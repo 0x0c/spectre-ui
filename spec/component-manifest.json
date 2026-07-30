@@ -1,0 +1,463 @@
+{
+  "$comment": "全生成物の単一の情報源。JSON Schema / TS型 / Swift型 / Kotlin型 / エディタのパレットとインスペクタは、すべてこのファイルから生成される。docs/tech-selection.md ADR-0002 を参照。",
+  "manifestVersion": "0.1.0",
+  "schemaVersion": "1.0",
+
+  "tokens": {
+    "color": [
+      "primary", "onPrimary", "primaryContainer", "onPrimaryContainer",
+      "secondary", "onSecondary", "secondaryContainer", "onSecondaryContainer",
+      "surface", "onSurface", "surfaceVariant", "onSurfaceVariant",
+      "background", "onBackground",
+      "outline", "outlineVariant",
+      "error", "onError", "success", "onSuccess",
+      "warning", "onWarning", "info", "onInfo",
+      "transparent"
+    ],
+    "spacing": { "none": 0, "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "xxl": 48 },
+    "radius": { "none": 0, "sm": 4, "md": 8, "lg": 16, "xl": 24, "full": -1 },
+    "typography": [
+      "displayLg", "displayMd",
+      "titleLg", "titleMd", "titleSm",
+      "bodyLg", "bodyMd", "bodySm",
+      "label", "caption", "overline"
+    ],
+    "elevation": [0, 1, 2, 3]
+  },
+
+  "commonNodeProps": {
+    "id":          { "type": "string", "description": "差分描画・計測・patch対象の識別子。エディタが自動採番する" },
+    "visibleWhen": { "type": "expression", "returns": "boolean" },
+    "repeat":      { "type": "repeat" },
+    "layout":      { "type": "layout" },
+    "style":       { "type": "style" },
+    "a11y":        { "type": "a11y" },
+    "fallback":    { "type": "node", "description": "未対応クライアント向けの代替ノード" },
+    "optional":    { "type": "boolean", "default": false, "description": "true なら未対応時に省略してよい" }
+  },
+
+  "components": [
+    {
+      "name": "Screen",
+      "category": "layout",
+      "icon": "device",
+      "rootOnly": true,
+      "children": { "min": 1, "max": 1 },
+      "props": {
+        "background": { "type": "colorToken", "default": "background", "editor": { "widget": "colorToken" } },
+        "scrollable": { "type": "boolean", "default": true, "editor": { "widget": "boolean" } },
+        "safeArea":   { "type": "enum", "values": ["all", "top", "bottom", "none"], "default": "all" },
+        "appBar":     { "type": "object", "shape": {
+                          "title":    { "type": "string", "expression": true },
+                          "showBack": { "type": "boolean", "default": true },
+                          "actions":  { "type": "array", "items": { "type": "node", "allow": ["Button", "Icon"] } }
+                        }, "nullable": true },
+        "bottomBar":  { "type": "node", "nullable": true, "description": "スクロールに追従しない下部固定領域" }
+      },
+      "since": "1.0"
+    },
+
+    {
+      "name": "VStack",
+      "category": "layout",
+      "icon": "layout.vertical",
+      "children": { "min": 0 },
+      "props": {
+        "spacing":      { "type": "spacingToken", "default": "none", "editor": { "widget": "spacingToken" } },
+        "alignment":    { "type": "enum", "values": ["leading", "center", "trailing"], "default": "leading" },
+        "distribution": { "type": "enum", "values": ["packed", "spaceBetween", "spaceAround"], "default": "packed" }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "HStack",
+      "category": "layout",
+      "icon": "layout.horizontal",
+      "children": { "min": 0 },
+      "props": {
+        "spacing":      { "type": "spacingToken", "default": "none" },
+        "alignment":    { "type": "enum", "values": ["top", "center", "bottom", "baseline"], "default": "center" },
+        "distribution": { "type": "enum", "values": ["packed", "spaceBetween", "spaceAround"], "default": "packed" },
+        "wrap":         { "type": "boolean", "default": false }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "ZStack",
+      "category": "layout",
+      "icon": "layout.stack",
+      "children": { "min": 0 },
+      "props": {
+        "alignment": { "type": "enum",
+          "values": ["topLeading", "top", "topTrailing", "leading", "center", "trailing",
+                     "bottomLeading", "bottom", "bottomTrailing"], "default": "center" }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Spacer",
+      "category": "layout",
+      "icon": "layout.spacer",
+      "children": false,
+      "props": { "minLength": { "type": "spacingToken", "nullable": true } },
+      "since": "1.0"
+    },
+    {
+      "name": "Divider",
+      "category": "layout",
+      "icon": "layout.divider",
+      "children": false,
+      "props": {
+        "orientation": { "type": "enum", "values": ["horizontal", "vertical"], "default": "horizontal" },
+        "inset":       { "type": "spacingToken", "default": "none" },
+        "color":       { "type": "colorToken", "default": "outlineVariant" }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "ScrollView",
+      "category": "layout",
+      "icon": "layout.scroll",
+      "children": { "min": 1, "max": 1 },
+      "lint": ["nested-vertical-scroll"],
+      "props": {
+        "direction":      { "type": "enum", "values": ["vertical", "horizontal"], "default": "vertical" },
+        "showsIndicator": { "type": "boolean", "default": true }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "List",
+      "category": "layout",
+      "icon": "layout.list",
+      "children": { "min": 0 },
+      "lazy": true,
+      "props": {
+        "spacing":   { "type": "spacingToken", "default": "none" },
+        "separator": { "type": "boolean", "default": false },
+        "header":    { "type": "node", "nullable": true },
+        "footer":    { "type": "node", "nullable": true }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Grid",
+      "category": "layout",
+      "icon": "layout.grid",
+      "children": { "min": 0 },
+      "lazy": true,
+      "props": {
+        "columns": { "type": "union", "of": [
+                       { "type": "number", "min": 1, "max": 4 },
+                       { "type": "enum", "values": ["adaptive"] }
+                     ], "default": 2 },
+        "spacing": { "type": "spacingToken", "default": "sm" }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Card",
+      "category": "layout",
+      "icon": "layout.card",
+      "children": { "min": 1, "max": 1 },
+      "props": {
+        "padding":   { "type": "spacingToken", "default": "md" },
+        "elevation": { "type": "enum", "values": [0, 1, 2, 3], "default": 1 },
+        "radius":    { "type": "radiusToken", "default": "md" },
+        "onTap":     { "type": "actions", "default": [], "editor": { "widget": "actions" } }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Section",
+      "category": "layout",
+      "icon": "layout.section",
+      "children": { "min": 0 },
+      "props": {
+        "title":    { "type": "string", "expression": true, "nullable": true },
+        "subtitle": { "type": "string", "expression": true, "nullable": true },
+        "action":   { "type": "object", "nullable": true, "shape": {
+                        "label":   { "type": "string", "expression": true },
+                        "actions": { "type": "actions" }
+                      } }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Tabs",
+      "category": "layout",
+      "icon": "layout.tabs",
+      "children": { "min": 1, "description": "children[i] が items[i] の内容に対応する" },
+      "props": {
+        "items":      { "type": "array", "expression": true, "items": { "type": "object", "shape": {
+                          "id":    { "type": "string" },
+                          "label": { "type": "string" },
+                          "icon":  { "type": "iconToken", "nullable": true },
+                          "badge": { "type": "string", "nullable": true }
+                        } } },
+        "selectedId": { "type": "binding", "returns": "string" },
+        "onChange":   { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+
+    {
+      "name": "Text",
+      "category": "content",
+      "icon": "content.text",
+      "children": false,
+      "props": {
+        "text":       { "type": "string", "expression": true, "required": true, "editor": { "widget": "textarea" } },
+        "typography": { "type": "typographyToken", "default": "bodyMd" },
+        "color":      { "type": "colorToken", "default": "onSurface" },
+        "align":      { "type": "enum", "values": ["start", "center", "end"], "default": "start" },
+        "weight":     { "type": "enum", "values": ["regular", "medium", "bold"], "default": "regular" },
+        "maxLines":   { "type": "number", "min": 1, "nullable": true },
+        "truncation": { "type": "enum", "values": ["tail", "middle", "none"], "default": "tail" },
+        "decoration": { "type": "enum", "values": ["none", "underline", "strikethrough"], "default": "none" },
+        "selectable": { "type": "boolean", "default": false }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Image",
+      "category": "content",
+      "icon": "content.image",
+      "children": false,
+      "props": {
+        "url":         { "type": "string", "expression": true, "required": true, "validate": "imageHostAllowlist" },
+        "contentMode": { "type": "enum", "values": ["fill", "fit"], "default": "fill" },
+        "aspectRatio": { "type": "number", "nullable": true },
+        "radius":      { "type": "radiusToken", "default": "none" },
+        "placeholder": { "type": "enum", "values": ["shimmer", "color", "none"], "default": "shimmer" },
+        "decorative":  { "type": "boolean", "default": false, "description": "true なら a11y から隠す" }
+      },
+      "lint": ["a11y/missing-label"],
+      "since": "1.0"
+    },
+    {
+      "name": "Icon",
+      "category": "content",
+      "icon": "content.icon",
+      "children": false,
+      "props": {
+        "name":  { "type": "iconToken", "required": true, "editor": { "widget": "icon" } },
+        "size":  { "type": "enum", "values": ["sm", "md", "lg"], "default": "md" },
+        "color": { "type": "colorToken", "default": "onSurface" }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Badge",
+      "category": "content",
+      "icon": "content.badge",
+      "children": false,
+      "props": {
+        "text":    { "type": "string", "expression": true, "required": true },
+        "tone":    { "type": "enum", "values": ["neutral", "info", "success", "warning", "error"], "default": "neutral" },
+        "variant": { "type": "enum", "values": ["filled", "outlined"], "default": "filled" }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "ProgressIndicator",
+      "category": "content",
+      "icon": "content.progress",
+      "children": false,
+      "props": {
+        "kind":  { "type": "enum", "values": ["linear", "circular"], "default": "circular" },
+        "value": { "type": "number", "expression": true, "min": 0, "max": 1, "nullable": true,
+                   "description": "null で不定形" },
+        "size":  { "type": "enum", "values": ["sm", "md", "lg"], "default": "md" }
+      },
+      "since": "1.0"
+    },
+
+    {
+      "name": "Button",
+      "category": "input",
+      "icon": "input.button",
+      "children": false,
+      "props": {
+        "label":        { "type": "string", "expression": true, "required": true },
+        "variant":      { "type": "enum", "values": ["primary", "secondary", "tertiary", "text", "destructive"], "default": "primary" },
+        "size":         { "type": "enum", "values": ["sm", "md", "lg"], "default": "md" },
+        "leadingIcon":  { "type": "iconToken", "nullable": true },
+        "trailingIcon": { "type": "iconToken", "nullable": true },
+        "enabled":      { "type": "boolean", "expression": true, "default": true },
+        "loading":      { "type": "boolean", "expression": true, "default": false },
+        "onTap":        { "type": "actions", "default": [], "editor": { "widget": "actions" } }
+      },
+      "lint": ["a11y/missing-label", "node/missing-id"],
+      "since": "1.0"
+    },
+    {
+      "name": "TextField",
+      "category": "input",
+      "icon": "input.textfield",
+      "children": false,
+      "props": {
+        "bindTo":      { "type": "statePath", "required": true, "editor": { "widget": "binding" } },
+        "label":       { "type": "string", "expression": true, "nullable": true },
+        "placeholder": { "type": "string", "expression": true, "nullable": true },
+        "helperText":  { "type": "string", "expression": true, "nullable": true },
+        "errorText":   { "type": "string", "expression": true, "nullable": true },
+        "keyboard":    { "type": "enum", "values": ["text", "email", "number", "phone", "url", "password"], "default": "text" },
+        "multiline":   { "type": "boolean", "default": false },
+        "maxLength":   { "type": "number", "nullable": true },
+        "validation":  { "type": "object", "nullable": true, "shape": {
+                           "required":  { "type": "boolean", "default": false },
+                           "pattern":   { "type": "string", "nullable": true },
+                           "minLength": { "type": "number", "nullable": true },
+                           "maxLength": { "type": "number", "nullable": true },
+                           "message":   { "type": "string" }
+                         } },
+        "debounceMs":  { "type": "number", "default": 300 },
+        "onChange":    { "type": "actions", "default": [] },
+        "onSubmit":    { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Toggle",
+      "category": "input",
+      "icon": "input.toggle",
+      "children": false,
+      "props": {
+        "bindTo":   { "type": "statePath", "required": true },
+        "label":    { "type": "string", "expression": true, "nullable": true },
+        "enabled":  { "type": "boolean", "expression": true, "default": true },
+        "onChange": { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Checkbox",
+      "category": "input",
+      "icon": "input.checkbox",
+      "children": false,
+      "props": {
+        "bindTo":   { "type": "statePath", "required": true },
+        "label":    { "type": "string", "expression": true, "nullable": true },
+        "enabled":  { "type": "boolean", "expression": true, "default": true },
+        "onChange": { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "RadioGroup",
+      "category": "input",
+      "icon": "input.radio",
+      "children": false,
+      "props": {
+        "bindTo":      { "type": "statePath", "required": true },
+        "options":     { "type": "array", "expression": true, "editor": { "widget": "options" },
+                         "items": { "type": "object", "shape": {
+                           "value":   { "type": "string" },
+                           "label":   { "type": "string" },
+                           "enabled": { "type": "boolean", "default": true }
+                         } } },
+        "orientation": { "type": "enum", "values": ["vertical", "horizontal"], "default": "vertical" },
+        "onChange":    { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Select",
+      "category": "input",
+      "icon": "input.select",
+      "children": false,
+      "props": {
+        "bindTo":      { "type": "statePath", "required": true },
+        "options":     { "type": "array", "expression": true, "editor": { "widget": "options" },
+                         "items": { "type": "object", "shape": {
+                           "value":   { "type": "string" },
+                           "label":   { "type": "string" },
+                           "enabled": { "type": "boolean", "default": true }
+                         } } },
+        "label":       { "type": "string", "expression": true, "nullable": true },
+        "placeholder": { "type": "string", "expression": true, "nullable": true },
+        "searchable":  { "type": "boolean", "default": false },
+        "onChange":    { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Slider",
+      "category": "input",
+      "icon": "input.slider",
+      "children": false,
+      "props": {
+        "bindTo":    { "type": "statePath", "required": true },
+        "min":       { "type": "number", "default": 0 },
+        "max":       { "type": "number", "default": 100 },
+        "step":      { "type": "number", "default": 1 },
+        "showValue": { "type": "boolean", "default": false },
+        "onChange":  { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "Stepper",
+      "category": "input",
+      "icon": "input.stepper",
+      "children": false,
+      "props": {
+        "bindTo":   { "type": "statePath", "required": true },
+        "min":      { "type": "number", "expression": true, "default": 0 },
+        "max":      { "type": "number", "expression": true, "nullable": true },
+        "step":     { "type": "number", "default": 1 },
+        "onChange": { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    },
+    {
+      "name": "DatePicker",
+      "category": "input",
+      "icon": "input.date",
+      "children": false,
+      "props": {
+        "bindTo":        { "type": "statePath", "required": true, "description": "ISO 8601 文字列" },
+        "mode":          { "type": "enum", "values": ["date", "time", "dateTime"], "default": "date" },
+        "label":         { "type": "string", "expression": true, "nullable": true },
+        "min":           { "type": "string", "expression": true, "nullable": true },
+        "max":           { "type": "string", "expression": true, "nullable": true },
+        "displayFormat": { "type": "enum", "values": ["short", "medium", "long"], "default": "medium" },
+        "onChange":      { "type": "actions", "default": [] }
+      },
+      "since": "1.0"
+    }
+  ],
+
+  "actions": [
+    { "name": "setState",      "since": "1.0", "async": false },
+    { "name": "toggleState",   "since": "1.0", "async": false },
+    { "name": "request",       "since": "1.0", "async": true  },
+    { "name": "navigate",      "since": "1.0", "async": false },
+    { "name": "back",          "since": "1.0", "async": false },
+    { "name": "dismiss",       "since": "1.0", "async": false },
+    { "name": "showOverlay",   "since": "1.0", "async": false },
+    { "name": "dismissOverlay","since": "1.0", "async": false },
+    { "name": "openUrl",       "since": "1.0", "async": false },
+    { "name": "refresh",       "since": "1.0", "async": true  },
+    { "name": "applyPatch",    "since": "1.0", "async": false },
+    { "name": "host",          "since": "1.0", "async": true  },
+    { "name": "track",         "since": "1.0", "async": false },
+    { "name": "sequence",      "since": "1.0", "async": false },
+    { "name": "condition",     "since": "1.0", "async": false },
+    { "name": "delay",         "since": "1.0", "async": true  },
+    { "name": "focus",         "since": "1.0", "async": false },
+    { "name": "scrollTo",      "since": "1.0", "async": false }
+  ],
+
+  "limits": {
+    "maxNodes": 2000,
+    "maxDepth": 32,
+    "maxDocumentBytes": 1048576,
+    "maxExprAstNodes": 256,
+    "maxExprDepth": 32,
+    "maxRepeatItems": 500,
+    "maxActionsPerDispatch": 64,
+    "maxActionNesting": 8
+  }
+}

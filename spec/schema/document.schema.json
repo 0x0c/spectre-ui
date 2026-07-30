@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spectre-ui.dev/schema/1.0/document.schema.json",
+  "title": "Spectre UI Document",
+  "$comment": "実装では spec/component-manifest.json から生成される。これは構造を示すための手書きサンプルで、components/props の網羅的な検証は生成版が担う。",
+
+  "type": "object",
+  "required": ["schemaVersion", "id", "root"],
+  "additionalProperties": false,
+  "properties": {
+    "$comment":      { "type": "string", "description": "オーサリング時の注記。公開時にサーバが除去する" },
+    "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "id":            { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "version":       { "type": "string", "description": "配信時にサーバが付与" },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title":       { "type": "string" },
+        "statePolicy": { "enum": ["reset", "preserve"], "default": "reset" },
+        "refresh": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pullToRefresh": { "type": "boolean", "default": false },
+            "intervalSec":   { "type": ["integer", "null"], "minimum": 5 }
+          }
+        }
+      }
+    },
+    "data":     { "type": "object", "description": "サーバ提供の不変データ" },
+    "state":    { "type": "object", "description": "クライアント可変stateの初期値" },
+    "root":     { "$ref": "#/$defs/node" },
+    "overlays": { "type": "array", "items": { "$ref": "#/$defs/overlay" }, "maxItems": 16 },
+    "onAppear":    { "$ref": "#/$defs/actions" },
+    "onDisappear": { "$ref": "#/$defs/actions" }
+  },
+
+  "$defs": {
+    "expression": {
+      "type": "string",
+      "$comment": "SpectreExpr。${...} を含みうる文字列。docs/spec/expression.md"
+    },
+
+    "colorToken": {
+      "enum": ["primary", "onPrimary", "primaryContainer", "onPrimaryContainer",
+               "secondary", "onSecondary", "secondaryContainer", "onSecondaryContainer",
+               "surface", "onSurface", "surfaceVariant", "onSurfaceVariant",
+               "background", "onBackground", "outline", "outlineVariant",
+               "error", "onError", "success", "onSuccess",
+               "warning", "onWarning", "info", "onInfo", "transparent"]
+    },
+    "spacingToken":    { "enum": ["none", "xs", "sm", "md", "lg", "xl", "xxl"] },
+    "radiusToken":     { "enum": ["none", "sm", "md", "lg", "xl", "full"] },
+    "typographyToken": { "enum": ["displayLg", "displayMd", "titleLg", "titleMd", "titleSm",
+                                  "bodyLg", "bodyMd", "bodySm", "label", "caption", "overline"] },
+
+    "edgeInsets": {
+      "oneOf": [
+        { "$ref": "#/$defs/spacingToken" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top":      { "$ref": "#/$defs/spacingToken" },
+            "leading":  { "$ref": "#/$defs/spacingToken" },
+            "bottom":   { "$ref": "#/$defs/spacingToken" },
+            "trailing": { "$ref": "#/$defs/spacingToken" }
+          }
+        }
+      ]
+    },
+
+    "dimension": {
+      "oneOf": [
+        { "enum": ["fill", "wrap"] },
+        { "type": "number", "minimum": 0, "maximum": 4096 }
+      ]
+    },
+
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "絶対座標指定は意図的に存在しない。docs/spec/schema.md §2.1",
+      "properties": {
+        "padding":     { "$ref": "#/$defs/edgeInsets" },
+        "margin":      { "$ref": "#/$defs/edgeInsets" },
+        "width":       { "$ref": "#/$defs/dimension" },
+        "height":      { "$ref": "#/$defs/dimension" },
+        "weight":      { "type": "number", "minimum": 0 },
+        "alignSelf":   { "enum": ["start", "center", "end", "stretch"] },
+        "aspectRatio": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "任意の色コードは受け付けない。トークンのみ。docs/spec/schema.md §2.2",
+      "properties": {
+        "background": { "$ref": "#/$defs/colorToken" },
+        "foreground": { "$ref": "#/$defs/colorToken" },
+        "radius":     { "$ref": "#/$defs/radiusToken" },
+        "border": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["color"],
+          "properties": {
+            "color": { "$ref": "#/$defs/colorToken" },
+            "width": { "type": "number", "minimum": 0, "maximum": 8, "default": 1 }
+          }
+        },
+        "elevation": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "opacity":   { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "a11y": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label":      { "$ref": "#/$defs/expression" },
+        "hint":       { "$ref": "#/$defs/expression" },
+        "role":       { "enum": ["button", "image", "header", "link", "none"] },
+        "hidden":     { "type": "boolean", "default": false },
+        "liveRegion": { "enum": ["off", "polite", "assertive"], "default": "off" }
+      }
+    },
+
+    "repeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["for"],
+      "properties": {
+        "for":       { "$ref": "#/$defs/expression" },
+        "as":        { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$", "default": "item" },
+        "indexAs":   { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$", "default": "index" },
+        "key":       { "$ref": "#/$defs/expression" },
+        "limit":     { "type": "integer", "minimum": 1, "maximum": 500 },
+        "emptyView": { "$ref": "#/$defs/node" }
+      }
+    },
+
+    "node": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "$comment":    { "type": "string", "description": "オーサリング時の注記。公開時にサーバが除去する" },
+        "type":        { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$" },
+        "id":          { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_.-]*$" },
+        "props":       { "type": "object" },
+        "children":    { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "layout":      { "$ref": "#/$defs/layout" },
+        "style":       { "$ref": "#/$defs/style" },
+        "a11y":        { "$ref": "#/$defs/a11y" },
+        "visibleWhen": { "$ref": "#/$defs/expression" },
+        "repeat":      { "$ref": "#/$defs/repeat" },
+        "fallback":    { "$ref": "#/$defs/node" },
+        "optional":    { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false,
+      "$comment": "props の中身は生成版スキーマで type ごとに if/then により検証される"
+    },
+
+    "overlay": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "properties": {
+        "id":          { "type": "string" },
+        "kind":        { "enum": ["sheet", "alert", "toast"] },
+        "title":       { "$ref": "#/$defs/expression" },
+        "message":     { "$ref": "#/$defs/expression" },
+        "dismissible": { "type": "boolean", "default": true }
+      },
+      "allOf": [
+        {
+          "if":   { "properties": { "kind": { "const": "sheet" } } },
+          "then": {
+            "required": ["root"],
+            "properties": {
+              "root":    { "$ref": "#/$defs/node" },
+              "detents": { "type": "array", "items": { "enum": ["small", "medium", "large"] } }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "kind": { "const": "alert" } } },
+          "then": {
+            "required": ["buttons"],
+            "properties": {
+              "buttons": {
+                "type": "array", "minItems": 1, "maxItems": 3,
+                "items": {
+                  "type": "object",
+                  "required": ["label"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "label":   { "$ref": "#/$defs/expression" },
+                    "role":    { "enum": ["default", "cancel", "destructive"], "default": "default" },
+                    "actions": { "$ref": "#/$defs/actions" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "kind": { "const": "toast" } } },
+          "then": {
+            "properties": {
+              "tone":       { "enum": ["neutral", "success", "warning", "error"], "default": "neutral" },
+              "durationMs": { "type": "integer", "minimum": 1000, "maximum": 10000, "default": 3000 }
+            }
+          }
+        }
+      ]
+    },
+
+    "actions": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/action" }
+    },
+
+    "action": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["setState", "toggleState", "request", "navigate", "back", "dismiss",
+                   "showOverlay", "dismissOverlay", "openUrl", "refresh", "applyPatch",
+                   "host", "track", "sequence", "condition", "delay", "focus", "scrollTo"]
+        },
+        "continueOnError": { "type": "boolean", "default": false },
+        "required":        { "type": "boolean", "default": false,
+                             "$comment": "true なら未対応クライアントは fallbackActions を実行する" },
+        "fallbackActions": { "$ref": "#/$defs/actions" }
+      },
+      "allOf": [
+        {
+          "if":   { "properties": { "type": { "const": "setState" } } },
+          "then": {
+            "oneOf": [
+              { "required": ["path", "value"] },
+              { "required": ["patch"] }
+            ],
+            "properties": {
+              "path":  { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_.\\[\\]]*$" },
+              "value": {},
+              "patch": { "type": "object" }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "type": { "const": "request" } } },
+          "then": {
+            "required": ["endpoint"],
+            "properties": {
+              "endpoint":       { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*(\\.[a-z][a-zA-Z0-9]*)*$",
+                                  "$comment": "論理名のみ。絶対URLは security/inline-url で拒否される" },
+              "method":         { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"], "default": "GET" },
+              "pathParams":     { "type": "object" },
+              "query":          { "type": "object" },
+              "body":           {},
+              "loadingPath":    { "type": "string" },
+              "timeoutMs":      { "type": "integer", "minimum": 100, "maximum": 60000, "default": 10000 },
+              "idempotencyKey": { "$ref": "#/$defs/expression" },
+              "onSuccess":      { "$ref": "#/$defs/actions" },
+              "onError":        { "$ref": "#/$defs/actions" }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "type": { "const": "navigate" } } },
+          "then": {
+            "properties": {
+              "mode":   { "enum": ["push", "present", "replace", "route"], "default": "push" },
+              "screen": { "type": "string" },
+              "route":  { "$ref": "#/$defs/expression" },
+              "params": { "type": "object" }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "type": { "const": "condition" } } },
+          "then": {
+            "required": ["if"],
+            "properties": {
+              "if":   { "$ref": "#/$defs/expression" },
+              "then": { "$ref": "#/$defs/actions" },
+              "else": { "$ref": "#/$defs/actions" }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "type": { "const": "host" } } },
+          "then": {
+            "required": ["name"],
+            "properties": {
+              "name":       { "type": "string" },
+              "params":     { "type": "object" },
+              "resultPath": { "type": "string" },
+              "onSuccess":  { "$ref": "#/$defs/actions" },
+              "onError":    { "$ref": "#/$defs/actions" }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "type": { "const": "openUrl" } } },
+          "then": {
+            "required": ["url"],
+            "properties": {
+              "url":  { "$ref": "#/$defs/expression" },
+              "mode": { "enum": ["inApp", "external"], "default": "inApp" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

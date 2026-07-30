@@ -1,0 +1,426 @@
+{
+  "$comment": "設計の妥当性を検証するためのサンプル。商品詳細画面を SpectreUI で表現したもの。",
+  "schemaVersion": "1.0",
+  "id": "product_detail",
+
+  "meta": {
+    "title": "商品詳細",
+    "statePolicy": "reset",
+    "refresh": { "pullToRefresh": true, "intervalSec": null }
+  },
+
+  "data": {
+    "product": {
+      "id": "SKU-1042",
+      "name": "ハンドドリップ コーヒーケトル 900ml",
+      "brand": "Kanata",
+      "price": 6800,
+      "listPrice": 8500,
+      "stock": 3,
+      "rating": 4.6,
+      "reviewCount": 128,
+      "images": [
+        "https://cdn.example.com/p/1042/1.jpg",
+        "https://cdn.example.com/p/1042/2.jpg"
+      ],
+      "sizes": [
+        { "value": "600", "label": "600ml", "enabled": true },
+        { "value": "900", "label": "900ml", "enabled": true },
+        { "value": "1200", "label": "1200ml", "enabled": false }
+      ],
+      "description": "細口ノズルで湯量をコントロールしやすい、ステンレス製のドリップケトル。",
+      "shippingNote": "本日18時までのご注文で明日お届け"
+    }
+  },
+
+  "state": {
+    "selectedSize": "900",
+    "qty": 1,
+    "adding": false,
+    "descExpanded": false
+  },
+
+  "root": {
+    "type": "Screen",
+    "id": "screen",
+    "props": {
+      "scrollable": true,
+      "background": "background",
+      "appBar": {
+        "title": "${data.product.brand}",
+        "showBack": true,
+        "actions": [
+          {
+            "type": "Button",
+            "id": "share_btn",
+            "props": {
+              "label": "",
+              "variant": "text",
+              "leadingIcon": "share",
+              "onTap": [
+                {
+                  "type": "host",
+                  "name": "share",
+                  "params": {
+                    "text": "${data.product.name}",
+                    "url": "https://example.com/p/${data.product.id}"
+                  }
+                }
+              ]
+            },
+            "a11y": { "label": "共有する", "role": "button" }
+          }
+        ]
+      },
+      "bottomBar": {
+        "type": "HStack",
+        "id": "cta_bar",
+        "props": { "spacing": "sm", "alignment": "center" },
+        "layout": { "padding": "md" },
+        "style": { "background": "surface", "elevation": 2 },
+        "children": [
+          {
+            "type": "Stepper",
+            "id": "qty_stepper",
+            "props": {
+              "bindTo": "qty",
+              "min": 1,
+              "max": "${data.product.stock}",
+              "step": 1
+            },
+            "a11y": { "label": "数量" }
+          },
+          {
+            "type": "Button",
+            "id": "add_to_cart",
+            "props": {
+              "label": "${data.product.stock > 0 ? 'カートに追加' : '在庫切れ'}",
+              "variant": "primary",
+              "size": "lg",
+              "enabled": "${data.product.stock > 0 && !state.adding}",
+              "loading": "${state.adding}",
+              "onTap": [
+                { "type": "setState", "path": "adding", "value": true },
+                {
+                  "type": "request",
+                  "endpoint": "cart.add",
+                  "method": "POST",
+                  "idempotencyKey": "${data.product.id}-${state.selectedSize}-${state.qty}",
+                  "body": {
+                    "productId": "${data.product.id}",
+                    "size": "${state.selectedSize}",
+                    "qty": "${state.qty}"
+                  },
+                  "onSuccess": [
+                    { "type": "showOverlay", "id": "added_toast" },
+                    {
+                      "type": "track",
+                      "event": "cart_add",
+                      "properties": {
+                        "sku": "${data.product.id}",
+                        "qty": "${state.qty}",
+                        "price": "${data.product.price}"
+                      }
+                    }
+                  ],
+                  "onError": [
+                    { "type": "showOverlay", "id": "error_alert" }
+                  ]
+                },
+                { "type": "setState", "path": "adding", "value": false }
+              ]
+            },
+            "layout": { "weight": 1 }
+          }
+        ]
+      }
+    },
+    "children": [
+      {
+        "type": "VStack",
+        "id": "content",
+        "props": { "spacing": "md", "alignment": "leading" },
+        "children": [
+          {
+            "type": "Image",
+            "id": "hero",
+            "props": {
+              "url": "${first(data.product.images)}",
+              "contentMode": "fill",
+              "aspectRatio": 1,
+              "placeholder": "shimmer"
+            },
+            "layout": { "width": "fill" },
+            "a11y": { "label": "${data.product.name}の商品画像", "role": "image" }
+          },
+
+          {
+            "type": "VStack",
+            "id": "summary",
+            "props": { "spacing": "sm", "alignment": "leading" },
+            "layout": { "padding": { "leading": "md", "trailing": "md" } },
+            "children": [
+              {
+                "type": "Text",
+                "id": "name",
+                "props": { "text": "${data.product.name}", "typography": "titleLg", "maxLines": 3 }
+              },
+              {
+                "type": "HStack",
+                "id": "rating_row",
+                "props": { "spacing": "xs", "alignment": "center" },
+                "children": [
+                  { "type": "Icon", "props": { "name": "star.fill", "size": "sm", "color": "warning" } },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "${formatNumber(data.product.rating, {maxFractionDigits: 1})}",
+                      "typography": "bodySm",
+                      "weight": "medium"
+                    }
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "(${data.product.reviewCount}件)",
+                      "typography": "bodySm",
+                      "color": "onSurfaceVariant"
+                    }
+                  }
+                ],
+                "a11y": {
+                  "label": "評価 ${data.product.rating} / 5、レビュー ${data.product.reviewCount}件"
+                }
+              },
+              {
+                "type": "HStack",
+                "id": "price_row",
+                "props": { "spacing": "sm", "alignment": "baseline" },
+                "children": [
+                  {
+                    "type": "Text",
+                    "id": "price",
+                    "props": {
+                      "text": "${formatCurrency(data.product.price, 'JPY')}",
+                      "typography": "titleMd",
+                      "weight": "bold",
+                      "color": "primary"
+                    }
+                  },
+                  {
+                    "type": "Text",
+                    "id": "list_price",
+                    "props": {
+                      "text": "${formatCurrency(data.product.listPrice, 'JPY')}",
+                      "typography": "bodySm",
+                      "color": "onSurfaceVariant",
+                      "decoration": "strikethrough"
+                    },
+                    "visibleWhen": "${data.product.listPrice > data.product.price}"
+                  },
+                  {
+                    "type": "Badge",
+                    "id": "discount",
+                    "props": {
+                      "text": "${round((1 - data.product.price / data.product.listPrice) * 100)}%OFF",
+                      "tone": "error"
+                    },
+                    "visibleWhen": "${data.product.listPrice > data.product.price}"
+                  }
+                ]
+              },
+              {
+                "type": "Badge",
+                "id": "low_stock",
+                "props": { "text": "残り${data.product.stock}点", "tone": "warning" },
+                "visibleWhen": "${data.product.stock > 0 && data.product.stock < 10}"
+              },
+              {
+                "type": "Text",
+                "id": "shipping",
+                "props": {
+                  "text": "${data.product.shippingNote}",
+                  "typography": "bodySm",
+                  "color": "success"
+                },
+                "visibleWhen": "${default(data.product.shippingNote, '') != ''}"
+              }
+            ]
+          },
+
+          { "type": "Divider", "props": { "inset": "md" } },
+
+          {
+            "type": "Section",
+            "id": "size_section",
+            "props": { "title": "サイズ" },
+            "layout": { "padding": { "leading": "md", "trailing": "md" } },
+            "children": [
+              {
+                "type": "RadioGroup",
+                "id": "size_picker",
+                "props": {
+                  "bindTo": "selectedSize",
+                  "options": "${data.product.sizes}",
+                  "orientation": "horizontal",
+                  "onChange": [
+                    {
+                      "type": "track",
+                      "event": "size_selected",
+                      "properties": { "size": "${state.selectedSize}" }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+
+          {
+            "type": "Section",
+            "id": "desc_section",
+            "props": { "title": "商品説明" },
+            "layout": { "padding": { "leading": "md", "trailing": "md" } },
+            "children": [
+              {
+                "type": "Text",
+                "id": "description",
+                "props": {
+                  "text": "${data.product.description}",
+                  "typography": "bodyMd",
+                  "maxLines": "${state.descExpanded ? null : 3}"
+                }
+              },
+              {
+                "type": "Button",
+                "id": "desc_toggle",
+                "props": {
+                  "label": "${state.descExpanded ? '閉じる' : 'もっと見る'}",
+                  "variant": "text",
+                  "size": "sm",
+                  "trailingIcon": "${state.descExpanded ? 'chevron.up' : 'chevron.down'}",
+                  "onTap": [{ "type": "toggleState", "path": "descExpanded" }]
+                }
+              }
+            ]
+          },
+
+          {
+            "$comment": "v1.4 で追加された新コンポーネント。古いクライアント向けに fallback を持つ。docs/compatibility.md §3",
+            "type": "Carousel",
+            "id": "related",
+            "props": {
+              "items": "${data.related}",
+              "title": "関連商品"
+            },
+            "optional": true,
+            "fallback": {
+              "type": "Section",
+              "props": { "title": "関連商品" },
+              "layout": { "padding": { "leading": "md", "trailing": "md" } },
+              "children": [
+                {
+                  "type": "List",
+                  "props": { "spacing": "sm", "separator": true },
+                  "children": [
+                    {
+                      "type": "Card",
+                      "repeat": {
+                        "for": "${data.related}",
+                        "as": "item",
+                        "key": "${item.id}",
+                        "limit": 6
+                      },
+                      "props": {
+                        "padding": "sm",
+                        "onTap": [
+                          {
+                            "type": "navigate",
+                            "mode": "push",
+                            "screen": "product_detail",
+                            "params": { "id": "${item.id}" }
+                          }
+                        ]
+                      },
+                      "children": [
+                        {
+                          "type": "HStack",
+                          "props": { "spacing": "sm", "alignment": "center" },
+                          "children": [
+                            {
+                              "type": "Image",
+                              "props": {
+                                "url": "${item.imageUrl}",
+                                "aspectRatio": 1,
+                                "radius": "sm",
+                                "decorative": true
+                              },
+                              "layout": { "width": 64 }
+                            },
+                            {
+                              "type": "VStack",
+                              "props": { "spacing": "xs", "alignment": "leading" },
+                              "layout": { "weight": 1 },
+                              "children": [
+                                {
+                                  "type": "Text",
+                                  "props": { "text": "${item.name}", "typography": "bodyMd", "maxLines": 2 }
+                                },
+                                {
+                                  "type": "Text",
+                                  "props": {
+                                    "text": "${formatCurrency(item.price, 'JPY')}",
+                                    "typography": "bodySm",
+                                    "color": "onSurfaceVariant"
+                                  }
+                                }
+                              ]
+                            },
+                            { "type": "Icon", "props": { "name": "chevron.right", "size": "sm", "color": "outline" } }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+
+          { "type": "Spacer", "props": { "minLength": "xxl" } }
+        ]
+      }
+    ]
+  },
+
+  "overlays": [
+    {
+      "id": "added_toast",
+      "kind": "toast",
+      "message": "カートに追加しました",
+      "tone": "success",
+      "durationMs": 2500
+    },
+    {
+      "id": "error_alert",
+      "kind": "alert",
+      "title": "追加できませんでした",
+      "message": "${default(error.message, '時間をおいて再度お試しください')}",
+      "buttons": [
+        { "label": "閉じる", "role": "cancel", "actions": [] },
+        {
+          "label": "再試行",
+          "role": "default",
+          "actions": [{ "type": "focus", "nodeId": "add_to_cart" }]
+        }
+      ]
+    }
+  ],
+
+  "onAppear": [
+    {
+      "type": "track",
+      "event": "product_view",
+      "properties": { "sku": "${data.product.id}", "price": "${data.product.price}" }
+    }
+  ]
+}
