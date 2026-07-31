@@ -5,9 +5,11 @@
 
 | リポジトリ上のパス | サイト上の扱い |
 | --- | --- |
-| `docs/**`     | `docs_dir` なので、`docs/` を取り除いたパスになる |
-| `roadmaps/**` | ビルド時に `roadmaps/` としてサイトへ取り込む（構造は保つ） |
-| それ以外 (`spec/`, `examples/`, `.agent-workflows/` など) | サイトに含まれないので GitHub の絶対URLにする |
+| `docs/**` | `docs_dir` なので、`docs/` を取り除いたパスになる |
+| それ以外 (`roadmaps/`, `spec/`, `examples/`, `.agent-workflows/` など) | サイトに含まれないので GitHub の絶対URLにする |
+
+ロードマップ項目の本文はサイトに載せず、一覧ページ
+(`scripts/build_roadmap_index.py`) から GitHub へ送る。
 
 いずれの場合も、リンク元ページのサイト上の位置からの相対パスに直す。
 """
@@ -19,16 +21,6 @@ import re
 
 GITHUB_BLOB = "https://github.com/0x0c/spectre-ui/blob/main"
 
-# サイトに取り込むリポジトリ直下のディレクトリ（`docs/` 以外）
-IMPORTED_DIRS = ("roadmaps",)
-
-# 取り込みに際して名前を変えるファイル。`roadmaps/README.md` をそのまま置くと
-# 生成する `roadmaps/index.md`（項目一覧）と衝突するため。
-RENAMED = {
-    "roadmaps/README.md": "roadmaps/conventions.md",
-    "roadmaps/README-ja.md": "roadmaps/conventions-ja.md",
-}
-
 # Markdown のリンクとイメージ。タイトル付き `](path "title")` にも対応する。
 _LINK_RE = re.compile(r'(?<=\])\((?!<)([^()\s]+?)(\s+"[^"]*")?\)')
 
@@ -37,13 +29,8 @@ _ABSOLUTE = re.compile(r"\A(?:[a-z][a-z0-9+.-]*:|//|#)")
 
 def repo_to_site(repo_path: str) -> str | None:
     """リポジトリ相対パス → サイト（docs_dir）相対パス。サイト外なら None。"""
-    if repo_path in RENAMED:
-        return RENAMED[repo_path]
     if repo_path.startswith("docs/"):
         return repo_path[len("docs/") :]
-    for name in IMPORTED_DIRS:
-        if repo_path == name or repo_path.startswith(name + "/"):
-            return repo_path
     return None
 
 

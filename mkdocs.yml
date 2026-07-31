@@ -1,13 +1,13 @@
 site_name: Spectre UI
 site_description: サーバードリブンUI (SDUI) のためのクロスプラットフォームライブラリ。設計ドキュメント、ADR、ロードマップ。
-site_url: https://0x0c.github.io/spectre-ui/
+site_url: https://0x0c.github.io/spectre-ui/docs/
 repo_url: https://github.com/0x0c/spectre-ui
 repo_name: 0x0c/spectre-ui
 edit_uri: edit/main/docs/
 copyright: Spectre UI — 設計フェーズ
 
 docs_dir: docs
-site_dir: site
+site_dir: site/docs
 
 theme:
   name: material
@@ -55,12 +55,6 @@ plugins:
       lang:
         - ja
         - en
-  # roadmaps/ をサイトへ取り込み、一覧ページとナビを生成する
-  - gen-files:
-      scripts:
-        - scripts/gen_roadmap_pages.py
-  - literate-nav:
-      nav_file: SUMMARY.md
 
 markdown_extensions:
   - admonition
@@ -107,9 +101,7 @@ nav:
       - コンポーネントカタログ v0.1: spec/components.md
       - 式言語 SpectreExpr: spec/expression.md
       - アクション: spec/actions.md
-  - ロードマップ:
-      - マイルストーンと未決事項: roadmap.md
-      - 項目: roadmaps/
+  - ロードマップ: roadmap.md
 
 # 英語版のページはナビには載せず、各ページの言語切り替えリンクから辿る
 not_in_nav: |

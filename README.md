@@ -8,9 +8,9 @@
 
 現在のフェーズ: **設計 (実装コードなし)**。本リポジトリには技術選定と仕様のドキュメントのみが含まれる。
 
-**ドキュメントサイト: https://0x0c.github.io/spectre-ui/**
-検索とナビゲーション付きで閲覧できる。ロードマップは
-[項目一覧](https://0x0c.github.io/spectre-ui/roadmaps/) から状態別・トピック別に辿れる。
+**ロードマップ項目一覧: https://0x0c.github.io/spectre-ui/**
+状態とトピックで絞り込める1枚のリスト。項目の本文は `roadmaps/` にある。
+設計ドキュメントは https://0x0c.github.io/spectre-ui/docs/ に MkDocs で置いている。
 
 ---
 
@@ -77,14 +77,24 @@ spectre-ui/
 
 ---
 
-## ドキュメントサイト
+## サイト
 
-MkDocs (Material) で構築し、GitHub Actions から GitHub Pages へデプロイする。
-`roadmaps/` の項目ページと項目一覧は `scripts/gen_roadmap_pages.py` がビルド時に生成するため、
-項目を追加してもサイト側のインデックスを手で更新する必要はない。
+GitHub Actions から GitHub Pages へデプロイする。2つの成果物からなる。
+
+| URL | 中身 | 作るもの |
+| --- | --- | --- |
+| `/` | ロードマップ項目一覧 | `scripts/build_roadmap_index.py` |
+| `/docs/` | 設計ドキュメントとADR | MkDocs (Material) |
+
+一覧は `roadmaps/` の各項目の `SU-METADATA` と冒頭の1段落から生成するので、
+項目を追加してもインデックスを手で更新する必要はない。項目の本文はサイトには載せず、
+リポジトリ上の Markdown へリンクする。
 
 ```sh
 pip install -r requirements-docs.txt
-mkdocs serve          # http://127.0.0.1:8000/
-mkdocs build --strict # CI と同じ検証。リンク切れがあれば失敗する
+
+mkdocs build --strict                        # ドキュメント → site/docs/
+python3 scripts/build_roadmap_index.py site  # 一覧 → site/index.html
+
+mkdocs serve                                 # ドキュメントだけをローカルで確認
 ```
