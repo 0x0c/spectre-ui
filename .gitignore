@@ -1,0 +1,19 @@
+# Gradle / JVM
+.gradle/
+build/
+local.properties
+*.hprof
+
+# Node
+node_modules/
+dist/
+
+# Xcode / SwiftPM
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+
+# OS
+.DS_Store

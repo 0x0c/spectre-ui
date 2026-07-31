@@ -1,0 +1,54 @@
+{
+  "name": "literals, path access, indexing",
+  "scope": {
+    "data": {
+      "n": 1280,
+      "f": 4.5,
+      "s": "hello",
+      "t": true,
+      "nil": null,
+      "arr": [10, 20, 30],
+      "obj": { "a": { "b": { "c": "deep" } } },
+      "list": [{ "id": "x1" }, { "id": "x2" }]
+    },
+    "state": { "qty": 2 },
+    "env": { "platform": "ios", "locale": "ja-JP", "appVersion": "3.14.0", "theme": "light" }
+  },
+  "cases": [
+    { "expr": "${1}", "expect": 1 },
+    { "expr": "${-3}", "expect": -3 },
+    { "expr": "${4.5}", "expect": 4.5 },
+    { "expr": "${true}", "expect": true },
+    { "expr": "${false}", "expect": false },
+    { "expr": "${null}", "expect": null },
+    { "expr": "${'text'}", "expect": "text" },
+    { "expr": "${\"text\"}", "expect": "text" },
+    { "expr": "${'with \\'quote\\''}", "expect": "with 'quote'" },
+    { "expr": "${[1, 2, 3]}", "expect": [1, 2, 3] },
+    { "expr": "${{\"k\": 1}}", "expect": { "k": 1 } },
+
+    { "expr": "${data.n}", "expect": 1280 },
+    { "expr": "${data.s}", "expect": "hello" },
+    { "expr": "${data.nil}", "expect": null },
+    { "expr": "${state.qty}", "expect": 2 },
+    { "expr": "${env.platform}", "expect": "ios" },
+
+    { "expr": "${data.obj.a.b.c}", "expect": "deep" },
+    { "expr": "${data.missing}", "expect": null },
+    { "expr": "${data.missing.deeper}", "expect": null },
+    { "expr": "${data.nil.anything}", "expect": null },
+    { "expr": "${data.obj?.a?.b?.c}", "expect": "deep" },
+    { "expr": "${data.missing?.deeper}", "expect": null },
+
+    { "expr": "${data.arr[0]}", "expect": 10 },
+    { "expr": "${data.arr[2]}", "expect": 30 },
+    { "expr": "${data.arr[3]}", "expect": null },
+    { "expr": "${data.arr[-1]}", "expect": null },
+    { "expr": "${data.list[1].id}", "expect": "x2" },
+    { "expr": "${data.obj['a']['b']['c']}", "expect": "deep" },
+    { "expr": "${data.arr[state.qty]}", "expect": 30 },
+
+    { "expr": "${unknownRoot}", "expect": null },
+    { "expr": "${(1 + 2) * 3}", "expect": 9 }
+  ]
+}
