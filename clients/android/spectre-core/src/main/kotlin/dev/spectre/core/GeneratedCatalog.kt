@@ -107,7 +107,7 @@ object GeneratedCatalog {
         ComponentSpec(
             name = "Tabs",
             acceptsChildren = true,
-            propNames = setOf("items", "selectedId", "onChange"),
+            propNames = setOf("items", "bindTo", "onChange"),
             actionPaths = listOf("onChange"),
             nodePaths = listOf(),
         ),

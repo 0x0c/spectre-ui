@@ -102,7 +102,7 @@ public enum GeneratedCatalog {
         ComponentSpec(
             name: "Tabs",
             acceptsChildren: true,
-            propNames: ["items", "selectedId", "onChange"],
+            propNames: ["items", "bindTo", "onChange"],
             actionPaths: ["onChange"],
             nodePaths: []
         ),

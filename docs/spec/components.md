@@ -122,7 +122,7 @@ camera, image, trash, edit, more.horizontal, more.vertical, ...
 `title`: string?、`subtitle`: string?、`action`: `{label, actions}`? （右上のテキストボタン）。
 
 ### `Tabs`
-`items`: `[{id, label, icon?, badge?}]`、`selectedId`: 式（`state` にバインド）、`onChange`: Action[]。
+`items`: `[{id, label, icon?, badge?}]`、`bindTo`: 選択中のタブ id を持つ state のパス、`onChange`: Action[]。
 `children` の各要素が各タブの内容に対応する。
 
 ---

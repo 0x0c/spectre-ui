@@ -195,7 +195,8 @@
                           "icon":  { "type": "iconToken", "nullable": true },
                           "badge": { "type": "string", "nullable": true }
                         } } },
-        "selectedId": { "type": "binding", "returns": "string" },
+        "bindTo":     { "type": "statePath", "required": true,
+                        "description": "選択中のタブ id を保持する state のパス" },
         "onChange":   { "type": "actions", "default": [] }
       },
       "since": "1.0"

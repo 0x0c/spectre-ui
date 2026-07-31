@@ -1,0 +1,296 @@
+{
+  "$comment": "入力コンポーネントとアクションの動作確認用。Tabs / TextField / Toggle / Select / RadioGroup / Slider / Checkbox / オーバレイを一通り含む。",
+  "schemaVersion": "1.0",
+  "id": "settings_form",
+
+  "meta": {
+    "title": "通知設定",
+    "statePolicy": "preserve"
+  },
+
+  "data": {
+    "user": { "name": "板東", "email": "bandou@example.com" },
+    "frequencies": [
+      { "value": "realtime", "label": "リアルタイム" },
+      { "value": "daily", "label": "1日1回" },
+      { "value": "weekly", "label": "週1回" }
+    ],
+    "categories": [
+      { "value": "order", "label": "注文" },
+      { "value": "campaign", "label": "キャンペーン" },
+      { "value": "system", "label": "システム" }
+    ]
+  },
+
+  "state": {
+    "tab": "notify",
+    "pushEnabled": true,
+    "mailEnabled": false,
+    "frequency": "daily",
+    "category": "order",
+    "quietHours": 22,
+    "agreed": false,
+    "email": "bandou@example.com",
+    "saving": false,
+    "emailError": null
+  },
+
+  "root": {
+    "type": "Screen",
+    "id": "screen",
+    "props": {
+      "scrollable": true,
+      "appBar": { "title": "通知設定", "showBack": true },
+      "bottomBar": {
+        "type": "HStack",
+        "id": "save_bar",
+        "props": { "spacing": "sm", "alignment": "center" },
+        "layout": { "padding": "md" },
+        "style": { "background": "surface", "elevation": 2 },
+        "children": [
+          {
+            "type": "Button",
+            "id": "reset_btn",
+            "props": {
+              "label": "リセット",
+              "variant": "secondary",
+              "onTap": [
+                {
+                  "type": "setState",
+                  "patch": {
+                    "pushEnabled": true,
+                    "mailEnabled": false,
+                    "frequency": "daily",
+                    "quietHours": 22,
+                    "agreed": false
+                  }
+                },
+                { "type": "showOverlay", "id": "reset_toast" }
+              ]
+            }
+          },
+          {
+            "type": "Button",
+            "id": "save_btn",
+            "props": {
+              "label": "保存する",
+              "variant": "primary",
+              "enabled": "${state.agreed && !state.saving}",
+              "loading": "${state.saving}",
+              "onTap": [
+                { "type": "setState", "path": "emailError", "value": null },
+                {
+                  "type": "condition",
+                  "if": "${!contains(state.email, '@')}",
+                  "then": [
+                    { "type": "setState", "path": "emailError", "value": "メールアドレスの形式が正しくありません" }
+                  ],
+                  "else": [
+                    {
+                      "type": "request",
+                      "endpoint": "settings.save",
+                      "method": "POST",
+                      "loadingPath": "saving",
+                      "body": {
+                        "push": "${state.pushEnabled}",
+                        "mail": "${state.mailEnabled}",
+                        "frequency": "${state.frequency}",
+                        "category": "${state.category}",
+                        "quietHours": "${state.quietHours}",
+                        "email": "${state.email}"
+                      },
+                      "onSuccess": [
+                        { "type": "showOverlay", "id": "saved_toast" },
+                        { "type": "track", "event": "settings_saved" }
+                      ],
+                      "onError": [{ "type": "showOverlay", "id": "save_error" }]
+                    }
+                  ]
+                }
+              ]
+            },
+            "layout": { "weight": 1 }
+          }
+        ]
+      }
+    },
+    "children": [
+      {
+        "type": "Tabs",
+        "id": "tabs",
+        "props": {
+          "bindTo": "tab",
+          "items": [
+            { "id": "notify", "label": "通知" },
+            { "id": "account", "label": "アカウント" }
+          ]
+        },
+        "children": [
+          {
+            "type": "VStack",
+            "id": "notify_tab",
+            "props": { "spacing": "md", "alignment": "leading" },
+            "layout": { "padding": "md" },
+            "children": [
+              {
+                "type": "Section",
+                "props": { "title": "受け取る通知" },
+                "children": [
+                  {
+                    "type": "Toggle",
+                    "id": "push_toggle",
+                    "props": { "bindTo": "pushEnabled", "label": "プッシュ通知" }
+                  },
+                  {
+                    "type": "Toggle",
+                    "id": "mail_toggle",
+                    "props": { "bindTo": "mailEnabled", "label": "メール通知" }
+                  }
+                ]
+              },
+
+              { "type": "Divider", "props": {} },
+
+              {
+                "type": "Section",
+                "props": { "title": "頻度" },
+                "visibleWhen": "${state.pushEnabled || state.mailEnabled}",
+                "children": [
+                  {
+                    "type": "RadioGroup",
+                    "id": "frequency_picker",
+                    "props": {
+                      "bindTo": "frequency",
+                      "options": "${data.frequencies}",
+                      "orientation": "vertical"
+                    }
+                  }
+                ]
+              },
+
+              {
+                "type": "Section",
+                "props": { "title": "カテゴリ" },
+                "children": [
+                  {
+                    "type": "Select",
+                    "id": "category_select",
+                    "props": {
+                      "bindTo": "category",
+                      "options": "${data.categories}",
+                      "label": "対象カテゴリ",
+                      "placeholder": "選択してください"
+                    }
+                  }
+                ]
+              },
+
+              {
+                "type": "Section",
+                "props": {
+                  "title": "サイレント時間",
+                  "subtitle": "${state.quietHours}時以降は通知しません"
+                },
+                "visibleWhen": "${state.pushEnabled}",
+                "children": [
+                  {
+                    "type": "Slider",
+                    "id": "quiet_slider",
+                    "props": {
+                      "bindTo": "quietHours",
+                      "min": 18,
+                      "max": 24,
+                      "step": 1,
+                      "showValue": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+
+          {
+            "type": "VStack",
+            "id": "account_tab",
+            "props": { "spacing": "md", "alignment": "leading" },
+            "layout": { "padding": "md" },
+            "children": [
+              {
+                "type": "Text",
+                "props": { "text": "${data.user.name}さんのアカウント", "typography": "titleSm" }
+              },
+              {
+                "type": "TextField",
+                "id": "email_field",
+                "props": {
+                  "bindTo": "email",
+                  "label": "メールアドレス",
+                  "keyboard": "email",
+                  "placeholder": "you@example.com",
+                  "helperText": "通知の送信先になります",
+                  "errorText": "${state.emailError}"
+                }
+              },
+              {
+                "type": "Checkbox",
+                "id": "agree_check",
+                "props": { "bindTo": "agreed", "label": "設定の変更に同意する" }
+              },
+              {
+                "type": "Text",
+                "props": {
+                  "text": "同意しないと保存できません",
+                  "typography": "caption",
+                  "color": "onSurfaceVariant"
+                },
+                "visibleWhen": "${!state.agreed}"
+              },
+              {
+                "type": "Button",
+                "id": "help_btn",
+                "props": {
+                  "label": "ヘルプを開く",
+                  "variant": "text",
+                  "trailingIcon": "chevron.right",
+                  "onTap": [
+                    { "type": "openUrl", "url": "https://example.com/help/notifications", "mode": "inApp" }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+
+      { "type": "Spacer", "props": { "minLength": "xl" } }
+    ]
+  },
+
+  "overlays": [
+    {
+      "id": "saved_toast",
+      "kind": "toast",
+      "message": "保存しました",
+      "tone": "success",
+      "durationMs": 2000
+    },
+    {
+      "id": "reset_toast",
+      "kind": "toast",
+      "message": "初期値に戻しました",
+      "tone": "neutral",
+      "durationMs": 2000
+    },
+    {
+      "id": "save_error",
+      "kind": "alert",
+      "title": "保存できませんでした",
+      "message": "${default(error.message, '通信に失敗しました')}",
+      "buttons": [{ "label": "閉じる", "role": "cancel", "actions": [] }]
+    }
+  ],
+
+  "onAppear": [
+    { "type": "track", "event": "settings_view", "properties": { "tab": "${state.tab}" } }
+  ]
+}
