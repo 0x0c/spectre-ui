@@ -1,0 +1,71 @@
+**English** · [日本語](SU-0007-conformance-corpus-ja.md)
+
+# SU-0007 — The conformance corpus
+
+<!-- SU-METADATA -->
+| Field | Value |
+|---|---|
+| Proposal | [SU-0007](SU-0007-conformance-corpus.md) |
+| Author | [@0x0c](https://github.com/0x0c) |
+| Status | **Proposal** |
+| Topic | Tooling |
+| Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md) |
+<!-- /SU-METADATA -->
+
+## Introduction
+
+This item builds `spec/conformance/`, a corpus of implementation-independent JSON cases, and the
+three test harnesses — Swift, Kotlin, and TypeScript — that read and execute it. Each case names an
+input and the exact output every runtime must produce.
+
+## Motivation
+
+Spectre UI ships two native renderers rather than one shared implementation, on the explicit premise
+that the behaviors underneath rendering can be pinned mechanically
+([ADR-0001](../../docs/adr/ADR-0001-client-rendering-strategy/ADR-0001-client-rendering-strategy.md)).
+This corpus is that premise. Without it, the same document evaluating differently on iOS and Android
+is a defect nobody can detect until a user reports a screen that looks wrong on one platform only.
+
+Corpus cases are also the cheapest place to settle a specification question. A disagreement about
+what `a ?? b` means with a missing binding is resolved once, as a case, instead of twice as two
+implementations and a third time as an incident.
+
+## Detailed design
+
+1. **`expr/`** — an expression string and a scope, against the evaluated JSON value or an error
+   code.
+2. **`binding/`** — a document and a state, against the resolved property values.
+3. **`actions/`** — a state and a sequence of actions, against the resulting state and the sequence
+   of side effects fired.
+4. **`layout/`** — a document, against the normalized render node tree before layout computation.
+5. **`compat/`** — a document and a capability declaration, against the degraded node tree.
+6. **A harness per runtime**, reading the corpus directly rather than through a generated copy.
+7. **The continuous integration rule** that a change to specified behavior must extend the corpus in
+   the same change.
+
+## Alternatives considered
+
+- **Per-runtime unit tests, with agreement checked in review.** Rejected: agreement then depends on
+  whoever writes the second test remembering what the first one asserted, which is exactly the drift
+  this corpus exists to prevent.
+- **Screenshot comparison across platforms.** Rejected as the agreement mechanism: whether two
+  runtimes evaluate an expression identically is a semantic question, and pixels answer it poorly.
+  Screenshots stay in use per platform, for within-platform regression.
+
+## Progress
+
+> Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
+> the log records what changed and when, oldest first.
+
+- [ ] Not started
+
+**Log**
+
+- No work has begun; the repository is in its design phase.
+
+## References
+
+- [ADR-0008 — The conformance testing strategy](../../docs/adr/ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy.md) — the decision this item implements.
+- [ADR-0004 — The expression language and data binding](../../docs/adr/ADR-0004-expression-language/ADR-0004-expression-language.md) — the language whose JSON-in, JSON-out shape makes the corpus possible.
+- [`docs/spec/expression.md`](../../docs/spec/expression.md) — the behavior `expr/` pins down.
+- [SU-0002 — M1, client SDKs for iOS and Android](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md) — the SDKs that must pass it at one hundred percent.
