@@ -3,6 +3,7 @@
  *
  * 情報源は docs/roadmap.md（マイルストーン・未決事項・リスク・次のアクション）と
  * docs/tech-selection.md（選定サマリ）。ドキュメントを更新したらこのファイルも合わせる。
+ * 個別の作業項目は roadmaps/ に、各技術決定は docs/adr/ に1件ずつある。
  *
  * 見積もりは「フルタイム換算の人週」。前提: iOS 1名、Android 1名、Web/サーバ 1〜2名。
  */
@@ -253,9 +254,19 @@ window.ROADMAP = {
 
   docs: [
     {
+      path: "docs/adr/README-ja.md",
+      title: "ADR (アーキテクチャ決定記録)",
+      desc: "1決定1ディレクトリ。文脈・選択肢・決定・根拠・代償・再検討のトリガー",
+    },
+    {
+      path: "roadmaps/README-ja.md",
+      title: "ロードマップ項目",
+      desc: "1項目1ディレクトリ。マイルストーンと個別の作業を提案として記述",
+    },
+    {
       path: "docs/tech-selection.md",
-      title: "技術選定",
-      desc: "ADR形式で各決定の選択肢・比較・結論",
+      title: "技術選定の索引",
+      desc: "前提として置いた制約、ADRの一覧、選定サマリ",
     },
     {
       path: "docs/architecture.md",
