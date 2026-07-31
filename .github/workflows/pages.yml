@@ -29,6 +29,10 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          # リポジトリ設定で Pages が未設定でも、ここで有効化する
+          # (Source = GitHub Actions)。
+          enablement: true
 
       - name: Upload site/
         uses: actions/upload-pages-artifact@v3
