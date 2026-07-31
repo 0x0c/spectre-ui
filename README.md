@@ -14,7 +14,9 @@
 
 | ドキュメント | 内容 |
 | --- | --- |
-| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定。ADR形式で各決定の選択肢・比較・結論 |
+| [docs/adr/](docs/adr/README-ja.md) | ADR（アーキテクチャ決定記録）。1決定1ディレクトリ、日英両方 |
+| [roadmaps/](roadmaps/README-ja.md) | ロードマップ項目。1項目1ディレクトリ、日英両方 |
+| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定の索引。前提の制約とADRの一覧 |
 | [docs/architecture.md](docs/architecture.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
 | [docs/spec/schema.md](docs/spec/schema.md) | UI定義ドキュメントのスキーマ仕様 v0.1 |
 | [docs/spec/components.md](docs/spec/components.md) | コンポーネントカタログ v0.1 とデザイントークン |
@@ -22,7 +24,12 @@
 | [docs/spec/actions.md](docs/spec/actions.md) | アクション仕様とサーバ応答プロトコル |
 | [docs/editor.md](docs/editor.md) | Web WYSIWYGエディタの設計 |
 | [docs/compatibility.md](docs/compatibility.md) | バージョニング・前方互換・配信/ロールバック戦略 |
-| [docs/roadmap.md](docs/roadmap.md) | マイルストーンと未決事項 |
+| [docs/roadmap.md](docs/roadmap.md) | マイルストーンの概観、見積もり、未決事項、リスク |
+
+ADRとロードマップ項目は採番して1件1ディレクトリに置き、英語版 `X.md` と日本語版 `X-ja.md` を組で持つ。
+採番と書式の規則は [docs/adr/README-ja.md](docs/adr/README-ja.md) と
+[roadmaps/README-ja.md](roadmaps/README-ja.md) にある。執筆時の文章規範と手順は
+[.agent-workflows/](.agent-workflows/README.md)（Claude Code 向けのアダプタは `.claude/skills/`）にある。
 
 ## 成果物 (設計サンプル)
 
@@ -44,6 +51,9 @@
 
 ```
 spectre-ui/
+├── docs/adr/                   # ADR (1決定1ディレクトリ、日英両方)
+├── roadmaps/                   # ロードマップ項目 (1項目1ディレクトリ、日英両方)
+├── .agent-workflows/           # 共有のエージェント手順 (.claude/skills がこれを読む)
 ├── spec/                       # 仕様の単一の情報源
 │   ├── component-manifest.json #   コンポーネント定義
 │   ├── tokens.json             #   デザイントークン

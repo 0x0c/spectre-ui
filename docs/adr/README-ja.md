@@ -4,11 +4,11 @@
 
 ADR（Architecture Decision Record、アーキテクチャ決定記録）は、技術上の重要な決定を1件ずつ記録した
 ものです。その選択を迫った文脈、比較した選択肢、決定そのもの、根拠、そして支払った代償を残します。
-このディレクトリは、Spectre UI におけるそうした決定の正となる置き場所です。Spectre UI は
-サーバードリブンUI（Server-Driven UI、SDUI）のためのクロスプラットフォームライブラリで、サーバが
-配信したUI定義ドキュメントを iOS と Android のネイティブSDKが解釈して描画します。
+このディレクトリは、Spectre UI におけるそうした決定の正となる置き場所です。Spectre UI は、
+サーバードリブンUI（Server-Driven UI、SDUI）のためのクロスプラットフォームライブラリです。サーバが
+配信したUI定義ドキュメントを、iOS と Android のネイティブSDKが解釈して描画します。
 
-ADRは既に下した決定を記録します。これから行う作業を提案するのは
+ADRはすでに下した決定を記録します。これから行う作業を提案するのは
 [`roadmaps/`](../../roadmaps/README-ja.md) 以下のロードマップ項目です。ここに記録した決定を変える作業を
 行う場合、既存のADRを書き換えるのではなく、それを置き換える新しいADRを書きます。当時何を信じ、なぜ
 そう決めたのかという記録を残すためです。
@@ -28,8 +28,8 @@ ADRは既に下した決定を記録します。これから行う作業を提�
 
 ## 記録IDの規則
 
-記録は `docs/adr/` 以下に**1件1ディレクトリ**で置きます。各記録は `docs/adr/ADR-NNNN-<slug>/` にあり、
-英語のファイル `ADR-NNNN-<slug>.md` と日本語版 `ADR-NNNN-<slug>-ja.md`（IDとslugは同じ）を持ちます。
+記録は `docs/adr/` 以下に**1件1ディレクトリ**で置きます。各記録は `docs/adr/ADR-NNNN-<slug>/` に置きます。
+そこに英語のファイル `ADR-NNNN-<slug>.md` と日本語版 `ADR-NNNN-<slug>-ja.md`（IDとslugは同じ）を置きます。
 `NNNN` は**4桁ゼロ埋めの単調増加する**IDです。
 
 記録を追加するときの手順です。
@@ -88,7 +88,7 @@ ADRは既に下した決定を記録します。これから行う作業を提�
 ## 関連
 
 - [`docs/tech-selection.md`](../tech-selection.md) — ここにある各記録が前提とする制約を示す索引です。
-- [`roadmaps/README-ja.md`](../../roadmaps/README-ja.md) — これらの決定が含意する作業を実行する
+- [`roadmaps/README-ja.md`](../../roadmaps/README-ja.md) — これらの決定が含意する作業を担う
   ロードマップ項目です。
 - [`.agent-workflows/adr/workflow.md`](../../.agent-workflows/adr/workflow.md) — 記録を書くための
-  手順です。人にもコーディングエージェントにも同じものが適用されます。
+  手順です。人とコーディングエージェントのどちらにも同じものが適用されます。

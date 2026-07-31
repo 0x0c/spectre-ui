@@ -124,3 +124,37 @@ To add another preset or rule, add it to `devDependencies` in `package.json`, th
 `rules` in `.textlintrc.json`. Always pin the version, so every environment reports the same
 findings. Place the entry in its target-language group (shared, Japanese, or English) and add a line
 to "The rules enabled today" above, so the config and its description stay in step.
+
+## Deviations in this repository
+
+Two changes to the upstream configuration, both structural rather than a way to dodge a finding on
+particular prose:
+
+- **`no-mix-dearu-desumasu` prefers ですます in body and list alike.** The rule's default demands
+  である inside a list even in a ですます document. This repository's documentation style requires
+  敬体 throughout every Japanese file, so the default contradicts the norm the skill exists to
+  enforce; the option makes the mechanical check agree with the written rule.
+- **`unexpanded-acronym` and `abbr-within-parentheses` are off.** Both encode the English
+  convention "full term (ACRONYM)". Japanese technical prose expands an acronym the other way round
+  — 「SDUI（Server-Driven UI、サーバードリブンUI）」 — so the two rules fire on every correctly
+  expanded Japanese acronym, and their `--fix` rewrites break the sentence. Spelling out an acronym
+  on first use stays a review-time expectation, stated in
+  [`../workflow.md`](../workflow.md#self-contained-prose-both-languages).
+
+`--fix` needs eyeballing here for the same reason the workflow says so: `spellcheck-tech-word` and
+the ひらく rules rewrite inside compound words (プレビューアプリ, 時系列, `Entity Tag`), which is
+wrong more often than not in this repository's vocabulary. Fix by hand and rerun.
+
+### What the check covers today
+
+The rule set is Japanese-oriented, so this repository runs it over the **Japanese** files. Pointed
+at English prose, the Japanese technical-writing preset applies a 100-character sentence limit and a
+Japanese sentence-final-period rule to English sentences, and `alex` flags the word *Japanese*
+itself — noise that would bury a real finding. English prose is held to
+[`english-document-writing`](../../english-document-writing/workflow.md) at review time instead.
+
+A handful of findings on the Japanese side are known false positives, left in place rather than
+worked around: `write-good` and `stop-words` fire on the phrase *What You See Is What You Get*,
+which appears only because the self-containment norm requires spelling WYSIWYG out; `alex` flags
+`React Hook Form`, a product name; and `spellcheck-tech-word` matches inside プレビューアプリ and
+inside the English term `Entity Tag`.

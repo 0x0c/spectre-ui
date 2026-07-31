@@ -9,18 +9,19 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **提案** |
 | トピック | クライアントSDK |
-| 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md) |
+| 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに
 
 マイルストーンM1は、UI定義ドキュメントを描画する2つのネイティブSDK（Software Development Kit、
-ソフトウェア開発キット）を作ります。1つは iOS 16以降向けの Swift と SwiftUI による実装、もう1つは
-minSdk 24 の Android 向けの Kotlin と Jetpack Compose による実装です。両者はエンジニア1名ずつが並行して
+ソフトウェア開発キット）を作ります。1つは iOS 16以降向けの、Swift と SwiftUI による実装です。
+もう1つは minSdk 24 の Android 向けの、Kotlin と Jetpack Compose による実装です。両者はエンジニア1名ずつが並行して
 作り、見積もりはフルタイム換算で6〜8人週です。
 
-M1は、手書きのJSONから実在する3画面が両OSで描画され、既存のネイティブ実装と並べて差異が許容範囲だと
-判断でき、適合性コーパスが両OSで100%通った時点で完了します。
+M1が完了するのは、3つの条件がそろったときです。手書きのJSONから実在する3画面が両OSで描画されること、
+既存のネイティブ実装と並べて差異が許容範囲だと判断できること、そして適合性コーパスをすべて通過すること
+です。
 
 ## 動機
 
@@ -49,10 +50,10 @@ SDUI（Server-Driven UI、サーバードリブンUI）が信頼を得るか失�
 ## 検討した代替案
 
 - **iOSを先に出し、Androidを後に回す。** 却下します。実装の食い違いは、両方を書いている最中に見つけるのが
-  最も安く、6週間後に見つかったコーパスの失敗は修正ではなく再設計になります。
+  もっとも安く、6週間後に見つかったコーパスの失敗は修正ではなく再設計になります。
 - **Kotlin Multiplatform の共有コアを介して描画する。**
   [ADR-0001](../../docs/adr/ADR-0001-client-rendering-strategy/ADR-0001-client-rendering-strategy-ja.md)
-  で却下済みです。バイナリとビルドの費用を、コーパスが既に防いでいるドリフトと比べたうえでの判断です。
+  で却下済みです。バイナリとビルドの費用を、コーパスがすでに防いでいるドリフトと比べたうえでの判断です。
 
 ## 進捗
 

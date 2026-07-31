@@ -53,7 +53,7 @@ iOS と Android のネイティブアプリであり、Web は編集用のイン
 JSONからのドキュメントのデコード、式の評価、状態ストアへのアクション適用の3つで、合わせておよそ
 2,000〜3,000行にとどまります。このうちデコードとそれが必要とする型は、コンポーネントマニフェストから
 生成するのでドリフトが構造的に消えます（[ADR-0002](../ADR-0002-component-manifest-single-source/ADR-0002-component-manifest-single-source-ja.md)）。
-式評価は入力も出力も純粋なJSONなので、ゴールデンテストのコーパスで3つの実装を互いにピン留めできます
+式評価は入力と出力がいずれも純粋なJSONなので、ゴールデンテストのコーパスで3つの実装を互いにピン留めできます
 （[ADR-0008](../ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy-ja.md)）。
 
 つまり案Bが防ぐドリフトの大半は、案Aと生成とコーパスの組み合わせでより安く防げます。一方で案Bの代償、
@@ -81,5 +81,5 @@ Multiplatform へ移行します。
 - [ADR-0002 — コンポーネントマニフェストを単一の情報源にする](../ADR-0002-component-manifest-single-source/ADR-0002-component-manifest-single-source-ja.md) — 生成がドリフトのうちデコード側を消す仕組みです。
 - [ADR-0004 — 式言語とデータバインディング](../ADR-0004-expression-language/ADR-0004-expression-language-ja.md) — 式評価器を3回実装できる小ささに保つ理由です。
 - [ADR-0008 — 適合性テスト戦略](../ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy-ja.md) — この決定が依拠するコーパスです。
-- [SU-0002 — M1、iOS / Android のクライアントSDK](../../../roadmaps/SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) — この決定を実行する作業です。
+- [SU-0002 — M1、iOS / Android のクライアントSDK](../../../roadmaps/SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) — この決定を形にする作業です。
 - [`docs/architecture.md`](../../architecture.md) — この決定が前提とするランタイムの層構成です。

@@ -8,12 +8,20 @@
       },
       "ja-no-mixed-period": {
         "periodMark": "。",
-        "allowPeriodMarks": ["}", "．"],
+        "allowPeriodMarks": [
+          "}",
+          "．"
+        ],
         "allowEmojiAtEnd": false,
         "forceAppendPeriod": false
       },
       "ja-no-redundant-expression": true,
-      "no-mix-dearu-desumasu": true,
+      "no-mix-dearu-desumasu": {
+        "preferInHeader": "",
+        "preferInBody": "ですます",
+        "preferInList": "ですます",
+        "strict": false
+      },
       "no-double-negative-ja": true,
       "ja-no-abusage": true,
       "no-dropping-the-ra": true,
@@ -50,8 +58,8 @@
     },
     "write-good": true,
     "stop-words": true,
-    "unexpanded-acronym": true,
-    "abbr-within-parentheses": true,
+    "unexpanded-acronym": false,
+    "abbr-within-parentheses": false,
     "alex": true,
     "ukraine": true
   }
