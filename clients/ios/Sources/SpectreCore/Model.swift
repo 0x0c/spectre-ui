@@ -69,7 +69,12 @@ public enum StatePolicy: Sendable { case reset, preserve }
 /// - `nodeProps` … 子ノードとして再帰的に解決する
 ///
 /// この振り分けは `GeneratedCatalog` がコンポーネントマニフェストから生成する。
-public struct Node: Sendable {
+///
+/// struct ではなく final class にしているのは、`fallback: Node?` が自分自身を
+/// 直接含むため。Swift の値型は再帰的に自分を含められない
+/// (`value type 'Node' cannot have a stored property that recursively contains it`)。
+/// 全プロパティが `let` なので参照型でも値としての性質は保たれ、Sendable も満たす。
+public final class Node: Sendable {
     public let type: String
     public let id: String?
     public let props: [String: SpValue]

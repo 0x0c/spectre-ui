@@ -11,7 +11,9 @@ public enum ExprParser {
     public static let maxDepth = 32
 
     public static func parse(_ source: String) throws -> Expr {
-        let tokens = try Lexer(source).tokenize()
+        // tokenize() は mutating なので一時値には呼べない。変数に受けてから呼ぶ。
+        var lexer = Lexer(source)
+        let tokens = try lexer.tokenize()
         let parser = Parser(tokens: tokens, source: source)
         let expr = try parser.parseExpression()
         try parser.expect(.eof, "式の後に余分な文字があります")

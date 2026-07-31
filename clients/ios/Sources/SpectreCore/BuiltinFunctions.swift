@@ -333,7 +333,7 @@ public struct BuiltinFunctions {
         guard let forms = ctx.args[1].asObject else {
             return ctx.typeError(&errors, "plural の第2引数は形式のオブジェクトです")
         }
-        let category = BuiltinFunctions.pluralCategory(n, language: ctx.locale.languageCode ?? "en")
+        let category = BuiltinFunctions.pluralCategory(n, language: ctx.locale.language.languageCode?.identifier ?? "en")
         guard let form = forms[category] ?? forms["other"] else { return .null }
         // ICU の '#' と同じく、選ばれた形式の中の '#' を数値に置換する。
         return .string(form.stringify().replacingOccurrences(of: "#", with: SpValue.formatNumberPlain(n)))
