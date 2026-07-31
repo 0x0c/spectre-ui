@@ -55,7 +55,8 @@ STYLE = """
     --accent: #6da7ec;
     --chip: #232320;
     --meter-fill: #6da7ec;
-    --meter-track: #1c5cab;
+    /* 暗い面では、溝は面に近い段にする。0% のときに満杯に見えないように */
+    --meter-track: #104281;
     --good: #0ca30c;
     --warning: #fab219;
   }
@@ -281,26 +282,29 @@ section.category.hidden { display: none; }
 
 .cards > li.hidden { display: none; }
 
+/* カード表示とリスト表示で、同じ要素を並べ替えるだけにする */
 .card {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 10px;
   padding: 18px 20px 16px;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto 1fr auto auto;
+  grid-template-areas:
+    "id     status"
+    "title  title"
+    "lede   lede"
+    "prog   prog"
+    "links  links";
+  column-gap: 12px;
 }
 
 .card:hover { border-color: var(--rule-strong); }
 
-.card .head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .card .id {
+  grid-area: id;
   font-family: var(--mono);
   font-size: 12px;
   color: var(--ink-muted);
@@ -308,12 +312,14 @@ section.category.hidden { display: none; }
 }
 
 .card .status {
+  grid-area: status;
   font-size: 12px;
   white-space: nowrap;
   color: var(--ink-2);
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
+  justify-self: end;
 }
 
 .card .status .mark { font-size: 10px; }
@@ -322,6 +328,7 @@ section.category.hidden { display: none; }
 .card .status[data-status="Proposal (deferred)"] { color: var(--ink-muted); }
 
 .card h3 {
+  grid-area: title;
   margin: 6px 0 0;
   font-size: 16.5px;
   font-weight: 620;
@@ -334,6 +341,7 @@ section.category.hidden { display: none; }
 
 /* 一覧の走査性を保つため4行で切る。全文は項目のリンク先にある。 */
 .card p.lede {
+  grid-area: lede;
   margin: 8px 0 0;
   color: var(--ink-2);
   font-size: 13.5px;
@@ -345,7 +353,7 @@ section.category.hidden { display: none; }
   overflow: hidden;
 }
 
-.card .progress { margin-top: auto; padding-top: 16px; }
+.card .progress { grid-area: prog; padding-top: 16px; }
 
 .card .progress .line {
   display: flex;
@@ -362,6 +370,7 @@ section.category.hidden { display: none; }
 }
 
 .card .links {
+  grid-area: links;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--rule);
@@ -372,6 +381,74 @@ section.category.hidden { display: none; }
 
 .card .links a { color: var(--ink-muted); }
 .card .links a:hover { color: var(--accent); }
+
+/* ------------------------------------------------------------ list view */
+
+body[data-view="list"] .cards { display: block; }
+
+body[data-view="list"] .cards > li + li { border-top: 1px solid var(--rule); }
+
+body[data-view="list"] .card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 11px 4px;
+  height: auto;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 170px 6.5rem;
+  grid-template-rows: auto;
+  grid-template-areas: "id title prog status";
+  align-items: center;
+  column-gap: 18px;
+}
+
+body[data-view="list"] .card h3 { margin: 0; font-size: 15px; }
+body[data-view="list"] .card .status { justify-self: end; }
+body[data-view="list"] .card p.lede,
+body[data-view="list"] .card .links { display: none; }
+
+body[data-view="list"] .card .progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 0;
+}
+
+body[data-view="list"] .card .progress .meter { order: 1; flex: 1; margin: 0; }
+body[data-view="list"] .card .progress .line { order: 2; }
+body[data-view="list"] .card .progress .line .k { display: none; }
+
+@media (max-width: 760px) {
+  body[data-view="list"] .card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "id     status"
+      "title  title"
+      "prog   prog";
+    align-items: baseline;
+    padding: 14px 0;
+  }
+  body[data-view="list"] .card .progress { padding-top: 8px; }
+}
+
+/* ---------------------------------------------------------------- search */
+
+.search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  padding: 5px 11px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search::placeholder { color: var(--ink-muted); }
+.search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .empty { padding: 40px 0; color: var(--ink-muted); font-size: 14px; }
 
@@ -397,29 +474,48 @@ footer.bottom a { color: var(--ink-muted); }
 
 SCRIPT = """
 (function () {
-  var state = { status: "all", topic: "all", lang: "ja" };
+  var state = { status: "all", topic: "all", lang: "ja", view: "card", q: "" };
   var cards = Array.prototype.slice.call(document.querySelectorAll(".cards > li"));
   var sections = Array.prototype.slice.call(document.querySelectorAll("section.category"));
   var count = document.getElementById("count");
   var empty = document.getElementById("empty");
+  var search = document.getElementById("q");
 
   function apply() {
     document.documentElement.lang = state.lang;
     document.body.dataset.lang = state.lang;
+    document.body.dataset.view = state.view;
     var shown = 0;
 
+    var terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
     cards.forEach(function (card) {
+      var haystack = card.dataset.search;
       var ok =
         (state.status === "all" || card.dataset.status === state.status) &&
-        (state.topic === "all" || card.dataset.topic === state.topic);
+        (state.topic === "all" || card.dataset.topic === state.topic) &&
+        terms.every(function (t) { return haystack.indexOf(t) !== -1; });
       card.classList.toggle("hidden", !ok);
       if (ok) shown++;
     });
 
     sections.forEach(function (section) {
-      var visible = section.querySelectorAll(".cards > li:not(.hidden)").length;
-      section.classList.toggle("hidden", visible === 0);
-      section.querySelector("h2 .count").textContent = visible;
+      var visible = Array.prototype.slice.call(
+        section.querySelectorAll(".cards > li:not(.hidden)")
+      );
+      section.classList.toggle("hidden", visible.length === 0);
+      section.querySelector("h2 .count").textContent = visible.length;
+
+      // 節のメーターは表示中の項目だけを数える
+      var done = 0;
+      var units = 0;
+      visible.forEach(function (li) {
+        done += Number(li.dataset.done);
+        units += Number(li.dataset.units);
+      });
+      var meter = section.querySelector(".cat-meter .meter");
+      meter.setAttribute("aria-label", done + " / " + units);
+      meter.firstElementChild.style.width = units ? (done / units) * 100 + "%" : "0%";
+      section.querySelector(".cat-meter .value").textContent = done + " / " + units;
     });
 
     count.textContent = shown;
@@ -428,6 +524,8 @@ SCRIPT = """
     document.querySelectorAll("[data-ja]").forEach(function (el) {
       el.textContent = el.dataset[state.lang];
     });
+    search.placeholder =
+      state.lang === "ja" ? search.dataset.phJa : search.dataset.phEn;
     document.querySelectorAll("a.title-link").forEach(function (link) {
       link.href = state.lang === "ja" ? link.dataset.hrefJa : link.dataset.hrefEn;
     });
@@ -444,6 +542,26 @@ SCRIPT = """
         });
       apply();
     });
+  });
+
+  search.addEventListener("input", function () {
+    state.q = search.value.trim();
+    apply();
+  });
+  search.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && search.value) {
+      search.value = "";
+      state.q = "";
+      apply();
+    }
+  });
+
+  // 「/」で検索欄へ
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "/" && document.activeElement !== search) {
+      event.preventDefault();
+      search.focus();
+    }
   });
 
   apply();
@@ -524,21 +642,34 @@ def render(items: list[R.Item]) -> str:
     for topic, group in topics.items():
         cards = []
         for item in group:
+            haystack = " ".join(
+                [
+                    item.id,
+                    item.title_ja,
+                    item.title_en,
+                    item.lede_ja,
+                    item.lede_en,
+                    item.topic_ja,
+                    item.topic_en,
+                    item.status,
+                    R.STATUS_JA[item.status],
+                ]
+            ).lower()
             cards.append(
-                f'<li data-status="{esc(item.status)}" data-topic="{esc(item.topic_en)}">'
+                f'<li data-status="{esc(item.status)}" data-topic="{esc(item.topic_en)}" '
+                f'data-done="{item.done}" data-units="{item.units}" '
+                f'data-search="{esc(haystack)}">'
                 '<article class="card">'
-                '<div class="head">'
                 f'<span class="id">{esc(item.id)}</span>'
                 f'<span class="status" data-status="{esc(item.status)}">'
                 f'<span class="mark" aria-hidden="true">{R.STATUS_MARK[item.status]}</span>'
                 f"{bilingual(R.STATUS_JA[item.status], item.status)}</span>"
-                "</div>"
                 f'<h3><a class="title-link" href="{esc(item.url_ja)}" '
                 f'data-href-ja="{esc(item.url_ja)}" data-href-en="{esc(item.url_en)}">'
                 f"{bilingual(item.title_ja, item.title_en)}</a></h3>"
                 f"{bilingual(item.lede_ja, item.lede_en, tag='p', cls='lede')}"
                 '<div class="progress"><div class="line">'
-                f'{bilingual("進捗", "Progress")}'
+                f'{bilingual("進捗", "Progress", cls="k")}'
                 f'<span class="value">{item.done} / {item.units}</span></div>'
                 f"{meter(item.done, item.units)}</div>"
                 '<div class="links">'
@@ -555,7 +686,7 @@ def render(items: list[R.Item]) -> str:
             f'<span class="count">{len(group)}</span></h2>'
             '<div class="cat-meter">'
             f"{meter(done, units)}"
-            f"<span>{done} / {units}</span></div>"
+            f'<span class="value">{done} / {units}</span></div>'
             f'<ul class="cards">{"".join(cards)}</ul>'
             "</section>"
         )
@@ -632,11 +763,24 @@ def render(items: list[R.Item]) -> str:
       {"".join(topic_chips)}
     </div>
     <div class="row">
+      {bilingual("表示", "View", cls="label")}
+      <button class="chip" type="button" data-group="view" data-value="card"
+        aria-pressed="true">{bilingual("カード", "Cards")}</button>
+      <button class="chip" type="button" data-group="view" data-value="list"
+        aria-pressed="false">{bilingual("リスト", "List")}</button>
       {bilingual("言語", "Language", cls="label")}
       <button class="chip" type="button" data-group="lang" data-value="ja"
         aria-pressed="true">日本語</button>
       <button class="chip" type="button" data-group="lang" data-value="en"
         aria-pressed="false">English</button>
+    </div>
+    <div class="row">
+      {bilingual("検索", "Search", cls="label")}
+      <input class="search" id="q" type="search" autocomplete="off"
+        aria-label="{esc("ロードマップ項目を検索")}"
+        data-ph-ja="{esc("ID・タイトル・本文で絞り込む（/ で移動）")}"
+        data-ph-en="{esc("Filter by ID, title, or text (press /)")}"
+        placeholder="{esc("ID・タイトル・本文で絞り込む（/ で移動）")}">
     </div>
   </div>
 
