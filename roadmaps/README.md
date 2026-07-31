@@ -26,6 +26,7 @@ code exists yet.
 | [SU-0008](SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md) | Capability negotiation and per-node fallback | Compatibility |
 | [SU-0009](SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md) | The device mirror preview | Editor |
 | [SU-0010](SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot.md) | A narrow-scope first pilot | Adoption |
+| [SU-0011](SU-0011-english-first-documentation/SU-0011-english-first-documentation.md) | English-first documentation | Documentation |
 
 The table lists every item; an item's `Status` field, not this table, is the single source of truth
 for how far along it is.
