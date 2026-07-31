@@ -158,7 +158,7 @@ struct CardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .fill(theme.color("surface", default: Color(.secondarySystemBackground)))
+                .fill(theme.color("surface", default: Color.spectreSurface))
         )
         .shadow(color: .black.opacity(elevation > 0 ? 0.10 : 0), radius: CGFloat(elevation) * 2, y: CGFloat(elevation))
 

@@ -85,9 +85,10 @@ struct TextFieldView: View {
                 }
             }
             .textFieldStyle(.roundedBorder)
-            .keyboardType(keyboardTypeOf(keyboard))
             .autocorrectionDisabled(keyboard == "email" || keyboard == "url")
-            .textInputAutocapitalization(keyboard == "email" || keyboard == "url" ? .never : .sentences)
+            // キーボード種別と自動大文字化は UIKit 由来で macOS には無い。
+            // CI が macOS ホストで `swift build` を通せるよう分岐しておく。
+            .modifier(KeyboardTraitsModifier(keyboard: keyboard))
             .onSubmit {
                 if let bindTo { model.setStateValue(bindTo, .string(text)) }
                 model.dispatch(node.actions("onSubmit"))
@@ -128,9 +129,29 @@ struct TextFieldView: View {
         }
         .spectreNode(node)
     }
+}
 
-    private func keyboardTypeOf(_ token: String) -> UIKeyboardType {
-        switch token {
+/// キーボード種別と自動大文字化の指定。
+///
+/// どちらも UIKit 由来で macOS には存在しないため、iOS 以外では何もしない。
+/// SpectreCore の適合性テストを macOS ホストで走らせる都合上、
+/// SpectreUI も macOS でコンパイルが通る必要がある。
+private struct KeyboardTraitsModifier: ViewModifier {
+    let keyboard: String
+
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        content
+            .keyboardType(keyboardType)
+            .textInputAutocapitalization(keyboard == "email" || keyboard == "url" ? .never : .sentences)
+        #else
+        content
+        #endif
+    }
+
+    #if os(iOS)
+    private var keyboardType: UIKeyboardType {
+        switch keyboard {
         case "email": return .emailAddress
         case "number": return .numberPad
         case "phone": return .phonePad
@@ -138,6 +159,7 @@ struct TextFieldView: View {
         default: return .default
         }
     }
+    #endif
 }
 
 struct ToggleView: View {

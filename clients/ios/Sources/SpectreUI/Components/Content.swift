@@ -35,7 +35,7 @@ struct ImageView: View {
 
     var body: some View {
         let radius = theme.corner(node.token("radius", default: "none"))
-        let placeholderColor = theme.color("surfaceVariant", default: Color(.tertiarySystemFill))
+        let placeholderColor = theme.color("surfaceVariant", default: Color.spectreFill)
 
         // v0.1 は SwiftUI 標準の AsyncImage を使う。ディスクキャッシュと
         // 優先度制御が要るようになったら Nuke へ差し替える (ADR-0001 の想定)。
@@ -105,7 +105,7 @@ struct BadgeView: View {
             container = theme.color("error", default: .red)
             content = theme.color("onError", default: .white)
         default:
-            container = theme.color("surfaceVariant", default: Color(.tertiarySystemFill))
+            container = theme.color("surfaceVariant", default: Color.spectreFill)
             content = theme.color("onSurfaceVariant", default: .secondary)
         }
 

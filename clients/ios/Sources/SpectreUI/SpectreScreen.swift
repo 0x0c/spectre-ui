@@ -59,7 +59,7 @@ private struct ScreenContent: View {
     @ViewBuilder
     private func screenBody(_ node: RenderNode) -> some View {
         let scrollable = node.bool("scrollable", default: true)
-        let background = theme.color(node.token("background", default: "background"), default: Color(.systemBackground))
+        let background = theme.color(node.token("background", default: "background"), default: Color.spectreBackground)
         let appBar = node.props["appBar"]?.asObject
         let bottomBar = node.node("bottomBar")
 
@@ -80,9 +80,9 @@ private struct ScreenContent: View {
         }
         .background(background.ignoresSafeArea())
         .navigationTitle(appBar?["title"]?.stringify() ?? document.meta.title ?? "")
-        .navigationBarTitleDisplayMode(.inline)
+        .spectreInlineNavigationTitle()
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: spectreToolbarTrailingPlacement) {
                 ForEach(Array(node.nodes("appBar.actions[]").enumerated()), id: \.offset) { _, action in
                     SpectreNodeView(action)
                 }
@@ -107,7 +107,7 @@ private struct ScreenContent: View {
                 .padding(.horizontal, theme.space("md"))
                 .padding(.vertical, theme.space("sm"))
                 .background(
-                    Capsule().fill(theme.color("surface", default: Color(.secondarySystemBackground)))
+                    Capsule().fill(theme.color("surface", default: Color.spectreSurface))
                 )
                 .shadow(radius: 6)
                 .padding(.bottom, theme.space("xl"))
@@ -189,7 +189,7 @@ private struct SheetContent: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .navigationTitle(overlay.props["title"]?.stringify() ?? "")
-            .navigationBarTitleDisplayMode(.inline)
+            .spectreInlineNavigationTitle()
         }
         .presentationDetents(detents)
     }
