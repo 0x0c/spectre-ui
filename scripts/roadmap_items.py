@@ -42,6 +42,11 @@ _TITLE_RE = re.compile(r"^#\s+(.*)$", re.MULTILINE)
 _BOLD_RE = re.compile(r"\*\*(.*?)\*\*")
 _LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 _CODE_RE = re.compile(r"`([^`]*)`")
+_CHECKBOX_RE = re.compile(r"^\s*-\s+\[([ xX])\]\s*(.*)$", re.MULTILINE)
+_NUMBERED_RE = re.compile(r"^\d+\.\s+(.*)$", re.MULTILINE)
+
+# 未着手の項目が置く「箱1つだけ」のプレースホルダ（roadmaps/README.md の規約）
+_PLACEHOLDERS = {"未着手", "not started"}
 
 
 def _plain(markdown: str) -> str:
@@ -90,6 +95,34 @@ def _lede(text: str, headings: tuple[str, ...]) -> str:
     return ""
 
 
+def _section(text: str, headings: tuple[str, ...]) -> str:
+    for heading in headings:
+        match = re.search(
+            rf"^##\s+{re.escape(heading)}\s*$(.*?)(?=^##\s|\Z)",
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _progress(text: str, design_headings: tuple[str, ...], progress_headings: tuple[str, ...]):
+    """(完了数, 作業単位数, 見込みかどうか) を返す。
+
+    `Progress` のチェックリストが正。ただし未着手の項目は「未着手」の箱を1つ置くだけなので、
+    それでは作業の量が分からない。その場合だけ `Detailed design` の番号付き項目数を
+    作業単位数の**見込み**として使い、完了数は 0 とする（規約上、両者は1対1で対応する）。
+    """
+    boxes = _CHECKBOX_RE.findall(_section(text, progress_headings))
+    done = sum(1 for mark, _ in boxes if mark.lower() == "x")
+    placeholder = len(boxes) == 1 and _plain(boxes[0][1]).strip().lower() in _PLACEHOLDERS
+    if boxes and not placeholder:
+        return done, len(boxes), False
+    units = len(_NUMBERED_RE.findall(_section(text, design_headings)))
+    return 0, units or len(boxes), True
+
+
 class Item:
     """1つのロードマップ項目（日英2ファイル）。"""
 
@@ -116,6 +149,13 @@ class Item:
         self.author = _plain(en_meta.get("Author", ""))
         self.lede_ja = _lede(ja, ("はじめに",))
         self.lede_en = _lede(en, ("Introduction",))
+        self.done, self.units, self.units_estimated = _progress(
+            ja, ("詳細設計",), ("進捗",)
+        )
+        if not self.units:  # 日本語側から数えられなければ英語側で
+            self.done, self.units, self.units_estimated = _progress(
+                en, ("Detailed design",), ("Progress",)
+            )
 
         status = _BOLD_RE.sub(r"\1", en_meta.get("Status", "")).strip()
         if status not in STATUS_ORDER:
