@@ -13,9 +13,10 @@ Android のネイティブSDK（Software Development Kit、ソフトウェア開
 本リポジトリは**設計フェーズ**にあり、実装コードはまだありません。ここにあるのは、技術選定と仕様を
 記録したドキュメントです。
 
-**ロードマップの可視化: https://0x0c.github.io/spectre-ui/**
+**ドキュメントサイト: https://0x0c.github.io/spectre-ui/**
 
-マイルストーン M0 から M4 までのタイムライン、成果物、未決事項、リスクを1ページにまとめたものです。
+検索とナビゲーション付きで閲覧できます。ロードマップは
+[項目一覧](https://0x0c.github.io/spectre-ui/roadmaps/) から、状態やトピックごとに辿れます。
 
 ---
 
@@ -86,4 +87,18 @@ spectre-ui/
 │   ├── ios/                    # Swift パッケージ: SpectreUI
 │   └── android/                # Gradle モジュール: spectre-ui
 └── examples/
+```
+
+---
+
+## ドキュメントサイト
+
+サイトは MkDocs（Material）で構築し、GitHub Actions から GitHub Pages へデプロイします。
+`roadmaps/` の項目ページと項目一覧は、ビルド時に `scripts/gen_roadmap_pages.py` が生成します。
+そのため、項目を追加してもサイト側のインデックスを手で更新する必要はありません。
+
+```sh
+pip install -r requirements-docs.txt
+mkdocs serve          # http://127.0.0.1:8000/
+mkdocs build --strict # CI と同じ検証。リンク切れがあれば失敗します
 ```

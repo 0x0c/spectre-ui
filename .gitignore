@@ -1,0 +1,5 @@
+# MkDocs のビルド出力
+/site/
+__pycache__/
+*.pyc
+.venv/

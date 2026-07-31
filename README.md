@@ -13,9 +13,10 @@ predefined **component catalog**.
 The repository is in its **design phase**: no implementation code exists yet. The documents here
 record the technology selection and the specification.
 
-**Roadmap visualization: https://0x0c.github.io/spectre-ui/**
+**Documentation site: https://0x0c.github.io/spectre-ui/**
 
-One page carries the M0–M4 milestone timeline, the deliverables, the open questions, and the risks.
+The site carries search and navigation. Its
+[item index](https://0x0c.github.io/spectre-ui/roadmaps/) lists the roadmap by status and by topic.
 
 ---
 
@@ -88,4 +89,18 @@ spectre-ui/
 │   ├── ios/                    # Swift package: SpectreUI
 │   └── android/                # Gradle module: spectre-ui
 └── examples/
+```
+
+---
+
+## Documentation site
+
+MkDocs (Material) builds the site, and GitHub Actions deploys it to GitHub Pages. At build time
+`scripts/gen_roadmap_pages.py` generates the item pages and the index for `roadmaps/`. Adding
+an item needs no hand edit of the index on the site.
+
+```sh
+pip install -r requirements-docs.txt
+mkdocs serve          # http://127.0.0.1:8000/
+mkdocs build --strict # The same check CI runs: a broken link fails the build
 ```
