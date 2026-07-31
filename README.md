@@ -8,8 +8,9 @@
 
 現在のフェーズ: **設計 (実装コードなし)**。本リポジトリには技術選定と仕様のドキュメントのみが含まれる。
 
-**ロードマップの可視化: https://0x0c.github.io/spectre-ui/**
-マイルストーン M0〜M4 のタイムライン、成果物、未決事項、リスクを1ページにまとめたもの。
+**ドキュメントサイト: https://0x0c.github.io/spectre-ui/**
+検索とナビゲーション付きで閲覧できる。ロードマップは
+[項目一覧](https://0x0c.github.io/spectre-ui/roadmaps/) から状態別・トピック別に辿れる。
 
 ---
 
@@ -72,4 +73,18 @@ spectre-ui/
 │   ├── ios/                    # Swift Package: SpectreUI
 │   └── android/                # Gradle module: spectre-ui
 └── examples/
+```
+
+---
+
+## ドキュメントサイト
+
+MkDocs (Material) で構築し、GitHub Actions から GitHub Pages へデプロイする。
+`roadmaps/` の項目ページと項目一覧は `scripts/gen_roadmap_pages.py` がビルド時に生成するため、
+項目を追加してもサイト側のインデックスを手で更新する必要はない。
+
+```sh
+pip install -r requirements-docs.txt
+mkdocs serve          # http://127.0.0.1:8000/
+mkdocs build --strict # CI と同じ検証。リンク切れがあれば失敗する
 ```

@@ -1,11 +1,22 @@
-name: Deploy roadmap site to GitHub Pages
+name: Deploy docs to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
-      - "site/**"
+      - "docs/**"
+      - "roadmaps/**"
+      - "scripts/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
       - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "roadmaps/**"
+      - "scripts/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
   workflow_dispatch:
 
 permissions:
@@ -19,26 +30,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-docs.txt
+
+      # リポジトリ設定で Pages が未設定でも、ここで有効化する (Source = GitHub Actions)
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # --strict なので、リンク切れや警告があればここで落ちる
+      - name: Build site
+        run: mkdocs build --strict
+
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
   deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          # リポジトリ設定で Pages が未設定でも、ここで有効化する
-          # (Source = GitHub Actions)。
-          enablement: true
-
-      - name: Upload site/
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
