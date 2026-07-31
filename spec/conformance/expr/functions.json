@@ -38,6 +38,11 @@
     { "expr": "${slice(data.arr, 0, 2)}", "expect": [3, 1] },
     { "expr": "${slice(data.arr, 10)}", "expect": [] },
 
+    { "$comment": "空の区切り文字/置換元は「何もしない」に揃える。素の実装では Kotlin と Swift で挙動が食い違う箇所。",
+      "expr": "${split('abc', '')}", "expect": ["abc"] },
+    { "expr": "${replace('abc', '', 'X')}", "expect": "abc" },
+    { "expr": "${contains('abc', '')}", "expect": true },
+
     { "expr": "${min(3, 5)}", "expect": 3 },
     { "expr": "${max(3, 5)}", "expect": 5 },
     { "expr": "${abs(-4.5)}", "expect": 4.5 },

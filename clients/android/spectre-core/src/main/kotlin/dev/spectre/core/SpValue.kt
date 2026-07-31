@@ -75,8 +75,10 @@ fun SpValue.stringify(): String = when (this) {
     is SpValue.Num -> formatNumberPlain(value)
     is SpValue.Str -> value
     is SpValue.Arr -> items.joinToString(",", "[", "]") { it.toJsonLikeString() }
-    is SpValue.Obj -> entries.entries.joinToString(",", "{", "}") { (k, v) ->
-        "${quoteJson(k)}:${v.toJsonLikeString()}"
+    // キーは辞書順に固定する。Swift の Dictionary は順序を持たないため、
+    // 挿入順に依存すると iOS と Android で出力が食い違う。
+    is SpValue.Obj -> entries.keys.sorted().joinToString(",", "{", "}") { k ->
+        "${quoteJson(k)}:${entries.getValue(k).toJsonLikeString()}"
     }
 }
 

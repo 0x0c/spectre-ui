@@ -69,13 +69,18 @@ class BuiltinFunctions {
             }
             "split" -> ctx.arity(2) {
                 val s = ctx.str(0); val sep = ctx.str(1)
+                // 空の区切り文字は Kotlin と Swift で挙動が違う (前者は1文字ずつ分割、
+                // 後者は分割しない)。仕様として「分割しない」に揃える。
                 if (s == null || sep == null) ctx.typeError()
+                else if (sep.isEmpty()) SpValue.Arr(listOf(SpValue.Str(s)))
                 else SpValue.Arr(s.split(sep).map { SpValue.Str(it) })
             }
             "replace" -> ctx.arity(3) {
                 val s = ctx.str(0); val from = ctx.str(1); val to = ctx.str(2)
                 // 正規表現ではなく単純な部分文字列置換。式言語に正規表現は入れない。
+                // 空文字の置換元も同様に、何もしないほうへ揃える
                 if (s == null || from == null || to == null) ctx.typeError()
+                else if (from.isEmpty()) SpValue.Str(s)
                 else SpValue.Str(s.replace(from, to))
             }
             "slice" -> ctx.arityRange(2, 3) { slice(ctx) }

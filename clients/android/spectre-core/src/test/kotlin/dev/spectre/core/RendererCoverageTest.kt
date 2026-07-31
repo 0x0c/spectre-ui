@@ -21,37 +21,73 @@ class RendererCoverageTest {
     /** Screen はルート専用で SpectreScreen が直接扱うため、分岐表には現れない。 */
     private val rootOnly = setOf("Screen")
 
-    private val rendererSource: String by lazy {
-        val file = File(
-            Conformance.corpusDir.parentFile.parentFile,
-            "clients/android/spectre-ui/src/main/kotlin/dev/spectre/ui/SpectreNodeView.kt",
-        )
+    private val repoRoot: File get() = Conformance.corpusDir.parentFile.parentFile
+
+    private fun rendererSource(path: String): String {
+        val file = File(repoRoot, path)
         assertTrue(file.isFile, "レンダラのソースが見つかりません: ${file.absolutePath}")
-        file.readText()
+        return file.readText()
     }
 
-    /** `"VStack" -> VStackView(...)` の形から、分岐が扱う型名を拾う。 */
-    private val handledTypes: Set<String> by lazy {
-        Regex("\"([A-Z][A-Za-z0-9]*)\"\\s*->").findAll(rendererSource)
-            .map { it.groupValues[1] }
-            .toSet()
+    /** `"VStack" -> VStackView(...)` / `case "VStack":` の形から、分岐が扱う型名を拾う。 */
+    private fun handledTypes(source: String, pattern: Regex): Set<String> =
+        pattern.findAll(source).map { it.groupValues[1] }.toSet()
+
+    private val composeHandled: Set<String> by lazy {
+        handledTypes(
+            rendererSource("clients/android/spectre-ui/src/main/kotlin/dev/spectre/ui/SpectreNodeView.kt"),
+            Regex("\"([A-Z][A-Za-z0-9]*)\"\\s*->"),
+        )
+    }
+
+    private val swiftUIHandled: Set<String> by lazy {
+        handledTypes(
+            rendererSource("clients/ios/Sources/SpectreUI/SpectreNodeView.swift"),
+            Regex("case\\s+\"([A-Z][A-Za-z0-9]*)\"\\s*:"),
+        )
+    }
+
+    /** 両プラットフォームで扱える型。サンプル画面の検証にはこちらを使う。 */
+    private val handledTypes: Set<String> by lazy { composeHandled intersect swiftUIHandled }
+
+    @Test
+    @DisplayName("Compose レンダラがカタログの全コンポーネントを分岐している")
+    fun composeRendererHandlesEveryCatalogComponent() {
+        val missing = (GeneratedCatalog.componentNames - rootOnly) - composeHandled
+        assertTrue(
+            missing.isEmpty(),
+            "Compose レンダラに分岐がないコンポーネント: ${missing.sorted()}。" +
+                " SpectreNodeView.kt に追加してください",
+        )
     }
 
     @Test
-    @DisplayName("カタログの全コンポーネントがレンダラで分岐している")
-    fun rendererHandlesEveryCatalogComponent() {
-        val missing = (GeneratedCatalog.componentNames - rootOnly) - handledTypes
+    @DisplayName("SwiftUI レンダラがカタログの全コンポーネントを分岐している")
+    fun swiftUIRendererHandlesEveryCatalogComponent() {
+        val missing = (GeneratedCatalog.componentNames - rootOnly) - swiftUIHandled
         assertTrue(
             missing.isEmpty(),
-            "レンダラに分岐がないコンポーネント: ${missing.sorted()}。" +
-                " SpectreNodeView.kt に追加してください",
+            "SwiftUI レンダラに分岐がないコンポーネント: ${missing.sorted()}。" +
+                " SpectreNodeView.swift に追加してください",
+        )
+    }
+
+    @Test
+    @DisplayName("2つのレンダラが扱う型の集合が一致する")
+    fun renderersAgreeOnHandledTypes() {
+        val onlyCompose = composeHandled - swiftUIHandled
+        val onlySwiftUI = swiftUIHandled - composeHandled
+        assertTrue(
+            onlyCompose.isEmpty() && onlySwiftUI.isEmpty(),
+            "レンダラ間で扱える型がずれています。" +
+                " Compose のみ: ${onlyCompose.sorted()} / SwiftUI のみ: ${onlySwiftUI.sorted()}",
         )
     }
 
     @Test
     @DisplayName("レンダラがカタログにない型を分岐していない")
     fun rendererHandlesNoUnknownComponent() {
-        val extra = handledTypes - GeneratedCatalog.componentNames
+        val extra = (composeHandled + swiftUIHandled) - GeneratedCatalog.componentNames
         assertTrue(
             extra.isEmpty(),
             "カタログにない型がレンダラにあります: ${extra.sorted()}。" +

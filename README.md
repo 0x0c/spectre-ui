@@ -6,7 +6,28 @@
 ボタンタップなどの操作を宣言的な **アクション** として処理する。UI定義は Web の **WYSIWYGエディタ** から、
 あらかじめ定義された **コンポーネントカタログ** の組み合わせで編集・公開できる。
 
-現在のフェーズ: **設計 (実装コードなし)**。本リポジトリには技術選定と仕様のドキュメントのみが含まれる。
+現在のフェーズ: **クライアント実装**。設計ドキュメント一式に加えて、iOS / Android のランタイムとレンダラ、
+および JSON をそのまま描画するサンプルアプリが入っている。エディタ (M2) と配信基盤 (M3) はまだ未着手。
+実装状況の詳細は [docs/roadmap.md](docs/roadmap.md#実装状況-現時点) を参照。
+
+## 動かす
+
+```bash
+# 適合性コーパス + ランタイムのテスト (Android SDK 不要)
+cd clients/android && ./gradlew :spectre-core:test
+
+# Android サンプルアプリ (要 Android SDK)
+cd clients/android && ./gradlew :sample:installDebug
+
+# iOS のランタイムテスト (要 Xcode)
+cd clients/ios && swift test
+
+# iOS サンプルアプリ (要 XcodeGen)
+cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+
+# マニフェストからカタログを再生成 (差分が出ないことを CI で検証する)
+node packages/codegen/generate.mjs --check
+```
 
 ---
 

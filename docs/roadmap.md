@@ -1,5 +1,33 @@
 # ロードマップと未決事項
 
+## 実装状況 (現時点)
+
+M0 と M1 の大半が入っている。**まだ実装していないのはエディタ (M2) と配信基盤 (M3)**。
+
+| 領域 | 状態 | 検証 |
+| --- | --- | --- |
+| コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) |
+| 適合性コーパス | 実装済み (234ケース) | — |
+| Kotlin ランタイム (spectre-core) | 実装済み | **265 テスト green** |
+| Compose レンダラ + Android サンプル | 実装済み | ビルド未検証 (下記) |
+| Swift ランタイム (SpectreCore) | 実装済み | ビルド未検証 (下記) |
+| SwiftUI レンダラ + iOS サンプル | 実装済み | ビルド未検証 (下記) |
+| 差分再解決 | 未実装 | 依存パス抽出まで用意、未接続 |
+| `applyPatch` / `focus` / `scrollTo` | 未実装 | 効果を通知するところまで |
+| 配信・キャッシュ (DocumentLoader) | 未実装 | サンプルはローカル JSON を読む |
+| エディタ (M2) / 配信基盤 (M3) | 未実装 | — |
+
+### 検証されていない範囲について
+
+開発環境の制約で、以下はコンパイル検証ができていない。**コードは書かれているが「動く」とは言えない状態**。
+
+- **Android (`:spectre-ui` / `:sample`)**: `dl.google.com` がプロキシに拒否されるため AGP と androidx を取得できない。
+- **iOS (`SpectreCore` / `SpectreUI` / SampleApp)**: Swift ツールチェインが無い。
+
+**受け入れ手順**: Mac 上で `cd clients/ios && swift test` を実行し、適合性コーパスが Kotlin と同じ結果になることを確認する。
+仕様はコーパスに固定されているので、実装がずれていればそこで落ちる。Android は Android SDK のある環境で
+`cd clients/android && ./gradlew build` を実行する。
+
 ## マイルストーン
 
 見積もりは「フルタイム換算の人週」。前提: iOS 1名、Android 1名、Web/サーバ 1〜2名。

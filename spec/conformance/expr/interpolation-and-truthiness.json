@@ -11,7 +11,9 @@
       "arr": [1, 2],
       "obj": { "a": 1 },
       "emptyArr": [],
-      "emptyObj": {}
+      "emptyObj": {},
+      "multi": { "z": "last", "a": 1, "b": true },
+      "nested": { "inner": { "k": [1, 2] } }
     },
     "state": { "qty": 3 },
     "env": { "platform": "ios", "locale": "ja-JP", "appVersion": "3.14.0" }
@@ -41,6 +43,9 @@
     { "expr": "f=${data.ratio}", "expect": "f=4.5" },
     { "expr": "a=${data.arr}", "expect": "a=[1,2]" },
     { "expr": "o=${data.obj}", "expect": "o={\"a\":1}" },
+    { "$comment": "オブジェクトの文字列化はキーを辞書順に固定する。Swift の Dictionary は順序を持たないため、挿入順に依存すると iOS と Android で出力が食い違う。",
+      "expr": "o=${data.multi}", "expect": "o={\"a\":1,\"b\":true,\"z\":\"last\"}" },
+    { "expr": "nested=${data.nested}", "expect": "nested={\"inner\":{\"k\":[1,2]}}" },
     { "expr": "calc=${1 / 4}", "expect": "calc=0.25" },
     { "expr": "whole=${10 / 2}", "expect": "whole=5" },
 
