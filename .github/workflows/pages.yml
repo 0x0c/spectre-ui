@@ -1,0 +1,78 @@
+name: Deploy site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "roadmaps/**"
+      - "scripts/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "roadmaps/**"
+      - "scripts/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 進行中のデプロイはキャンセルせず、キューに積んで順番に流す。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-docs.txt
+
+      # リポジトリ設定で Pages が未設定でも、ここで有効化する (Source = GitHub Actions)
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # ドキュメント → site/docs/。--strict なのでリンク切れがあれば落ちる
+      - name: Build documentation
+        run: mkdocs build --strict
+
+      # ロードマップ項目一覧 → site/index.html
+      - name: Build roadmap index
+        run: python3 scripts/build_roadmap_index.py site
+
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

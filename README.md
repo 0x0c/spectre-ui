@@ -29,13 +29,19 @@ cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 node packages/codegen/generate.mjs --check
 ```
 
+**ロードマップ項目一覧: https://0x0c.github.io/spectre-ui/**
+状態とトピックで絞り込める1枚のリスト。項目の本文は `roadmaps/` にある。
+設計ドキュメントは https://0x0c.github.io/spectre-ui/docs/ に MkDocs で置いている。
+
 ---
 
 ## ドキュメント
 
 | ドキュメント | 内容 |
 | --- | --- |
-| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定。ADR形式で各決定の選択肢・比較・結論 |
+| [docs/adr/](docs/adr/README-ja.md) | ADR（アーキテクチャ決定記録）。1決定1ディレクトリ、日英両方 |
+| [roadmaps/](roadmaps/README-ja.md) | ロードマップ項目。1項目1ディレクトリ、日英両方 |
+| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定の索引。前提の制約とADRの一覧 |
 | [docs/architecture.md](docs/architecture.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
 | [docs/spec/schema.md](docs/spec/schema.md) | UI定義ドキュメントのスキーマ仕様 v0.1 |
 | [docs/spec/components.md](docs/spec/components.md) | コンポーネントカタログ v0.1 とデザイントークン |
@@ -43,7 +49,12 @@ node packages/codegen/generate.mjs --check
 | [docs/spec/actions.md](docs/spec/actions.md) | アクション仕様とサーバ応答プロトコル |
 | [docs/editor.md](docs/editor.md) | Web WYSIWYGエディタの設計 |
 | [docs/compatibility.md](docs/compatibility.md) | バージョニング・前方互換・配信/ロールバック戦略 |
-| [docs/roadmap.md](docs/roadmap.md) | マイルストーンと未決事項 |
+| [docs/roadmap.md](docs/roadmap.md) | マイルストーンの概観、見積もり、未決事項、リスク |
+
+ADRとロードマップ項目は採番して1件1ディレクトリに置き、英語版 `X.md` と日本語版 `X-ja.md` を組で持つ。
+採番と書式の規則は [docs/adr/README-ja.md](docs/adr/README-ja.md) と
+[roadmaps/README-ja.md](roadmaps/README-ja.md) にある。執筆時の文章規範と手順は
+[.agent-workflows/](.agent-workflows/README.md)（Claude Code 向けのアダプタは `.claude/skills/`）にある。
 
 ## 成果物 (設計サンプル)
 
@@ -65,6 +76,9 @@ node packages/codegen/generate.mjs --check
 
 ```
 spectre-ui/
+├── docs/adr/                   # ADR (1決定1ディレクトリ、日英両方)
+├── roadmaps/                   # ロードマップ項目 (1項目1ディレクトリ、日英両方)
+├── .agent-workflows/           # 共有のエージェント手順 (.claude/skills がこれを読む)
 ├── spec/                       # 仕様の単一の情報源
 │   ├── component-manifest.json #   コンポーネント定義
 │   ├── tokens.json             #   デザイントークン
@@ -80,4 +94,34 @@ spectre-ui/
 │   ├── ios/                    # Swift Package: SpectreUI
 │   └── android/                # Gradle module: spectre-ui
 └── examples/
+```
+
+---
+
+## サイト
+
+GitHub Actions から GitHub Pages へデプロイする。2つの成果物からなる。
+
+| URL | 中身 | 作るもの |
+| --- | --- | --- |
+| `/` | ロードマップ項目一覧 | `scripts/build_roadmap_index.py` |
+| `/docs/` | 設計ドキュメントとADR | MkDocs (Material) |
+
+一覧はカテゴリ（トピック）ごとにまとめ、項目・カテゴリ・全体の進捗をバーで示す。
+表示はカードとリストを切り替えられ、状態・カテゴリでの絞り込みと全文検索（ID・タイトル・要約・
+カテゴリ・状態が対象、`/` で検索欄へ）がある。
+生成元は各項目の `SU-METADATA`、冒頭の1段落、そして進捗チェックリストなので、
+項目を追加してもインデックスを手で更新する必要はない。項目の本文はサイトには載せず、
+リポジトリ上の Markdown へリンクする。
+
+進捗の分母は各項目の**進捗チェックリスト**。未着手の項目はチェックリストが
+「未着手」の箱1つだけなので、その場合に限り**詳細設計の分解数**を見込みとして使う。
+
+```sh
+pip install -r requirements-docs.txt
+
+mkdocs build --strict                        # ドキュメント → site/docs/
+python3 scripts/build_roadmap_index.py site  # 一覧 → site/index.html
+
+mkdocs serve                                 # ドキュメントだけをローカルで確認
 ```

@@ -1,38 +1,55 @@
 # ロードマップと未決事項
 
+このページはマイルストーンの概観、見積もり、未決事項、リスクをまとめたものです。個々の作業項目は
+[`roadmaps/`](../roadmaps/README-ja.md) 以下に、1項目1ディレクトリで日英両方の提案として置いています。
+下の各マイルストーンは、対応する項目 SU-0001〜SU-0005 に対応します。
+
 ## 実装状況 (現時点)
 
 M0 と M1 の大半が入っている。**まだ実装していないのはエディタ (M2) と配信基盤 (M3)**。
 
 | 領域 | 状態 | 検証 |
 | --- | --- | --- |
-| コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) |
+| コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) + CI のドリフト検査 |
 | 適合性コーパス | 実装済み (234ケース) | — |
 | Kotlin ランタイム (spectre-core) | 実装済み | **265 テスト green** |
-| Compose レンダラ + Android サンプル | 実装済み | ビルド未検証 (下記) |
-| Swift ランタイム (SpectreCore) | 実装済み | ビルド未検証 (下記) |
-| SwiftUI レンダラ + iOS サンプル | 実装済み | ビルド未検証 (下記) |
+| Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
+| Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
+| SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
 | 差分再解決 | 未実装 | 依存パス抽出まで用意、未接続 |
 | `applyPatch` / `focus` / `scrollTo` | 未実装 | 効果を通知するところまで |
 | 配信・キャッシュ (DocumentLoader) | 未実装 | サンプルはローカル JSON を読む |
 | エディタ (M2) / 配信基盤 (M3) | 未実装 | — |
 
-### 検証されていない範囲について
+### 検証の分担
 
-開発環境の制約で、以下はコンパイル検証ができていない。**コードは書かれているが「動く」とは言えない状態**。
+開発環境によっては iOS / Android のコンパイル検証ができない (Swift ツールチェインが無い、
+`dl.google.com` に到達できず AGP と androidx を取得できない、など)。そのため
+`clients/android/settings.gradle.kts` は Android SDK が見つからないときに `:spectre-ui` と
+`:sample` をスキップし、**ロジックのテストだけはどこでも回る**ようにしてある。
 
-- **Android (`:spectre-ui` / `:sample`)**: `dl.google.com` がプロキシに拒否されるため AGP と androidx を取得できない。
-- **iOS (`SpectreCore` / `SpectreUI` / SampleApp)**: Swift ツールチェインが無い。
+コンパイル検証は CI が担う ([.github/workflows/ci.yml](../.github/workflows/ci.yml))。
 
-**受け入れ手順**: Mac 上で `cd clients/ios && swift test` を実行し、適合性コーパスが Kotlin と同じ結果になることを確認する。
-仕様はコーパスに固定されているので、実装がずれていればそこで落ちる。Android は Android SDK のある環境で
-`cd clients/android && ./gradlew build` を実行する。
+| ジョブ | ランナー | 内容 |
+| --- | --- | --- |
+| `core` | ubuntu | `:spectre-core:test` — 適合性コーパスとランタイム |
+| `codegen` | ubuntu | 生成物がマニフェストとずれていないか + 仕様 JSON の構文 |
+| `android` | ubuntu | `:spectre-ui` / `:sample` のビルド |
+| `ios` | macos | `swift build` / `swift test` + iOS 向け `xcodebuild` |
+| `ios-sample` | macos | XcodeGen でプロジェクトを生成してサンプルアプリをビルド |
+
+手元で全部を確かめたいときは、Android SDK と Xcode のある環境で以下を実行する。
+
+```sh
+cd clients/android && ./gradlew build
+cd clients/ios && swift test
+```
 
 ## マイルストーン
 
 見積もりは「フルタイム換算の人週」。前提: iOS 1名、Android 1名、Web/サーバ 1〜2名。
 
-### M0 — 仕様の確定 (3〜4週)
+### M0 — 仕様の確定 (3〜4週) — [SU-0001](../roadmaps/SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md)
 
 **成果物**: 仕様が凍結され、コード生成が動く状態。
 
@@ -45,7 +62,7 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 
 > **M0 の受け入れ基準**: 実在の画面3つ（一覧・詳細・フォーム）を手書きJSONで表現でき、レビューで「これで足りる」と合意できること。ここを妥協するとM3以降で作り直しになる。
 
-### M1 — クライアントSDK (6〜8週、iOS/Android 並行)
+### M1 — クライアントSDK (6〜8週、iOS/Android 並行) — [SU-0002](../roadmaps/SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md)
 
 - [ ] Runtime: DocumentLoader / Store / Resolver / ActionDispatcher
 - [ ] SpectreExpr パーサ + 評価器（適合性コーパスをパス）
@@ -58,7 +75,7 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 
 > **M1 の受け入れ基準**: 手書きJSONで実在の画面3つが両OSで描画され、既存のネイティブ実装と並べて差異が許容範囲であること。適合性コーパスが両OSで100%通ること。
 
-### M2 — エディタ (6〜8週)
+### M2 — エディタ (6〜8週) — [SU-0003](../roadmaps/SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md)
 
 - [ ] マニフェスト駆動のパレット / インスペクタ
 - [ ] キャンバス（DnD、選択、木構造パネル）
@@ -69,7 +86,7 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 - [ ] **実機ミラー（WebSocket）** ← 必須。後回しにしない
 - [ ] デバイス/ロケール/テーマ/フォントスケールの切り替え
 
-### M3 — 配信基盤 (4〜5週)
+### M3 — 配信基盤 (4〜5週) — [SU-0004](../roadmaps/SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md)
 
 - [ ] オーサリングAPI（下書き・検証・公開・ロールバック・監査ログ）
 - [ ] 配信API（ケイパビリティネゴシエーション、ETag、CDN設定）
@@ -79,7 +96,7 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 
 > **M3 完了時点で本番投入可能**。まず影響の小さい画面（キャンペーン告知、お知らせ一覧など）から。
 
-### M4 — 運用の成熟 (継続)
+### M4 — 運用の成熟 (継続) — [SU-0005](../roadmaps/SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity-ja.md)
 
 - [ ] 段階公開 / A-Bテスト / セグメント配信
 - [ ] エディタ上の対応率フィードバック
@@ -153,3 +170,6 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 1. 上記「未決事項」の 1・2・5 を確認する（設計への影響が大きい順）。
 2. 置き換え対象の実画面を3つ選び、手書きJSONで表現しきれるか検証する。
 3. その結果でコンポーネントカタログ v0.1 を確定させ、M0 に入る。
+
+適用範囲を絞る判断は [SU-0010](../roadmaps/SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md)
+として提案しています。

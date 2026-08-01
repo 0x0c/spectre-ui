@@ -1,0 +1,114 @@
+site_name: Spectre UI
+site_description: サーバードリブンUI (SDUI) のためのクロスプラットフォームライブラリ。設計ドキュメント、ADR、ロードマップ。
+site_url: https://0x0c.github.io/spectre-ui/docs/
+repo_url: https://github.com/0x0c/spectre-ui
+repo_name: 0x0c/spectre-ui
+edit_uri: edit/main/docs/
+copyright: Spectre UI — 設計フェーズ
+
+docs_dir: docs
+site_dir: site/docs
+
+theme:
+  name: material
+  language: ja
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: OSの設定に合わせる
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: ダークテーマに切り替え
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: ライトテーマに切り替え
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+
+# docs/ のページのリンクをサイト用に書き換える
+hooks:
+  - scripts/hooks.py
+
+plugins:
+  - search:
+      lang:
+        - ja
+        - en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - ホーム: index.md
+  - 設計:
+      - 技術選定: tech-selection.md
+      - アーキテクチャ: architecture.md
+      - エディタ: editor.md
+      - 互換性・配信戦略: compatibility.md
+      - ADR:
+          - 一覧: adr/README-ja.md
+          - Index (English): adr/README.md
+          - ADR-0001 クライアントのレンダリング方式: adr/ADR-0001-client-rendering-strategy/ADR-0001-client-rendering-strategy-ja.md
+          - ADR-0002 コンポーネントマニフェスト: adr/ADR-0002-component-manifest-single-source/ADR-0002-component-manifest-single-source-ja.md
+          - ADR-0003 UI定義の表現形式: adr/ADR-0003-ui-document-format/ADR-0003-ui-document-format-ja.md
+          - ADR-0004 式言語: adr/ADR-0004-expression-language/ADR-0004-expression-language-ja.md
+          - ADR-0005 エディタのスタック: adr/ADR-0005-editor-stack/ADR-0005-editor-stack-ja.md
+          - ADR-0006 バージョニングと前方互換性: adr/ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility-ja.md
+          - ADR-0007 バックエンド: adr/ADR-0007-backend-stack/ADR-0007-backend-stack-ja.md
+          - ADR-0008 適合性テスト戦略: adr/ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy-ja.md
+  - 仕様:
+      - スキーマ v0.1: spec/schema.md
+      - コンポーネントカタログ v0.1: spec/components.md
+      - 式言語 SpectreExpr: spec/expression.md
+      - アクション: spec/actions.md
+  - ロードマップ: roadmap.md
+
+# 英語版のページはナビには載せず、各ページの言語切り替えリンクから辿る
+not_in_nav: |
+  adr/*/*.md
+  !adr/*/*-ja.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/0x0c/spectre-ui

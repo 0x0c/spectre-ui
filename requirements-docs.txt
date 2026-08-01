@@ -1,0 +1,6 @@
+# ドキュメントサイト (MkDocs) のビルドに必要なもの。
+# インストール:  pip install -r requirements-docs.txt
+# ローカル確認:  mkdocs serve
+# ビルド:        mkdocs build --strict
+mkdocs==1.6.1
+mkdocs-material==9.7.7
