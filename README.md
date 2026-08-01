@@ -1,106 +1,123 @@
+**English** · [日本語](README-ja.md)
+
 # Spectre UI
 
-サーバードリブンUI (Server-Driven UI, SDUI) のためのクロスプラットフォームライブラリ。
+Spectre UI is a cross-platform library for server-driven user interfaces (SDUI).
 
-サーバから配信された **UI定義ドキュメント (JSON)** を iOS / Android のネイティブSDKが解釈してレンダリングし、
-ボタンタップなどの操作を宣言的な **アクション** として処理する。UI定義は Web の **WYSIWYGエディタ** から、
-あらかじめ定義された **コンポーネントカタログ** の組み合わせで編集・公開できる。
+A server delivers a **user-interface definition document** in JavaScript Object Notation (JSON).
+Native software development kits (SDKs) on iOS and Android render that document. A button tap
+travels back as a declarative **action**. Authors edit the same document in a
+what-you-see-is-what-you-get (WYSIWYG) editor on the web. The editor composes a screen out of a
+predefined **component catalog**.
 
-現在のフェーズ: **設計 (実装コードなし)**。本リポジトリには技術選定と仕様のドキュメントのみが含まれる。
+The repository is in its **design phase**: no implementation code exists yet. The documents here
+record the technology selection and the specification.
 
-**ロードマップ項目一覧: https://0x0c.github.io/spectre-ui/**
-状態とトピックで絞り込める1枚のリスト。項目の本文は `roadmaps/` にある。
-設計ドキュメントは https://0x0c.github.io/spectre-ui/docs/ に MkDocs で置いている。
+**Roadmap index: https://0x0c.github.io/spectre-ui/**
 
----
-
-## ドキュメント
-
-| ドキュメント | 内容 |
-| --- | --- |
-| [docs/adr/](docs/adr/README-ja.md) | ADR（アーキテクチャ決定記録）。1決定1ディレクトリ、日英両方 |
-| [roadmaps/](roadmaps/README-ja.md) | ロードマップ項目。1項目1ディレクトリ、日英両方 |
-| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定の索引。前提の制約とADRの一覧 |
-| [docs/architecture.md](docs/architecture.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
-| [docs/spec/schema.md](docs/spec/schema.md) | UI定義ドキュメントのスキーマ仕様 v0.1 |
-| [docs/spec/components.md](docs/spec/components.md) | コンポーネントカタログ v0.1 とデザイントークン |
-| [docs/spec/expression.md](docs/spec/expression.md) | 式言語 SpectreExpr とデータバインディング |
-| [docs/spec/actions.md](docs/spec/actions.md) | アクション仕様とサーバ応答プロトコル |
-| [docs/editor.md](docs/editor.md) | Web WYSIWYGエディタの設計 |
-| [docs/compatibility.md](docs/compatibility.md) | バージョニング・前方互換・配信/ロールバック戦略 |
-| [docs/roadmap.md](docs/roadmap.md) | マイルストーンの概観、見積もり、未決事項、リスク |
-
-ADRとロードマップ項目は採番して1件1ディレクトリに置き、英語版 `X.md` と日本語版 `X-ja.md` を組で持つ。
-採番と書式の規則は [docs/adr/README-ja.md](docs/adr/README-ja.md) と
-[roadmaps/README-ja.md](roadmaps/README-ja.md) にある。執筆時の文章規範と手順は
-[.agent-workflows/](.agent-workflows/README.md)（Claude Code 向けのアダプタは `.claude/skills/`）にある。
-
-## 成果物 (設計サンプル)
-
-| ファイル | 内容 |
-| --- | --- |
-| [spec/component-manifest.json](spec/component-manifest.json) | コンポーネントマニフェスト。全生成物の単一の情報源 |
-| [spec/schema/document.schema.json](spec/schema/document.schema.json) | ドキュメント用 JSON Schema (マニフェストから生成される想定の手書きサンプル) |
-| [examples/screens/product-detail.json](examples/screens/product-detail.json) | 商品詳細画面のUI定義サンプル |
+One list, filtered by status and by topic. The item bodies live in `roadmaps/`. MkDocs serves the
+design documents at https://0x0c.github.io/spectre-ui/docs/.
 
 ---
 
-## 設計の要点 (3行)
+## Documents
 
-1. **コンポーネントマニフェストを単一の情報源**とし、JSON Schema / TypeScript型 / Swift型 / Kotlin型 / エディタのパレットとインスペクタをすべてそこから生成する。
-2. **レンダラは各プラットフォームネイティブ** (SwiftUI / Jetpack Compose / React)。共有するのは「コード」ではなく「仕様 + 適合性テストコーパス」。
-3. **前方互換性を最優先**。古いアプリバージョンが未知のコンポーネントを受け取っても壊れないよう、ケイパビリティネゴシエーションとノード単位のフォールバックを言語仕様に組み込む。
+| Document | Contents |
+| --- | --- |
+| [docs/adr/](docs/adr/README.md) | Architecture decision records (ADRs). One decision per directory, in both languages |
+| [roadmaps/](roadmaps/README.md) | Roadmap items. One item per directory, in both languages |
+| [docs/tech-selection.md](docs/tech-selection.md) | Index of the technology selection: the constraints assumed, and the decision records |
+| [docs/architecture.md](docs/architecture.md) | Overall architecture, the components it divides into, and the data flow |
+| [docs/spec/schema.md](docs/spec/schema.md) | Schema specification v0.1 for the user-interface definition document |
+| [docs/spec/components.md](docs/spec/components.md) | Component catalog v0.1 and the design tokens |
+| [docs/spec/expression.md](docs/spec/expression.md) | The SpectreExpr expression language and data binding |
+| [docs/spec/actions.md](docs/spec/actions.md) | Action specification and the server response protocol |
+| [docs/editor.md](docs/editor.md) | Design of the web WYSIWYG editor |
+| [docs/compatibility.md](docs/compatibility.md) | Versioning, forward compatibility, and the delivery and rollback strategy |
+| [docs/roadmap.md](docs/roadmap.md) | Milestone overview, estimates, open questions, and risks |
 
-## リポジトリ構成 (実装フェーズの想定)
+Architecture decision records and roadmap items carry a permanent number. Each one occupies a
+directory holding the English `X.md` beside its Japanese mirror `X-ja.md`. The numbering and
+formatting rules live in [docs/adr/README.md](docs/adr/README.md) and
+[roadmaps/README.md](roadmaps/README.md). The prose norm and the drafting procedure live in
+[.agent-workflows/](.agent-workflows/README.md). The adapters under `.claude/skills/` load that
+norm for Claude Code.
+
+English leads and the mirror follows it. The documents under `docs/` outside `docs/adr/` are the
+exception, with no English version today.
+
+## Deliverables (design samples)
+
+| File | Contents |
+| --- | --- |
+| [spec/component-manifest.json](spec/component-manifest.json) | Component manifest, the single source of truth behind everything generated |
+| [spec/schema/document.schema.json](spec/schema/document.schema.json) | JSON Schema for the document (a hand-written sample of what the manifest will generate) |
+| [examples/screens/product-detail.json](examples/screens/product-detail.json) | Sample user-interface definition for a product detail screen |
+
+---
+
+## The design in three points
+
+1. **The component manifest is the single source of truth**. From that one file we generate the
+   JSON Schema and the TypeScript, Swift, and Kotlin types. The editor's palette and inspector come
+   from the same file.
+2. **Each renderer is native to its platform** (SwiftUI, Jetpack Compose, and React). The platforms
+   share a specification and a conformance test corpus rather than code.
+3. **Forward compatibility comes first**. The language specification itself carries capability
+   negotiation and per-node fallback. An older application version survives a component it does not
+   recognize.
+
+## Repository layout (planned for the implementation phase)
 
 ```
 spectre-ui/
-├── docs/adr/                   # ADR (1決定1ディレクトリ、日英両方)
-├── roadmaps/                   # ロードマップ項目 (1項目1ディレクトリ、日英両方)
-├── .agent-workflows/           # 共有のエージェント手順 (.claude/skills がこれを読む)
-├── spec/                       # 仕様の単一の情報源
-│   ├── component-manifest.json #   コンポーネント定義
-│   ├── tokens.json             #   デザイントークン
-│   ├── schema/                 #   生成された JSON Schema
-│   └── conformance/            #   適合性テストコーパス (全ランタイム共通)
-├── packages/                   # TypeScript モノレポ (pnpm workspace)
-│   ├── manifest/               #   マニフェストのローダと検証
-│   ├── codegen/                #   TS / Swift / Kotlin コード生成
-│   ├── core/                   #   式評価・パッチ適用の TS 実装 (エディタ/サーバ共用)
-│   ├── editor/                 #   React WYSIWYG エディタ
-│   └── server/                 #   オーサリングAPI + 配信サービス (Fastify)
+├── docs/adr/                   # Architecture decision records (one per directory, English and Japanese)
+├── roadmaps/                   # Roadmap items (one per directory, English and Japanese)
+├── .agent-workflows/           # Shared agent procedures (.claude/skills reads these)
+├── spec/                       # Single source of truth for the specification
+│   ├── component-manifest.json #   Component definitions
+│   ├── tokens.json             #   Design tokens
+│   ├── schema/                 #   Generated JSON Schema
+│   └── conformance/            #   Conformance test corpus (shared by every runtime)
+├── packages/                   # TypeScript monorepo (pnpm workspace)
+│   ├── manifest/               #   Manifest loader and validation
+│   ├── codegen/                #   TypeScript, Swift, and Kotlin code generation
+│   ├── core/                   #   TypeScript expression evaluation and patch application (editor and server)
+│   ├── editor/                 #   React WYSIWYG editor
+│   └── server/                 #   Authoring API and delivery service (Fastify)
 ├── clients/
-│   ├── ios/                    # Swift Package: SpectreUI
+│   ├── ios/                    # Swift package: SpectreUI
 │   └── android/                # Gradle module: spectre-ui
 └── examples/
 ```
 
 ---
 
-## サイト
+## The site
 
-GitHub Actions から GitHub Pages へデプロイする。2つの成果物からなる。
+GitHub Actions deploys the site to GitHub Pages. The site is two artifacts.
 
-| URL | 中身 | 作るもの |
+| URL | Contents | Built by |
 | --- | --- | --- |
-| `/` | ロードマップ項目一覧 | `scripts/build_roadmap_index.py` |
-| `/docs/` | 設計ドキュメントとADR | MkDocs (Material) |
+| `/` | The roadmap index | `scripts/build_roadmap_index.py` |
+| `/docs/` | The design documents and the decision records | MkDocs (Material) |
 
-一覧はカテゴリ（トピック）ごとにまとめ、項目・カテゴリ・全体の進捗をバーで示す。
-表示はカードとリストを切り替えられ、状態・カテゴリでの絞り込みと全文検索（ID・タイトル・要約・
-カテゴリ・状態が対象、`/` で検索欄へ）がある。
-生成元は各項目の `SU-METADATA`、冒頭の1段落、そして進捗チェックリストなので、
-項目を追加してもインデックスを手で更新する必要はない。項目の本文はサイトには載せず、
-リポジトリ上の Markdown へリンクする。
+The index groups the items by category (topic). Bars carry the progress of an item, of a category,
+and of the roadmap as a whole. A toggle switches between cards and a list. Filters cover status and
+category. The full-text search reaches the ID and title of an item, plus its summary, category, and
+status. Pressing `/` moves the cursor to the search box. The index reads each item's `SU-METADATA`,
+opening paragraph, and progress checklist. Adding an item needs no hand edit of the index. The item
+bodies stay off the site, which links to the Markdown in the repository instead.
 
-進捗の分母は各項目の**進捗チェックリスト**。未着手の項目はチェックリストが
-「未着手」の箱1つだけなので、その場合に限り**詳細設計の分解数**を見込みとして使う。
+The denominator of the progress bar is the item's **progress checklist**. An item that has not
+started carries a single "Not started" box. In that case alone, the number of **Detailed design**
+steps stands in as the estimate.
 
 ```sh
 pip install -r requirements-docs.txt
 
-mkdocs build --strict                        # ドキュメント → site/docs/
-python3 scripts/build_roadmap_index.py site  # 一覧 → site/index.html
+mkdocs build --strict                        # the documents  -> site/docs/
+python3 scripts/build_roadmap_index.py site  # the index      -> site/index.html
 
-mkdocs serve                                 # ドキュメントだけをローカルで確認
+mkdocs serve                                 # preview the documents alone
 ```
