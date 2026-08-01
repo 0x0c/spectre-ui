@@ -34,11 +34,14 @@ shared prose validation runtime.
 | [`roadmap-item`](roadmap-item/workflow.md) | Author or revise a numbered bilingual roadmap item |
 | [`adr`](adr/workflow.md) | Author or supersede a numbered bilingual architecture decision record |
 | [`roadmap-filter`](roadmap-filter/workflow.md) | Survey roadmap items by status, read-only |
+| [`implement`](implement/workflow.md) | Ship a roadmap item's product code, from accepted design to a reviewed, green change |
 
-Spectre UI is in its design phase, so the implementation-side workflows of the upstream
-repository — the ones that build a proposal's code, run a test gate, and drive a pull request to
-green — are deliberately not ported yet. They assume a build and test gate that does not exist here;
-port them when the implementation phase starts.
+Spectre UI's client-implementation phase is underway: real product code lives under `clients/`,
+`packages/`, and `spec/`, alongside the specification, ADRs, and roadmap. `implement` is the first
+of the upstream repository's implementation-side workflows to be ported, adapted to this
+repository's per-area checks rather than the single unified test gate the upstream repository
+assumes. Port the remaining ones — the pull-request follow-up loop chief among them — as the parts
+of the repository they depend on (a tracking-issue convention, a unified gate) come to exist.
 
 ## What belongs here
 
