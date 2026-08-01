@@ -46,7 +46,7 @@ final class JsonPatchTests: XCTestCase {
     func testRemoveDeletesObjectKey() throws {
         let root = try doc(#"{"props":{"a":1,"b":2}}"#)
         let result = try JsonPatch.apply(root, [try op(#"{"op":"remove","path":"/props/a"}"#)])
-        XCTAssertEqual(Set(result.path("props").asObject?.keys ?? []), ["b"])
+        XCTAssertEqual(Set((result.path("props").asObject ?? [:]).keys), ["b"])
     }
 
     func testMoveRelocatesValue() throws {
