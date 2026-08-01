@@ -1,0 +1,25 @@
+{
+  "name": "@spectre-ui/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Authoring and delivery API (SU-0004). Fastify + PostgreSQL, per ADR-0007.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "migrate": "tsx src/migrate.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test --test-concurrency=1 test/*.test.ts"
+  },
+  "dependencies": {
+    "@spectre-ui/manifest": "workspace:*",
+    "fastify": "^5.11.0",
+    "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.19.0"
+  }
+}

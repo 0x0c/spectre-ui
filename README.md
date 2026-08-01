@@ -12,9 +12,10 @@ predefined **component catalog**.
 
 The repository is in its **client-implementation phase**. The documents here record the technology
 selection and the specification. The repository also holds the iOS and Android runtimes and a
-renderer for each platform. Sample applications render a user-interface definition document without
-a server. Work on the editor (milestone M2) and on the delivery platform (milestone M3) has not
-started. [docs/roadmap.md](docs/roadmap.md) records what each part covers and which job verifies it.
+renderer for each platform. It holds an authoring and delivery API too (milestone M3,
+`packages/server`). Sample applications render a user-interface definition document without a
+server. Work on the editor (milestone M2) has not started. [docs/roadmap.md](docs/roadmap.md)
+records what each part covers and which job verifies it.
 
 ## Running it
 
@@ -36,6 +37,11 @@ cd clients/ios && swift test
 
 # iOS sample application (needs XcodeGen)
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+
+# Authoring and delivery API: type check and integration tests (needs pnpm and PostgreSQL)
+pnpm install
+pnpm --filter @spectre-ui/manifest run typecheck && pnpm --filter @spectre-ui/manifest run test
+cd packages/server && pnpm run typecheck && TEST_DATABASE_URL=<url> pnpm run test
 ```
 
 Continuous integration (CI) runs every command above on each pull request. The job definitions live
@@ -95,7 +101,7 @@ exception, with no English version today.
    negotiation and per-node fallback. An older application version survives a component it does not
    recognize.
 
-## Repository layout (planned for the implementation phase)
+## Repository layout (target shape; `packages/core` and `packages/editor` do not exist yet)
 
 ```
 spectre-ui/

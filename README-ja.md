@@ -11,10 +11,10 @@ Android のネイティブSDK（Software Development Kit、ソフトウェア開
 できます。画面は、あらかじめ定義された**コンポーネントカタログ**の組み合わせで作ります。
 
 本リポジトリは**クライアント実装フェーズ**にあります。技術選定と仕様を記録したドキュメントに加えて、
-iOS と Android のランタイムと、プラットフォームごとのレンダラを置いています。サーバを立てずに
-UI定義ドキュメントを描画するサンプルアプリもあります。エディタ（マイルストーンM2）と配信基盤
-（マイルストーンM3）は未着手です。各部分が何を含み、どう検証しているかは
-[docs/roadmap.md](docs/roadmap.md) に記録しています。
+iOS と Android のランタイムと、プラットフォームごとのレンダラを置いています。オーサリング・配信API
+（マイルストーンM3、`packages/server`）もここにあります。サーバを立てずに UI定義ドキュメントを描画する
+サンプルアプリもあります。エディタ（マイルストーンM2）は未着手です。各部分が何を含み、どう検証している
+かは [docs/roadmap.md](docs/roadmap.md) に記録しています。
 
 ## 動かす
 
@@ -37,6 +37,11 @@ cd clients/ios && swift test
 
 # iOS サンプルアプリ（XcodeGen が必要）
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+
+# オーサリング・配信API: 型検査と統合テスト（pnpm と PostgreSQL が必要）
+pnpm install
+pnpm --filter @spectre-ui/manifest run typecheck && pnpm --filter @spectre-ui/manifest run test
+cd packages/server && pnpm run typecheck && TEST_DATABASE_URL=<url> pnpm run test
 ```
 
 CI（Continuous Integration、継続的インテグレーション）は、上記のすべてのコマンドをプルリクエストごと
@@ -94,7 +99,7 @@ ADRとロードマップ項目は永続的な番号を持ち、1件につき1デ
    言語仕様そのものに組み込みます。古いアプリバージョンが未知のコンポーネントを受け取っても、
    壊れません。
 
-## リポジトリ構成（実装フェーズの想定）
+## リポジトリ構成（目指す形。`packages/core` と `packages/editor` はまだ存在しません）
 
 ```
 spectre-ui/

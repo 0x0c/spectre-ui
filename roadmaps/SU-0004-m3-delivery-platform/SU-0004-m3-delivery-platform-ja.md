@@ -7,7 +7,7 @@
 |---|---|
 | 提案 | [SU-0004](SU-0004-m3-delivery-platform-ja.md) |
 | 提案者 | [@0x0c](https://github.com/0x0c) |
-| 状態 | **提案** |
+| 状態 | **進行中** |
 | トピック | 配信 |
 | 関連 | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md) |
 <!-- /SU-METADATA -->
@@ -56,11 +56,40 @@ M3までは、ドキュメントが端末に届く手段が手作業しかあり
 > 作業の進行に合わせて更新します。チェックリストは*詳細設計*の分解を写したもので、ログは何がいつ
 > 変わったかを古い順に記録します。
 
-- [ ] 未着手
+- [x] オーサリングAPI: 下書き / 検証 / 公開 / ロールバック / 監査ログ
+- [ ] 配信API: ケイパビリティネゴシエーション、ETag、CDNの設定
+- [ ] 権限とワークフロー（公開前の承認ステップを含みます）
+- [x] 論理エンドポイントの登録と管理
+- [x] テレメトリの収集と対応率の集計
 
 **ログ**
 
-- 作業は未着手です。リポジトリは設計フェーズにあります。
+- 今回の変更は、PostgreSQLに対するFastifyサービス`packages/server`を追加します（ADR-0007）。
+- オーサリングAPIは、項目1が挙げる5つの操作すべてをカバーします。
+- 下書きは楽観的ロックを使い、公開時にはまず`@spectre-ui/manifest`で検証します。
+- ロールバックは、`releases`テーブルに古い`version_id`を指す行を追加する形で実現します。
+- `document_versions`は書き換えないため、すべてのバージョンがイミュータブルなまま保たれます。
+- 配信APIは、`GET /screens/:screenId`を`ETag`と304応答つきで提供します。
+- イミュータブルな`GET /d/:documentId/:versionId`と`GET /manifest/:schemaVersion`も提供します。
+- 申告されたケイパビリティに応じた木の整形はまだ行いません。項目2のその半分はSU-0008に持ち越します。
+- `documents`テーブルと`releases`テーブルが、項目4の求める論理エンドポイントの登録簿です。
+- `POST /api/telemetry`と`GET /api/screens/:screenId/adoption`が、項目5を完全に満たします。
+- 項目3（権限とワークフロー）には仮の実装しかありません。
+- 本番チャンネルへの公開は、依頼者とは別の`approvedBy`を必須とします。
+- 本物の認証やロールベースアクセス制御はまだなく、依頼者は自己申告のままです。
+- 実際のPostgreSQLインスタンスに対して、23件の統合テストが一連の流れを検証します。
+- `packages/manifest`には、生成された型に加えて実行時のローダと構造検証も加わりました。これは
+  SU-0006の項目2の一部を副次的に満たします。
+- レビューは、公開とロールバックの競合が同じチャネルに2件の有効なリリースを生む経路を
+  見つけました。
+- `releases`テーブルの部分ユニークインデックスが2件目の挿入を阻止し、ルートは409を返します。
+- 同じレビューで、`POST`/`PUT /api/documents/...`が`/validate`や`/publish`と違って
+  リソース上限を強制していないことも見つかりました。両ルートは書き込み前に
+  `checkResourceLimits`を呼ぶようになりました。
+- デフォルトのエラーハンドラが、PostgreSQLとNodeの生のエラーメッセージを汎用メッセージの
+  背後へ隠すようになりました。
+- テレメトリの挿入は1件ごとにSAVEPOINTで区切られ、不正な1件がバッチ全体を巻き込まなく
+  なりました。
 
 ## 参考
 

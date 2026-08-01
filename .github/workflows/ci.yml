@@ -52,15 +52,58 @@ jobs:
       - name: 生成物がマニフェストと同期しているか
         run: node packages/codegen/generate.mjs --check
 
-      - name: 生成された TypeScript 型が正しく型検査を通るか
-        run: npx --yes -p typescript@5 tsc -p packages/manifest/tsconfig.json
-
       - name: 仕様 JSON の構文チェック
         run: |
           set -euo pipefail
           find spec examples -name '*.json' -print0 \
             | xargs -0 -I{} node -e 'JSON.parse(require("fs").readFileSync("{}","utf8"))'
           echo "すべての JSON が解析できました"
+
+  # packages/manifest と packages/server のテスト。実際の PostgreSQL に対して
+  # 統合テストを走らせる (SU-0004)。
+  server:
+    name: Server (TypeScript)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: spectre
+          POSTGRES_PASSWORD: spectre
+          POSTGRES_DB: spectre_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: 依存関係のインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: packages/manifest の型検査とテスト
+        run: |
+          pnpm --filter @spectre-ui/manifest run typecheck
+          pnpm --filter @spectre-ui/manifest run test
+
+      - name: packages/server の型検査とテスト
+        working-directory: packages/server
+        env:
+          TEST_DATABASE_URL: postgres://spectre:spectre@localhost:5432/spectre_test
+        run: |
+          pnpm run typecheck
+          pnpm run test
 
   # Compose レンダラとサンプルアプリのコンパイル。
   # GitHub の ubuntu ランナーには Android SDK が入っているため、

@@ -1,0 +1,11 @@
+{
+  "name": "@spectre-ui/codegen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generates the JSON Schema, TypeScript, Swift, and Kotlin catalogs from spec/component-manifest.json (SU-0006).",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "generate:check": "node generate.mjs --check"
+  }
+}
