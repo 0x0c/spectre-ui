@@ -85,9 +85,10 @@ jobs:
         with:
           node-version: '22'
 
+      # バージョンは指定しない — ルート package.json の packageManager フィールドから
+      # 読む。両方指定すると ERR_PNPM_BAD_PM_VERSION を避けるためこのアクション自体が
+      # エラーで止まる。
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: 依存関係のインストール
         run: pnpm install --frozen-lockfile
