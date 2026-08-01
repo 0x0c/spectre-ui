@@ -13,10 +13,10 @@ Android のネイティブSDK（Software Development Kit、ソフトウェア開
 本リポジトリは**設計フェーズ**にあり、実装コードはまだありません。ここにあるのは、技術選定と仕様を
 記録したドキュメントです。
 
-**ドキュメントサイト: https://0x0c.github.io/spectre-ui/**
+**ロードマップ項目一覧: https://0x0c.github.io/spectre-ui/**
 
-検索とナビゲーション付きで閲覧できます。ロードマップは
-[項目一覧](https://0x0c.github.io/spectre-ui/roadmaps/) から、状態やトピックごとに辿れます。
+状態とトピックで絞り込める1枚のリストです。項目の本文は `roadmaps/` にあります。設計ドキュメントは
+MkDocs で https://0x0c.github.io/spectre-ui/docs/ に置いています。
 
 ---
 
@@ -91,14 +91,29 @@ spectre-ui/
 
 ---
 
-## ドキュメントサイト
+## サイト
 
-サイトは MkDocs（Material）で構築し、GitHub Actions から GitHub Pages へデプロイします。
-`roadmaps/` の項目ページと項目一覧は、ビルド時に `scripts/gen_roadmap_pages.py` が生成します。
-そのため、項目を追加してもサイト側のインデックスを手で更新する必要はありません。
+サイトは GitHub Actions から GitHub Pages へデプロイします。成果物は2つです。
+
+| URL | 中身 | 作るもの |
+| --- | --- | --- |
+| `/` | ロードマップ項目一覧 | `scripts/build_roadmap_index.py` |
+| `/docs/` | 設計ドキュメントとADR | MkDocs（Material） |
+
+一覧はカテゴリ（トピック）ごとに項目をまとめます。項目、カテゴリ、ロードマップ全体の進捗は、それぞれ
+バーで示します。表示はカードとリストを切り替えられます。絞り込みは状態とカテゴリで行い、全文検索は
+ID、タイトル、要約、カテゴリ、状態を対象とします（`/` で検索欄へ移ります）。一覧の生成元は、各項目の
+`SU-METADATA`、冒頭の1段落、進捗チェックリストです。そのため、項目を追加しても一覧を手で更新する
+必要はありません。項目の本文はサイトには載せず、リポジトリ上の Markdown へリンクします。
+
+進捗バーの分母は、その項目の**進捗チェックリスト**です。未着手の項目はチェックリストが「未着手」の
+箱1つだけなので、その場合に限り**詳細設計**の分解数を見込みとして使います。
 
 ```sh
 pip install -r requirements-docs.txt
-mkdocs serve          # http://127.0.0.1:8000/
-mkdocs build --strict # CI と同じ検証。リンク切れがあれば失敗します
+
+mkdocs build --strict                        # ドキュメント → site/docs/
+python3 scripts/build_roadmap_index.py site  # 一覧 → site/index.html
+
+mkdocs serve                                 # ドキュメントだけをローカルで確認
 ```

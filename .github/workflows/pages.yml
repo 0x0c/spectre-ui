@@ -1,4 +1,4 @@
-name: Deploy docs to GitHub Pages
+name: Deploy site to GitHub Pages
 
 on:
   push:
@@ -51,9 +51,13 @@ jobs:
         with:
           enablement: true
 
-      # --strict なので、リンク切れや警告があればここで落ちる
-      - name: Build site
+      # ドキュメント → site/docs/。--strict なのでリンク切れがあれば落ちる
+      - name: Build documentation
         run: mkdocs build --strict
+
+      # ロードマップ項目一覧 → site/index.html
+      - name: Build roadmap index
+        run: python3 scripts/build_roadmap_index.py site
 
       - name: Upload artifact
         if: github.event_name != 'pull_request'

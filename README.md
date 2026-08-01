@@ -13,10 +13,10 @@ predefined **component catalog**.
 The repository is in its **design phase**: no implementation code exists yet. The documents here
 record the technology selection and the specification.
 
-**Documentation site: https://0x0c.github.io/spectre-ui/**
+**Roadmap index: https://0x0c.github.io/spectre-ui/**
 
-The site carries search and navigation. Its
-[item index](https://0x0c.github.io/spectre-ui/roadmaps/) lists the roadmap by status and by topic.
+One list, filtered by status and by topic. The item bodies live in `roadmaps/`. MkDocs serves the
+design documents at https://0x0c.github.io/spectre-ui/docs/.
 
 ---
 
@@ -93,14 +93,31 @@ spectre-ui/
 
 ---
 
-## Documentation site
+## The site
 
-MkDocs (Material) builds the site, and GitHub Actions deploys it to GitHub Pages. At build time
-`scripts/gen_roadmap_pages.py` generates the item pages and the index for `roadmaps/`. Adding
-an item needs no hand edit of the index on the site.
+GitHub Actions deploys the site to GitHub Pages. The site is two artifacts.
+
+| URL | Contents | Built by |
+| --- | --- | --- |
+| `/` | The roadmap index | `scripts/build_roadmap_index.py` |
+| `/docs/` | The design documents and the decision records | MkDocs (Material) |
+
+The index groups the items by category (topic). Bars carry the progress of an item, of a category,
+and of the roadmap as a whole. A toggle switches between cards and a list. Filters cover status and
+category. The full-text search reaches the ID and title of an item, plus its summary, category, and
+status. Pressing `/` moves the cursor to the search box. The index reads each item's `SU-METADATA`,
+opening paragraph, and progress checklist. Adding an item needs no hand edit of the index. The item
+bodies stay off the site, which links to the Markdown in the repository instead.
+
+The denominator of the progress bar is the item's **progress checklist**. An item that has not
+started carries a single "Not started" box. In that case alone, the number of **Detailed design**
+steps stands in as the estimate.
 
 ```sh
 pip install -r requirements-docs.txt
-mkdocs serve          # http://127.0.0.1:8000/
-mkdocs build --strict # The same check CI runs: a broken link fails the build
+
+mkdocs build --strict                        # the documents  -> site/docs/
+python3 scripts/build_roadmap_index.py site  # the index      -> site/index.html
+
+mkdocs serve                                 # preview the documents alone
 ```
