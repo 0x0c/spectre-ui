@@ -204,18 +204,25 @@ public final class DocumentLoader: Sendable {
         }
 
         func get(_ key: String) -> CachedBody? {
-            entries[key]
+            guard let value = entries[key] else { return nil }
+            touch(key)
+            return value
         }
 
         func set(_ key: String, _ value: CachedBody) {
-            if entries[key] == nil {
-                order.append(key)
-                if order.count > capacity {
-                    let evicted = order.removeFirst()
-                    entries.removeValue(forKey: evicted)
-                }
-            }
             entries[key] = value
+            touch(key)
+            if order.count > capacity {
+                let evicted = order.removeFirst()
+                entries.removeValue(forKey: evicted)
+            }
+        }
+
+        /// [key] を最近使った側 (末尾) へ動かす。読み書きどちらでも呼ぶ — Kotlin 側の
+        /// `LinkedHashMap(accessOrder = true)` と同じ「読んだものは捨てにくい」LRU にする。
+        private func touch(_ key: String) {
+            order.removeAll { $0 == key }
+            order.append(key)
         }
     }
 }

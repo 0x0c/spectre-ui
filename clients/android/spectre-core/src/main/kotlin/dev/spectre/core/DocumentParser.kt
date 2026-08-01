@@ -21,16 +21,22 @@ object DocumentParser {
     class ParseException(message: String) : Exception(message)
 
     fun parse(text: String): Document {
-        if (text.toByteArray(Charsets.UTF_8).size > SpectreLimits.MAX_DOCUMENT_BYTES) {
-            throw ParseException("ドキュメントが上限 ${SpectreLimits.MAX_DOCUMENT_BYTES} バイトを超えています")
-        }
+        checkSize(text.toByteArray(Charsets.UTF_8).size)
         val root = runCatching { json.parseToJsonElement(text) }
             .getOrElse { throw ParseException("JSON として解析できません: ${it.message}") }
         val obj = root as? JsonObject ?: throw ParseException("ドキュメントのトップレベルはオブジェクトです")
         return parse(obj.toSpValue() as SpValue.Obj)
     }
 
+    /**
+     * [text] を経由しない呼び出し元 (`applyPatch` が再パースする JSON Patch の適用結果など)
+     * のために、ここでも改めてバイト数を強制する。上限値は入り口を選ばない
+     * (docs/architecture.md §5)。
+     */
     fun parse(value: SpValue.Obj): Document {
+        // JsonObject/JsonArray/JsonPrimitive の toString() は妥当な JSON テキストを返す
+        // (kotlinx.serialization.json の仕様)。再シリアライズしてバイト数を数える。
+        checkSize(value.toJsonElement().toString().toByteArray(Charsets.UTF_8).size)
         val schemaVersion = value.entries["schemaVersion"]?.asStringOrNull
             ?: throw ParseException("schemaVersion がありません")
         val id = value.entries["id"]?.asStringOrNull
@@ -56,6 +62,12 @@ object DocumentParser {
             onDisappear = actionList(value.entries["onDisappear"]),
             raw = value,
         )
+    }
+
+    private fun checkSize(byteCount: Int) {
+        if (byteCount > SpectreLimits.MAX_DOCUMENT_BYTES) {
+            throw ParseException("ドキュメントが上限 ${SpectreLimits.MAX_DOCUMENT_BYTES} バイトを超えています")
+        }
     }
 
     private fun parseMeta(value: SpValue.Obj?): DocumentMeta {

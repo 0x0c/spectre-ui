@@ -106,6 +106,13 @@ internal fun Modifier.spectreNode(node: RenderNode): Modifier =
  * `scrollTo` アクション (docs/spec/actions.md) の着地点。id を持つノードすべてに
  * 適用しておき、コントローラの [dev.spectre.ui.SpectreScreenController.scrollRequest]
  * が自分の id を指した時点でスクロールして知らせる。
+ *
+ * **既知の制約**: `id` は `repeat` で展開した各要素の間で一意という保証がない —
+ * 展開元の [dev.spectre.core.Node] を全要素が共有するため、`id` を書いた `repeat`
+ * テンプレートは要素数ぶんの [RenderNode] が同じ `id` を持つ。この状態で `scrollTo`
+ * がその `id` を指すと、一致する全インスタンスの `LaunchedEffect` が同時に発火し、
+ * どれが実際にスクロールするかは不定になる。`repeat` の中で個々の要素を狙う手段は
+ * 現状ない — ドキュメント側は `repeat` テンプレートに `id` を付けないことで避けられる。
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -127,6 +134,9 @@ internal fun Modifier.spectreScrollTarget(node: RenderNode): Modifier {
  * `focus` アクションの着地点。フォーカスを受けられるコンポーネント (今のところ
  * [dev.spectre.ui.components.TextFieldView]) だけが使う — Card や Text に付けても
  * 意味がないため [spectreNode] には含めない。
+ *
+ * [spectreScrollTarget] と同じ制約を持つ: `repeat` テンプレートに `id` を付けると
+ * 展開後の全要素が同じ `id` を共有し、`focus` の着地先が不定になる。
  */
 @Composable
 internal fun Modifier.spectreFocusTarget(node: RenderNode): Modifier {

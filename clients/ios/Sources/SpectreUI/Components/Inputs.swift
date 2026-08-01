@@ -62,6 +62,9 @@ struct TextFieldView: View {
     @State private var text: String = ""
     @State private var debounceTask: Task<Void, Never>?
     /// `focus` アクション (docs/spec/actions.md) の着地点。
+    ///
+    /// `SpectreNodeView` の `.id(nodeID)` と同じ制約を持つ: `repeat` テンプレートに
+    /// `id` を付けると展開後の全要素が同じ `id` を共有し、`focus` の着地先が不定になる。
     @FocusState private var isFocused: Bool
 
     var body: some View {

@@ -56,6 +56,13 @@ public struct SpectreNodeView: View {
         }
         // `scrollTo` アクション (docs/spec/actions.md) の着地点。id を持つノードすべてに
         // 付けておき、ScreenContent の ScrollViewReader が id で見つけられるようにする。
+        //
+        // 既知の制約: `id` は `repeat` で展開した各要素の間で一意という保証がない —
+        // 展開元の `Node` を全要素が共有するため、`id` を書いた `repeat` テンプレートは
+        // 要素数ぶんの RenderNode が同じ id を持つ。SwiftUI は重複した `.id()` の扱いを
+        // 保証しないため、この状態では `scrollTo` の着地先も不定になる。`repeat` の中で
+        // 個々の要素を狙う手段は現状ない — ドキュメント側は `repeat` テンプレートに
+        // `id` を付けないことで避けられる。
         .modifier(SpectreScrollTargetID(nodeID: node.nodeID))
     }
 }

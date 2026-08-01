@@ -137,4 +137,28 @@ class JsonPatchTest {
             (result.path("items") as SpValue.Arr).items.map { it.asStringOrNull },
         )
     }
+
+    @Test
+    @DisplayName("patch 適用後のドキュメントも 1MB 上限の対象になる (applyPatch が抜け道にならない)")
+    fun patchedDocumentStillEnforcesDocumentSizeLimit() {
+        val original = """
+            {"schemaVersion":"1.0","id":"s","root":{"type":"Text","props":{"text":"x"}}}
+        """.trimIndent()
+        val document = DocumentParser.parse(original)
+        val huge = SpValue.Str("x".repeat(SpectreLimits.MAX_DOCUMENT_BYTES + 1))
+        val patched = JsonPatch.apply(
+            requireNotNull(document.raw),
+            listOf(
+                SpValue.Obj(
+                    mapOf(
+                        "op" to SpValue.Str("replace"),
+                        "path" to SpValue.Str("/root/props/text"),
+                        "value" to huge,
+                    )
+                )
+            ),
+        ) as SpValue.Obj
+
+        assertFailsWith<DocumentParser.ParseException> { DocumentParser.parse(patched) }
+    }
 }
