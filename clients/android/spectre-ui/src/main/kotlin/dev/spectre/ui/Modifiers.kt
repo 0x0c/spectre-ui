@@ -1,5 +1,6 @@
 package dev.spectre.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.ColumnScope
@@ -106,6 +107,7 @@ internal fun Modifier.spectreNode(node: RenderNode): Modifier =
  * 適用しておき、コントローラの [dev.spectre.ui.SpectreScreenController.scrollRequest]
  * が自分の id を指した時点でスクロールして知らせる。
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun Modifier.spectreScrollTarget(node: RenderNode): Modifier {
     val nodeId = node.id ?: return this
