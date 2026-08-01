@@ -9,8 +9,10 @@ it proceeds. Spectre UI is a cross-platform library for server-driven user inter
 which a server ships a user-interface definition document and native software development kits
 (SDKs) on iOS and Android render it.
 
-The repository is still in its design phase, so every item here is a `Proposal`: no implementation
-code exists yet.
+Every item here is currently a `Proposal`, but that field can lag the code: the repository is in its
+client-implementation phase, and product code already exists under `clients/`, `packages/`, and
+`spec/` for parts of some items whose `Status` has not yet been updated to match. See
+[`docs/roadmap.md`](../docs/roadmap.md) for what is actually built per area.
 
 ## Items
 
@@ -130,3 +132,5 @@ in the log.
   risk table that the milestone items (SU-0001 through SU-0005) draw from.
 - [`.agent-workflows/roadmap-item/workflow.md`](../.agent-workflows/roadmap-item/workflow.md) — the
   procedure for authoring an item, for humans and coding agents alike.
+- [`.agent-workflows/implement/workflow.md`](../.agent-workflows/implement/workflow.md) — the
+  procedure for shipping an accepted item's code, and the counterpart to authoring it.

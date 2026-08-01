@@ -15,11 +15,14 @@ This workflow **only** authors and shapes roadmap items. It stops at the files u
 code**, even if the discussion makes the implementation obvious or the user nudges toward "just
 build it". The deliverable is always the proposal, never a working feature.
 
-Two neighboring cases go elsewhere:
+Three neighboring cases go elsewhere:
 
 - A decision that is **already made** and needs recording is an architecture decision record, not a
   roadmap item. Use [`adr`](../adr/workflow.md).
 - A **read-only survey** of what is already proposed is [`roadmap-filter`](../roadmap-filter/workflow.md).
+- A proposal that is **accepted and ready to build** is [`implement`](../implement/workflow.md), the
+  counterpart to this workflow: it ships an item's code and never reshapes the proposal it was
+  handed. A design gap it finds comes back here, not around it.
 
 ## Constraints every idea must respect
 

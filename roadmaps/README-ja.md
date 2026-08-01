@@ -8,8 +8,10 @@
 サーバードリブンUI（Server-Driven UI、SDUI）のためのクロスプラットフォームライブラリです。サーバが
 配信したUI定義ドキュメントを、iOS と Android のネイティブSDKが解釈して描画します。
 
-このリポジトリは設計フェーズにあるため、ここにある項目はすべて `Proposal` です。実装コードはまだ
-ありません。
+ここにある項目は現時点ですべて `Proposal` ですが、この値はコードより遅れることがあります。
+このリポジトリはクライアント実装フェーズにあり、`clients/`、`packages/`、`spec/` 以下には、
+`Status` がまだ追いついていない項目の一部について、すでにコードが存在します。各領域で実際に
+何が実装済みかは [`docs/roadmap.md`](../docs/roadmap.md) を参照してください。
 
 ## 項目一覧
 
@@ -126,3 +128,5 @@
   マイルストーン項目（SU-0001〜SU-0005）はここから起こしています。
 - [`.agent-workflows/roadmap-item/workflow.md`](../.agent-workflows/roadmap-item/workflow.md) —
   項目を書くための手順です。人とコーディングエージェントのどちらにも同じものが適用されます。
+- [`.agent-workflows/implement/workflow.md`](../.agent-workflows/implement/workflow.md) —
+  採択された項目のコードを出荷するための手順です。項目を書く手順と対になっています。

@@ -1,8 +1,10 @@
 # Working in this repository
 
-Spectre UI is a cross-platform library for server-driven user interfaces (SDUI). The repository is
-in its **design phase**: it holds specifications, architecture decision records, and a roadmap, and
-no implementation code.
+Spectre UI is a cross-platform library for server-driven user interfaces (SDUI). The repository
+holds specifications, architecture decision records, and a roadmap, and it is in its
+**client-implementation phase**: real product code lives under `clients/`, `packages/`, and `spec/`.
+See [`docs/roadmap.md`](docs/roadmap.md) for exactly what exists today per area — it can run ahead
+of a roadmap item's own `Status` field when a change lands code without also flipping the metadata.
 
 This file is the short form. Each rule below names the one document that states it in full — go
 there before acting, rather than working from the summary.
@@ -31,9 +33,9 @@ supersede it with a new record, so what was believed at the time survives.
 ## The code decides a roadmap item's status
 
 An item's `Status` tracks whether its implementation exists, not a preference to keep it reading as
-a forward-looking proposal. Every item is `Proposal` today because nothing is implemented. The
-change that ships an item's code sets its `Status`, ticks its `Progress` boxes, and records the pull
-request in the same change.
+a forward-looking proposal. The change that ships an item's code sets its `Status`, ticks its
+`Progress` boxes, and records the pull request in the same change — a `Status` that still reads
+`Proposal` after its code has landed is a bug in that change, not a fact about the item.
 
 ## Prose has a norm, and it shapes the draft
 
@@ -49,4 +51,4 @@ alongside it. Run textlint over what you wrote and revise until no finding remai
 
 [`.agent-workflows/`](.agent-workflows/README.md) holds the shared procedures; `.claude/skills/`
 holds the Claude adapters that load them. Use `roadmap-item` to author a proposal, `adr` to record a
-decision, and `roadmap-filter` to survey what already exists.
+decision, `roadmap-filter` to survey what already exists, and `implement` to ship a proposal's code.
