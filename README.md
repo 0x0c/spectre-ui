@@ -10,8 +10,36 @@ travels back as a declarative **action**. Authors edit the same document in a
 what-you-see-is-what-you-get (WYSIWYG) editor on the web. The editor composes a screen out of a
 predefined **component catalog**.
 
-The repository is in its **design phase**: no implementation code exists yet. The documents here
-record the technology selection and the specification.
+The repository is in its **client-implementation phase**. The documents here record the technology
+selection and the specification. The repository also holds the iOS and Android runtimes and a
+renderer for each platform. Sample applications render a user-interface definition document without
+a server. Work on the editor (milestone M2) and on the delivery platform (milestone M3) has not
+started. [docs/roadmap.md](docs/roadmap.md) records what each part covers and which job verifies it.
+
+## Running it
+
+The conformance corpus and the runtime tests need no Android SDK. A plain checkout can verify the
+library's logic. Every other command needs a platform toolchain.
+
+```bash
+# Conformance corpus and runtime tests (no Android SDK needed)
+cd clients/android && ./gradlew :spectre-core:test
+
+# The generated catalogs still match the component manifest (needs node)
+node packages/codegen/generate.mjs --check
+
+# Android sample application (needs the Android SDK)
+cd clients/android && ./gradlew :sample:installDebug
+
+# iOS runtime tests (needs Xcode)
+cd clients/ios && swift test
+
+# iOS sample application (needs XcodeGen)
+cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+```
+
+Continuous integration (CI) runs every command above on each pull request. The job definitions live
+in [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 **Roadmap index: https://0x0c.github.io/spectre-ui/**
 

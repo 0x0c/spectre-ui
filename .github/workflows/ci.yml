@@ -1,0 +1,153 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 適合性コーパスとランタイムのテスト。Android SDK を必要としないので
+  # ここが一番速く回り、仕様違反を最初に捕まえる層になる。
+  core:
+    name: Core (JVM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: spectre-core のテスト
+        working-directory: clients/android
+        run: ./gradlew --no-daemon :spectre-core:test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-test-report
+          path: clients/android/spectre-core/build/reports/tests/test
+          retention-days: 7
+
+  # マニフェストと生成物がずれていないこと (ADR-0002)。
+  # 生成物はコミットする方針なので、再生成して差分が出たら失敗させる。
+  codegen:
+    name: Codegen drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 生成物がマニフェストと同期しているか
+        run: node packages/codegen/generate.mjs --check
+
+      - name: 仕様 JSON の構文チェック
+        run: |
+          set -euo pipefail
+          find spec examples -name '*.json' -print0 \
+            | xargs -0 -I{} node -e 'JSON.parse(require("fs").readFileSync("{}","utf8"))'
+          echo "すべての JSON が解析できました"
+
+  # Compose レンダラとサンプルアプリのコンパイル。
+  # GitHub の ubuntu ランナーには Android SDK が入っているため、
+  # settings.gradle.kts の条件付き include が :spectre-ui と :sample を拾う。
+  android:
+    name: Android (Compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Android モジュールが構成に含まれることを確認
+        working-directory: clients/android
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon projects | tee /tmp/projects.txt
+          grep -q "spectre-ui" /tmp/projects.txt \
+            || { echo "::error::Android SDK が検出されず :spectre-ui がスキップされました"; exit 1; }
+
+      - name: ライブラリとサンプルのビルド
+        working-directory: clients/android
+        run: ./gradlew --no-daemon :spectre-ui:assembleDebug :sample:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: sample-debug-apk
+          path: clients/android/sample/build/outputs/apk/debug/*.apk
+          retention-days: 7
+
+  # SpectreCore の適合性テスト。ここが通れば、コーパスの範囲で
+  # Kotlin 実装と同じ挙動であることが確定する (ADR-0008)。
+  ios:
+    name: iOS (Swift)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode のバージョン
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: SpectreCore / SpectreUI のビルド
+        working-directory: clients/ios
+        run: swift build
+
+      - name: 適合性テスト
+        working-directory: clients/ios
+        run: swift test
+
+      # SpectreUI の本来の対象は iOS。macOS でのビルドが通っても
+      # iOS 固有 API の解決までは保証されないため、実機向けにも通す。
+      - name: SpectreUI を iOS 向けにビルド
+        working-directory: clients/ios
+        run: |
+          xcodebuild build \
+            -scheme SpectreUI \
+            -destination 'generic/platform=iOS' \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO
+
+  # サンプルアプリは XcodeGen でプロジェクトを生成してからビルドする。
+  # .xcodeproj をコミットしない方針 (情報源は project.yml) の裏取りでもある。
+  ios-sample:
+    name: iOS sample app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: XcodeGen の導入
+        run: brew install xcodegen
+
+      - name: プロジェクト生成
+        working-directory: clients/ios/SampleApp
+        run: xcodegen generate
+
+      - name: サンプルアプリのビルド
+        working-directory: clients/ios/SampleApp
+        run: |
+          xcodebuild build \
+            -project SpectreSample.xcodeproj \
+            -scheme SpectreSample \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

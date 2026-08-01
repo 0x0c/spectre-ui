@@ -1,0 +1,67 @@
+{
+  "name": "operators: arithmetic, comparison, logic, ternary",
+  "$comment": "&& と || は真偽値を返す (オペランドではない)。値のフォールバックには coalesce/default を使う。",
+  "scope": {
+    "data": { "price": 6800, "listPrice": 8500, "stock": 3, "name": "ケトル", "empty": "", "nil": null },
+    "state": { "agreed": true, "adding": false },
+    "env": { "platform": "ios", "locale": "ja-JP", "appVersion": "3.14.0" }
+  },
+  "cases": [
+    { "expr": "${1 + 2}", "expect": 3 },
+    { "expr": "${5 - 8}", "expect": -3 },
+    { "expr": "${4 * 2.5}", "expect": 10 },
+    { "expr": "${7 / 2}", "expect": 3.5 },
+    { "expr": "${7 % 3}", "expect": 1 },
+    { "expr": "${3 / 0}", "expect": null, "error": "E_TYPE" },
+    { "expr": "${-data.stock}", "expect": -3 },
+
+    { "expr": "${'a' + 'b'}", "expect": "ab" },
+    { "expr": "${'qty: ' + 2}", "expect": "qty: 2" },
+    { "expr": "${2 + ' items'}", "expect": "2 items" },
+    { "expr": "${'a' - 1}", "expect": null, "error": "E_TYPE" },
+    { "expr": "${true + 1}", "expect": null, "error": "E_TYPE" },
+
+    { "expr": "${data.stock > 0}", "expect": true },
+    { "expr": "${data.stock >= 3}", "expect": true },
+    { "expr": "${data.stock < 3}", "expect": false },
+    { "expr": "${data.stock <= 3}", "expect": true },
+    { "expr": "${'abc' < 'abd'}", "expect": true },
+    { "expr": "${1 < 'a'}", "expect": null, "error": "E_TYPE" },
+
+    { "expr": "${1 == 1}", "expect": true },
+    { "expr": "${1 == '1'}", "expect": false },
+    { "expr": "${1 != '1'}", "expect": true },
+    { "expr": "${null == null}", "expect": true },
+    { "expr": "${data.nil == null}", "expect": true },
+    { "expr": "${'x' == 'x'}", "expect": true },
+    { "expr": "${[1, 2] == [1, 2]}", "expect": true },
+    { "expr": "${[1, 2] == [2, 1]}", "expect": false },
+    { "expr": "${{\"a\": 1} == {\"a\": 1}}", "expect": true },
+
+    { "expr": "${true && true}", "expect": true },
+    { "expr": "${true && false}", "expect": false },
+    { "expr": "${false || true}", "expect": true },
+    { "expr": "${false || false}", "expect": false },
+    { "expr": "${!true}", "expect": false },
+    { "expr": "${!data.empty}", "expect": true },
+    { "expr": "${state.agreed && !state.adding}", "expect": true },
+    { "expr": "${data.stock > 0 && data.stock < 10}", "expect": true },
+
+    { "$comment": "短絡評価: 左辺が偽なら右辺は評価されない (右辺のエラーが記録されない)",
+      "expr": "${false && ('a' - 1)}", "expect": false },
+    { "expr": "${true || ('a' - 1)}", "expect": true },
+
+    { "expr": "${data.stock > 0 ? '在庫あり' : '在庫切れ'}", "expect": "在庫あり" },
+    { "expr": "${data.stock > 100 ? '在庫あり' : '在庫切れ'}", "expect": "在庫切れ" },
+    { "expr": "${data.nil ? 1 : 2}", "expect": 2 },
+
+    { "$comment": "演算子の優先順位", "expr": "${1 + 2 * 3}", "expect": 7 },
+    { "expr": "${(1 + 2) * 3}", "expect": 9 },
+    { "expr": "${1 + 2 > 2 && 3 < 4}", "expect": true },
+    { "expr": "${!false && true}", "expect": true },
+    { "expr": "${2 - 1 - 1}", "expect": 0 },
+    { "expr": "${8 / 4 / 2}", "expect": 1 },
+
+    { "$comment": "割引率の実例", "expr": "${round((1 - data.price / data.listPrice) * 100)}", "expect": 20 }
+  ]
+}

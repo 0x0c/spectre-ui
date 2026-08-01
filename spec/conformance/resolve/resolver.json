@@ -1,0 +1,404 @@
+{
+  "name": "resolver: visibleWhen, repeat, fallback, degradation",
+  "$comment": "expect は正規化された RenderTree。props はソースに現れたキーのみを含み、式は解決済み。既定値の適用は描画時であって解決時ではない。",
+  "cases": [
+    {
+      "name": "visibleWhen false のノードは木から除外される",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "stock": 0 },
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "id": "a", "props": { "text": "always" } },
+            { "type": "Badge", "id": "b", "props": { "text": "在庫あり" }, "visibleWhen": "${data.stock > 0}" },
+            { "type": "Text", "id": "c", "props": { "text": "after" } }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "id": "a", "props": { "text": "always" } },
+          { "type": "Text", "id": "c", "props": { "text": "after" } }
+        ]
+      }
+    },
+
+    {
+      "name": "visibleWhen true のノードは残り、式は解決される",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "stock": 3 },
+        "root": {
+          "type": "Badge",
+          "id": "b",
+          "props": { "text": "残り${data.stock}点", "tone": "warning" },
+          "visibleWhen": "${data.stock > 0 && data.stock < 10}"
+        }
+      },
+      "expect": { "type": "Badge", "id": "b", "props": { "text": "残り3点", "tone": "warning" } }
+    },
+
+    {
+      "name": "repeat はノード自身を反復し、item と index をスコープに導入する",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [{ "id": "a", "name": "Alpha" }, { "id": "b", "name": "Beta" }] },
+        "root": {
+          "type": "List",
+          "children": [
+            {
+              "type": "Text",
+              "id": "row",
+              "repeat": { "for": "${data.items}", "as": "item", "indexAs": "index", "key": "${item.id}" },
+              "props": { "text": "${index}: ${item.name}" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "List",
+        "children": [
+          { "type": "Text", "id": "row", "key": "a", "props": { "text": "0: Alpha" } },
+          { "type": "Text", "id": "row", "key": "b", "props": { "text": "1: Beta" } }
+        ]
+      }
+    },
+
+    {
+      "name": "repeat の as/indexAs は既定で item/index",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": ["x", "y"] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "repeat": { "for": "${data.items}" }, "props": { "text": "${index}=${item}" } }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "props": { "text": "0=x" } },
+          { "type": "Text", "props": { "text": "1=y" } }
+        ]
+      }
+    },
+
+    {
+      "name": "repeat の対象が空なら emptyView に置き換わる",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Text",
+              "repeat": {
+                "for": "${data.items}",
+                "emptyView": { "type": "Text", "id": "empty", "props": { "text": "該当なし" } }
+              },
+              "props": { "text": "${item}" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [{ "type": "Text", "id": "empty", "props": { "text": "該当なし" } }]
+      }
+    },
+
+    {
+      "name": "repeat の対象が空で emptyView がなければ何も出力しない",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [] },
+        "root": {
+          "type": "VStack",
+          "children": [{ "type": "Text", "repeat": { "for": "${data.items}" }, "props": { "text": "${item}" } }]
+        }
+      },
+      "expect": { "type": "VStack", "children": [] }
+    },
+
+    {
+      "name": "repeat の for が配列でなければ何も出力しない",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": null },
+        "root": {
+          "type": "VStack",
+          "children": [{ "type": "Text", "repeat": { "for": "${data.items}" }, "props": { "text": "${item}" } }]
+        }
+      },
+      "expect": { "type": "VStack", "children": [] }
+    },
+
+    {
+      "name": "repeat の limit で件数が切り詰められる",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [1, 2, 3, 4, 5] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "repeat": { "for": "${data.items}", "limit": 2 }, "props": { "text": "${item}" } }
+          ]
+        }
+      },
+      "$comment": "`\"${item}\"` は文字列全体がひとつの式なので型が保存される。item が数値なら text も数値のまま解決され、文字列化はレンダラが行う (docs/spec/expression.md §1)。",
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "props": { "text": 1 } },
+          { "type": "Text", "props": { "text": 2 } }
+        ]
+      }
+    },
+
+    {
+      "name": "repeat と visibleWhen の併用: 各要素ごとに判定される",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [{ "n": 1 }, { "n": 5 }, { "n": 9 }] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Text",
+              "repeat": { "for": "${data.items}" },
+              "visibleWhen": "${item.n > 3}",
+              "props": { "text": "${item.n}" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "props": { "text": 5 } },
+          { "type": "Text", "props": { "text": 9 } }
+        ]
+      }
+    },
+
+    {
+      "name": "補間を混ぜると文字列になる — 型が保存されるのは式が単独のときだけ",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "n": 7 },
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "id": "bare", "props": { "text": "${data.n}" } },
+            { "type": "Text", "id": "mixed", "props": { "text": "${data.n}件" } }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "id": "bare", "props": { "text": 7 } },
+          { "type": "Text", "id": "mixed", "props": { "text": "7件" } }
+        ]
+      }
+    },
+
+    {
+      "name": "未知の type は fallback に置換され、fallback 内の式も解決される",
+      "capabilities": { "components": ["VStack", "Text", "Image"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "banners": [{ "imageUrl": "https://cdn.example.com/1.jpg" }] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "id": "car",
+              "props": { "items": "${data.banners}" },
+              "fallback": {
+                "type": "Image",
+                "id": "car_fb",
+                "props": { "url": "${first(data.banners).imageUrl}" }
+              }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Image", "id": "car_fb", "props": { "url": "https://cdn.example.com/1.jpg" } }
+        ]
+      },
+      "expectDegradations": [{ "nodeType": "Carousel", "degradedTo": "fallback" }]
+    },
+
+    {
+      "name": "未知の type で optional なら省略される",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "id": "a", "props": { "text": "before" } },
+            { "type": "Carousel", "id": "car", "optional": true },
+            { "type": "Text", "id": "b", "props": { "text": "after" } }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "id": "a", "props": { "text": "before" } },
+          { "type": "Text", "id": "b", "props": { "text": "after" } }
+        ]
+      },
+      "expectDegradations": [{ "nodeType": "Carousel", "degradedTo": "omitted" }]
+    },
+
+    {
+      "name": "未知の type で fallback も optional もなければ省略し、劣化として記録する",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "id": "a", "props": { "text": "before" } },
+            { "type": "Carousel", "id": "car" }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [{ "type": "Text", "id": "a", "props": { "text": "before" } }]
+      },
+      "expectDegradations": [{ "nodeType": "Carousel", "degradedTo": "omitted" }]
+    },
+
+    {
+      "name": "fallback 自体も未知なら再帰的に劣化する",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "fallback": {
+                "type": "Marquee",
+                "fallback": { "type": "Text", "id": "deep", "props": { "text": "最終手段" } }
+              }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [{ "type": "Text", "id": "deep", "props": { "text": "最終手段" } }]
+      }
+    },
+
+    {
+      "name": "未知の props キーは無視され、既知のキーだけが残る",
+      "capabilities": { "components": ["Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "Text",
+          "id": "a",
+          "props": { "text": "hello", "quantumShading": true }
+        }
+      },
+      "expect": { "type": "Text", "id": "a", "props": { "text": "hello" } }
+    },
+
+    {
+      "name": "layout / style / a11y の式も解決される",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "product": { "name": "ケトル", "rating": 4.6 } },
+        "root": {
+          "type": "Image",
+          "id": "hero",
+          "props": { "url": "https://cdn.example.com/1.jpg" },
+          "layout": { "width": "fill", "padding": "md" },
+          "style": { "radius": "md", "background": "surfaceVariant" },
+          "a11y": { "label": "${data.product.name}の商品画像", "role": "image" }
+        }
+      },
+      "expect": {
+        "type": "Image",
+        "id": "hero",
+        "props": { "url": "https://cdn.example.com/1.jpg" },
+        "layout": { "width": "fill", "padding": "md" },
+        "style": { "radius": "md", "background": "surfaceVariant" },
+        "a11y": { "label": "ケトルの商品画像", "role": "image" }
+      }
+    },
+
+    {
+      "name": "state の初期値が式から読める",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "max": 5 },
+        "state": { "qty": 2 },
+        "root": {
+          "type": "Text",
+          "props": { "text": "${state.qty} / ${data.max}" }
+        }
+      },
+      "expect": { "type": "Text", "props": { "text": "2 / 5" } }
+    },
+
+    {
+      "name": "アクション内の式は解決時ではなくディスパッチ時に評価されるため、そのまま保持される",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "state": { "qty": 1 },
+        "root": {
+          "type": "Button",
+          "id": "inc",
+          "props": {
+            "label": "追加",
+            "onTap": [{ "type": "setState", "path": "qty", "value": "${state.qty + 1}" }]
+          }
+        }
+      },
+      "expect": {
+        "type": "Button",
+        "id": "inc",
+        "props": {
+          "label": "追加",
+          "onTap": [{ "type": "setState", "path": "qty", "value": "${state.qty + 1}" }]
+        }
+      }
+    }
+  ]
+}

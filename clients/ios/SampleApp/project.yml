@@ -1,0 +1,45 @@
+# XcodeGen 用の定義。`xcodegen generate` で SpectreSample.xcodeproj を作る。
+#
+# .xcodeproj をリポジトリにコミットしないのは、手で編集される巨大な生成物であり
+# コンフリクトの温床になるため。プロジェクト構成の情報源はこのファイルにする。
+#
+#   brew install xcodegen
+#   cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+name: SpectreSample
+options:
+  bundleIdPrefix: dev.spectre
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  SpectreUI:
+    path: ../
+
+targets:
+  SpectreSample:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      # サンプル画面の JSON は examples/ を単一の情報源として参照する。
+      # コピーを置くと必ず古くなるため。
+      - path: ../../../examples
+        name: examples
+        buildPhase: resources
+        type: folder
+    dependencies:
+      - package: SpectreUI
+        product: SpectreUI
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Spectre Sample
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.spectre.sample
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"

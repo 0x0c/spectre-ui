@@ -10,8 +10,37 @@ Android のネイティブSDK（Software Development Kit、ソフトウェア開
 は、Web の**WYSIWYG（What You See Is What You Get、見たままが得られる）エディタ**から編集して公開
 できます。画面は、あらかじめ定義された**コンポーネントカタログ**の組み合わせで作ります。
 
-本リポジトリは**設計フェーズ**にあり、実装コードはまだありません。ここにあるのは、技術選定と仕様を
-記録したドキュメントです。
+本リポジトリは**クライアント実装フェーズ**にあります。技術選定と仕様を記録したドキュメントに加えて、
+iOS と Android のランタイムと、プラットフォームごとのレンダラを置いています。サーバを立てずに
+UI定義ドキュメントを描画するサンプルアプリもあります。エディタ（マイルストーンM2）と配信基盤
+（マイルストーンM3）は未着手です。各部分が何を含み、どう検証しているかは
+[docs/roadmap.md](docs/roadmap.md) に記録しています。
+
+## 動かす
+
+適合性コーパスとランタイムのテストは Android SDK を必要としないので、チェックアウトしただけの状態で
+ライブラリのロジックを検証できます。それ以外のコマンドは、各プラットフォームのツールチェインを必要と
+します。
+
+```bash
+# 適合性コーパスとランタイムのテスト（Android SDK 不要）
+cd clients/android && ./gradlew :spectre-core:test
+
+# 生成されたカタログがコンポーネントマニフェストと一致しているか（node が必要）
+node packages/codegen/generate.mjs --check
+
+# Android サンプルアプリ（Android SDK が必要）
+cd clients/android && ./gradlew :sample:installDebug
+
+# iOS のランタイムテスト（Xcode が必要）
+cd clients/ios && swift test
+
+# iOS サンプルアプリ（XcodeGen が必要）
+cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+```
+
+CI（Continuous Integration、継続的インテグレーション）は、上記のすべてのコマンドをプルリクエストごと
+に実行します。ジョブの定義は [.github/workflows/ci.yml](.github/workflows/ci.yml) にあります。
 
 **ロードマップ項目一覧: https://0x0c.github.io/spectre-ui/**
 

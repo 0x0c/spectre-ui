@@ -1,0 +1,22 @@
+{
+  "name": "locale-dependent formatting (advisory)",
+  "advisory": true,
+  "$comment": "書式関数は各プラットフォームのネイティブフォーマッタに委譲するため、出力の完全一致は要求しない (docs/spec/expression.md §4)。ランナーは expect ではなく contains / matches のみを検査する。JDK・ICU・OSバージョンで通貨記号や区切りが変わりうるため。",
+  "scope": {
+    "data": { "price": 1280, "big": 1234567.891, "rate": 0.1234, "date": "2026-03-05T09:30:00Z" },
+    "state": {},
+    "env": { "platform": "ios", "locale": "ja-JP", "timeZone": "Asia/Tokyo", "appVersion": "3.14.0" }
+  },
+  "cases": [
+    { "expr": "${formatNumber(data.big)}", "contains": ["1,234,567"] },
+    { "expr": "${formatNumber(data.price)}", "contains": ["1,280"] },
+    { "expr": "${formatNumber(data.big, {\"maxFractionDigits\": 2})}", "contains": ["1,234,567.89"] },
+    { "expr": "${formatNumber(data.price, {\"grouping\": false})}", "contains": ["1280"] },
+    { "expr": "${formatCurrency(data.price, 'JPY')}", "contains": ["1,280"], "matches": "^[^0-9]*1,280$" },
+    { "expr": "${formatCurrency(data.price, 'USD')}", "contains": ["1,280"] },
+    { "expr": "${formatPercent(data.rate, 1)}", "contains": ["12.3"] },
+    { "expr": "${formatDate(data.date, 'short')}", "matches": ".*2026.*|.*26.*" },
+    { "expr": "${formatDate(data.date, 'medium')}", "contains": ["2026"] },
+    { "expr": "${formatDate('not-a-date', 'short')}", "expect": null, "error": "E_TYPE" }
+  ]
+}

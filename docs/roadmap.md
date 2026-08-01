@@ -4,6 +4,49 @@
 [`roadmaps/`](../roadmaps/README-ja.md) 以下に、1項目1ディレクトリで日英両方の提案として置いています。
 下の各マイルストーンは、対応する項目 SU-0001〜SU-0005 に対応します。
 
+## 実装状況 (現時点)
+
+M0 と M1 の大半が入っている。**まだ実装していないのはエディタ (M2) と配信基盤 (M3)**。
+
+| 領域 | 状態 | 検証 |
+| --- | --- | --- |
+| コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) + CI のドリフト検査 |
+| 適合性コーパス | 実装済み (234ケース) | — |
+| Kotlin ランタイム (spectre-core) | 実装済み | **265 テスト green** |
+| Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
+| Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
+| SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
+| 差分再解決 | 未実装 | 依存パス抽出まで用意、未接続 |
+| `applyPatch` / `focus` / `scrollTo` | 未実装 | 効果を通知するところまで |
+| 配信・キャッシュ (DocumentLoader) | 未実装 | サンプルはローカル JSON を読む |
+| エディタ (M2) / 配信基盤 (M3) | 未実装 | — |
+
+### 検証の分担
+
+開発環境によっては、iOS と Android のコンパイルを検証できません。Swift のツールチェインが
+入っていない、`dl.google.com` へ到達できず AGP と androidx を取得できない、といった事情があるためです。
+
+そこで `clients/android/settings.gradle.kts` は、Android SDK が見つからないときに `:spectre-ui` と
+`:sample` をスキップします。**ロジックのテストだけは、どの環境でも実行できます。**
+
+コンパイル検証は CI（Continuous Integration、継続的インテグレーション）が担います。
+ジョブの定義は [.github/workflows/ci.yml](../.github/workflows/ci.yml) にあります。
+
+| ジョブ | ランナー | 内容 |
+| --- | --- | --- |
+| `core` | Ubuntu | `:spectre-core:test` — 適合性コーパスとランタイム |
+| `codegen` | Ubuntu | 生成物がマニフェストとずれていないか + 仕様 JSON の構文 |
+| `android` | Ubuntu | `:spectre-ui` / `:sample` のビルド |
+| `ios` | macos | `swift build` / `swift test` + iOS 向け `xcodebuild` |
+| `ios-sample` | macos | XcodeGen でプロジェクトを生成してサンプルアプリをビルド |
+
+手元で全部を確かめたいときは、Android SDK と Xcode のある環境で以下を実行する。
+
+```sh
+cd clients/android && ./gradlew build
+cd clients/ios && swift test
+```
+
 ## マイルストーン
 
 見積もりは「フルタイム換算の人週」。前提: iOS 1名、Android 1名、Web/サーバ 1〜2名。

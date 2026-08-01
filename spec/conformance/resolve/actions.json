@@ -1,0 +1,203 @@
+{
+  "name": "action dispatcher: state transitions and recorded effects",
+  "$comment": "effects は SDK がホストアプリ/UI層へ渡した副作用の記録。request の応答はケースごとに responses で与える。",
+  "cases": [
+    {
+      "name": "setState はパスに値を書き込み、式が評価される",
+      "state": { "qty": 1 },
+      "actions": [{ "type": "setState", "path": "qty", "value": "${state.qty + 1}" }],
+      "expectState": { "qty": 2 },
+      "expectEffects": []
+    },
+    {
+      "name": "setState は逐次適用され、後続は前の結果を見る",
+      "state": { "qty": 1 },
+      "actions": [
+        { "type": "setState", "path": "qty", "value": "${state.qty + 1}" },
+        { "type": "setState", "path": "qty", "value": "${state.qty * 10}" }
+      ],
+      "expectState": { "qty": 20 }
+    },
+    {
+      "name": "setState はネストしたパスを作成する",
+      "state": {},
+      "actions": [{ "type": "setState", "path": "form.email", "value": "a@example.com" }],
+      "expectState": { "form": { "email": "a@example.com" } }
+    },
+    {
+      "name": "setState の patch 形式は複数キーを同時に書く",
+      "state": { "form": { "email": "x", "name": "y" }, "other": 1 },
+      "actions": [{ "type": "setState", "patch": { "form.email": "", "form.name": "" } }],
+      "expectState": { "form": { "email": "", "name": "" }, "other": 1 }
+    },
+    {
+      "name": "toggleState は真偽値を反転する。未設定は false 扱い",
+      "state": { "expanded": false },
+      "actions": [
+        { "type": "toggleState", "path": "expanded" },
+        { "type": "toggleState", "path": "neverSet" }
+      ],
+      "expectState": { "expanded": true, "neverSet": true }
+    },
+    {
+      "name": "condition は if の真偽で分岐する",
+      "state": { "agreed": false },
+      "actions": [
+        {
+          "type": "condition",
+          "if": "${state.agreed}",
+          "then": [{ "type": "setState", "path": "result", "value": "yes" }],
+          "else": [{ "type": "setState", "path": "result", "value": "no" }]
+        }
+      ],
+      "expectState": { "agreed": false, "result": "no" }
+    },
+    {
+      "name": "sequence は入れ子のアクションを展開する",
+      "state": { "n": 0 },
+      "actions": [
+        {
+          "type": "sequence",
+          "actions": [
+            { "type": "setState", "path": "n", "value": "${state.n + 1}" },
+            { "type": "setState", "path": "n", "value": "${state.n + 1}" }
+          ]
+        }
+      ],
+      "expectState": { "n": 2 }
+    },
+    {
+      "name": "request 成功時は loadingPath が false に戻り onSuccess が走る",
+      "state": {},
+      "data": { "product": { "id": "SKU-1" } },
+      "responses": { "cart.add": { "ok": true, "body": { "state": { "cartCount": 3 } } } },
+      "actions": [
+        {
+          "type": "request",
+          "endpoint": "cart.add",
+          "method": "POST",
+          "loadingPath": "adding",
+          "body": { "productId": "${data.product.id}" },
+          "onSuccess": [{ "type": "showOverlay", "id": "added_toast" }]
+        }
+      ],
+      "expectState": { "adding": false, "cartCount": 3 },
+      "expectEffects": [
+        { "type": "request", "endpoint": "cart.add", "method": "POST", "body": { "productId": "SKU-1" } },
+        { "type": "showOverlay", "id": "added_toast" }
+      ]
+    },
+    {
+      "name": "request 失敗時は onError が走り、error スコープが参照できる",
+      "state": {},
+      "responses": {
+        "cart.add": { "ok": false, "body": { "error": { "code": "OUT_OF_STOCK", "message": "在庫がありません" } } }
+      },
+      "actions": [
+        {
+          "type": "request",
+          "endpoint": "cart.add",
+          "loadingPath": "adding",
+          "onSuccess": [{ "type": "setState", "path": "reached", "value": "success" }],
+          "onError": [{ "type": "setState", "path": "msg", "value": "${error.message}" }]
+        }
+      ],
+      "expectState": { "adding": false, "msg": "在庫がありません" }
+    },
+    {
+      "name": "登録されていない endpoint は onError に落ちる",
+      "state": {},
+      "responses": {},
+      "actions": [
+        {
+          "type": "request",
+          "endpoint": "not.registered",
+          "onError": [{ "type": "setState", "path": "code", "value": "${error.code}" }]
+        }
+      ],
+      "expectState": { "code": "ENDPOINT_NOT_REGISTERED" }
+    },
+    {
+      "name": "既定ではエラーで後続アクションを中止する",
+      "state": {},
+      "responses": { "a.fail": { "ok": false, "body": { "error": { "code": "X" } } } },
+      "actions": [
+        { "type": "setState", "path": "step", "value": 1 },
+        { "type": "request", "endpoint": "a.fail" },
+        { "type": "setState", "path": "step", "value": 2 }
+      ],
+      "expectState": { "step": 1 }
+    },
+    {
+      "name": "continueOnError が true なら後続を続行する",
+      "state": {},
+      "responses": { "a.fail": { "ok": false, "body": { "error": { "code": "X" } } } },
+      "actions": [
+        { "type": "setState", "path": "step", "value": 1 },
+        { "type": "request", "endpoint": "a.fail", "continueOnError": true },
+        { "type": "setState", "path": "step", "value": 2 }
+      ],
+      "expectState": { "step": 2 }
+    },
+    {
+      "name": "未知のアクション種別は無視して次へ進む",
+      "state": {},
+      "actions": [
+        { "type": "setState", "path": "a", "value": 1 },
+        { "type": "teleport", "destination": "mars" },
+        { "type": "setState", "path": "b", "value": 2 }
+      ],
+      "expectState": { "a": 1, "b": 2 },
+      "expectEffects": [{ "type": "unknownAction", "name": "teleport" }]
+    },
+    {
+      "name": "required な未知アクションは fallbackActions を実行する",
+      "state": {},
+      "actions": [
+        {
+          "type": "teleport",
+          "required": true,
+          "fallbackActions": [{ "type": "setState", "path": "fellBack", "value": true }]
+        }
+      ],
+      "expectState": { "fellBack": true }
+    },
+    {
+      "name": "track / navigate / openUrl は副作用として記録される",
+      "state": {},
+      "data": { "product": { "id": "SKU-1" } },
+      "actions": [
+        { "type": "track", "event": "cart_add", "properties": { "sku": "${data.product.id}" } },
+        { "type": "navigate", "mode": "push", "screen": "cart", "params": { "from": "${data.product.id}" } },
+        { "type": "openUrl", "url": "https://example.com/help", "mode": "inApp" }
+      ],
+      "expectEffects": [
+        { "type": "track", "event": "cart_add", "properties": { "sku": "SKU-1" } },
+        { "type": "navigate", "mode": "push", "screen": "cart", "params": { "from": "SKU-1" } },
+        { "type": "openUrl", "url": "https://example.com/help", "mode": "inApp" }
+      ]
+    },
+    {
+      "name": "アクション総数の上限を超えると打ち切られる",
+      "state": { "n": 0 },
+      "limits": { "maxActionsPerDispatch": 3 },
+      "actions": [
+        { "type": "setState", "path": "n", "value": "${state.n + 1}" },
+        { "type": "setState", "path": "n", "value": "${state.n + 1}" },
+        { "type": "setState", "path": "n", "value": "${state.n + 1}" },
+        { "type": "setState", "path": "n", "value": "${state.n + 1}" },
+        { "type": "setState", "path": "n", "value": "${state.n + 1}" }
+      ],
+      "expectState": { "n": 3 },
+      "expectEffects": [{ "type": "limitExceeded", "limit": "maxActionsPerDispatch" }]
+    },
+    {
+      "name": "data は setState で書き換えられない",
+      "state": {},
+      "data": { "readonly": 1 },
+      "actions": [{ "type": "setState", "path": "data.readonly", "value": 999 }],
+      "expectState": { "data": { "readonly": 999 } },
+      "$comment": "path は state 相対なので state.data.readonly が作られるだけ。data スコープは不変のまま"
+    }
+  ]
+}

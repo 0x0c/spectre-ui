@@ -1,0 +1,64 @@
+{
+  "name": "string interpolation, stringification, truthiness",
+  "scope": {
+    "data": {
+      "name": "ケトル",
+      "price": 1280,
+      "ratio": 4.5,
+      "stock": 0,
+      "nil": null,
+      "flag": true,
+      "arr": [1, 2],
+      "obj": { "a": 1 },
+      "emptyArr": [],
+      "emptyObj": {},
+      "multi": { "z": "last", "a": 1, "b": true },
+      "nested": { "inner": { "k": [1, 2] } }
+    },
+    "state": { "qty": 3 },
+    "env": { "platform": "ios", "locale": "ja-JP", "appVersion": "3.14.0" }
+  },
+  "cases": [
+    { "$comment": "文字列全体がちょうど1つの ${...} なら型が保存される",
+      "expr": "${data.price}", "expect": 1280 },
+    { "expr": "${data.flag}", "expect": true },
+    { "expr": "${data.arr}", "expect": [1, 2] },
+    { "expr": "${data.nil}", "expect": null },
+
+    { "$comment": "それ以外は文字列補間", "expr": "価格: ${data.price}円", "expect": "価格: 1280円" },
+    { "expr": "${data.name}を${state.qty}点", "expect": "ケトルを3点" },
+    { "expr": "${data.price}", "expect": 1280 },
+    { "expr": " ${data.price}", "expect": " 1280" },
+    { "expr": "${data.price} ", "expect": "1280 " },
+    { "expr": "${data.price}${state.qty}", "expect": "12803" },
+
+    { "$comment": "補間なしの素の文字列はそのまま", "expr": "ただの文字列", "expect": "ただの文字列" },
+    { "expr": "", "expect": "" },
+
+    { "$comment": "$$ { でリテラルの ${ をエスケープ", "expr": "$${data.price}", "expect": "${data.price}" },
+
+    { "$comment": "文字列化の規則", "expr": "n=${data.nil}", "expect": "n=" },
+    { "expr": "b=${data.flag}", "expect": "b=true" },
+    { "expr": "i=${data.price}", "expect": "i=1280" },
+    { "expr": "f=${data.ratio}", "expect": "f=4.5" },
+    { "expr": "a=${data.arr}", "expect": "a=[1,2]" },
+    { "expr": "o=${data.obj}", "expect": "o={\"a\":1}" },
+    { "$comment": "オブジェクトの文字列化はキーを辞書順に固定する。Swift の Dictionary は順序を持たないため、挿入順に依存すると iOS と Android で出力が食い違う。",
+      "expr": "o=${data.multi}", "expect": "o={\"a\":1,\"b\":true,\"z\":\"last\"}" },
+    { "expr": "nested=${data.nested}", "expect": "nested={\"inner\":{\"k\":[1,2]}}" },
+    { "expr": "calc=${1 / 4}", "expect": "calc=0.25" },
+    { "expr": "whole=${10 / 2}", "expect": "whole=5" },
+
+    { "$comment": "真偽判定 (visibleWhen などが boolean を要求する文脈)",
+      "expr": "${!!data.flag}", "expect": true, "asBoolean": true },
+    { "expr": "${data.stock}", "expect": 0, "asBoolean": false },
+    { "expr": "${data.price}", "expect": 1280, "asBoolean": true },
+    { "expr": "${data.nil}", "expect": null, "asBoolean": false },
+    { "expr": "${''}", "expect": "", "asBoolean": false },
+    { "expr": "${'x'}", "expect": "x", "asBoolean": true },
+    { "expr": "${data.emptyArr}", "expect": [], "asBoolean": false },
+    { "expr": "${data.arr}", "expect": [1, 2], "asBoolean": true },
+    { "expr": "${data.emptyObj}", "expect": {}, "asBoolean": false },
+    { "expr": "${data.obj}", "expect": { "a": 1 }, "asBoolean": true }
+  ]
+}
