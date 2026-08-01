@@ -23,7 +23,7 @@ struct TextView: View {
             .multilineTextAlignment(textAlignmentOf(node.token("align", default: "start")))
             .lineLimit(node.intOrNil("maxLines"))
             .truncationMode(node.token("truncation", default: "tail") == "middle" ? .middle : .tail)
-            .textSelection(node.bool("selectable", default: false) ? .enabled : .disabled)
+            .modifier(TextSelectionModifier(selectable: node.bool("selectable", default: false)))
             .frame(maxWidth: .infinity, alignment: frameAlignmentOf(node.token("align", default: "start")))
             .spectreNode(node)
     }
@@ -64,14 +64,17 @@ struct IconView: View {
     let node: RenderNode
     @Environment(\.spectreTheme) private var theme
 
-    var body: some View {
-        let size: CGFloat
+    /// body に明示的な return が無いと @ViewBuilder が適用され、代入文が
+    /// View 式として解釈されてしまう。寸法の決定は body の外に出す。
+    private var size: CGFloat {
         switch node.token("size", default: "md") {
-        case "sm": size = 16
-        case "lg": size = 32
-        default: size = 24
+        case "sm": return 16
+        case "lg": return 32
+        default: return 24
         }
+    }
 
+    var body: some View {
         Image(systemName: theme.symbol(node.token("name", default: "")))
             .resizable()
             .scaledToFit()
@@ -146,5 +149,22 @@ struct ProgressIndicatorView: View {
         }
         .tint(theme.color("primary", default: .accentColor))
         .spectreNode(node)
+    }
+}
+
+/// テキスト選択の可否。
+///
+/// `.enabled` と `.disabled` は別々の型 (`EnabledTextSelectability` /
+/// `DisabledTextSelectability`) なので三項演算子では選べない。分岐で切り替える。
+private struct TextSelectionModifier: ViewModifier {
+    let selectable: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if selectable {
+            content.textSelection(.enabled)
+        } else {
+            content.textSelection(.disabled)
+        }
     }
 }

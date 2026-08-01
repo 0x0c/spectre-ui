@@ -2,8 +2,8 @@ package dev.spectre.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
@@ -17,10 +17,10 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
@@ -170,20 +170,20 @@ internal val SpectreDefaultRadius: Map<String, Dp> = mapOf(
  * (docs/spec/components.md)。ここに無いトークンは情報アイコンに落ちる。
  */
 internal val SpectreDefaultIcons: Map<String, ImageVector> = mapOf(
-    "chevron.right" to Icons.Default.KeyboardArrowRight,
-    "chevron.left" to Icons.Default.KeyboardArrowLeft,
+    "chevron.right" to Icons.AutoMirrored.Filled.KeyboardArrowRight,
+    "chevron.left" to Icons.AutoMirrored.Filled.KeyboardArrowLeft,
     "chevron.up" to Icons.Default.KeyboardArrowUp,
     "chevron.down" to Icons.Default.KeyboardArrowDown,
-    "arrow.back" to Icons.Default.ArrowBack,
-    "arrow.forward" to Icons.Default.ArrowForward,
+    "arrow.back" to Icons.AutoMirrored.Filled.ArrowBack,
+    "arrow.forward" to Icons.AutoMirrored.Filled.ArrowForward,
     "close" to Icons.Default.Close,
     "clear" to Icons.Default.Clear,
     "check" to Icons.Default.Check,
     "plus" to Icons.Default.Add,
     "search" to Icons.Default.Search,
-    "filter" to Icons.Default.List,
-    "sort" to Icons.Default.List,
-    "list" to Icons.Default.List,
+    "filter" to Icons.AutoMirrored.Filled.List,
+    "sort" to Icons.AutoMirrored.Filled.List,
+    "list" to Icons.AutoMirrored.Filled.List,
     "menu" to Icons.Default.Menu,
     "heart" to Icons.Default.FavoriteBorder,
     "heart.fill" to Icons.Default.Favorite,

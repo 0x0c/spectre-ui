@@ -352,16 +352,19 @@ struct DatePickerView: View {
     let node: RenderNode
     @EnvironmentObject private var model: SpectreScreenModel
 
+    /// IconView と同じ理由で body の外に出す。@ViewBuilder の下では
+    /// 代入の switch が View 式として解釈される。
+    private var components: DatePickerComponents {
+        switch node.token("mode", default: "date") {
+        case "time": return [.hourAndMinute]
+        case "dateTime": return [.date, .hourAndMinute]
+        default: return [.date]
+        }
+    }
+
     var body: some View {
         if let bindTo = node.stringOrNil("bindTo") {
             let raw = model.stateValue(bindTo).stringify()
-            let components: DatePickerComponents
-            switch node.token("mode", default: "date") {
-            case "time": components = [.hourAndMinute]
-            case "dateTime": components = [.date, .hourAndMinute]
-            default: components = [.date]
-            }
-
             DatePicker(
                 node.stringOrNil("label") ?? "",
                 selection: Binding(

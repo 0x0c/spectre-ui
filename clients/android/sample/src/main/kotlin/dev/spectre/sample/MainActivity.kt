@@ -37,7 +37,7 @@ import dev.spectre.ui.rememberSpectreEnv
 /**
  * サーバードリブン UI のサンプル。
  *
- * サーバを立てる代わりに、examples/screens/*.json をアセットから読み込んで
+ * サーバを立てる代わりに、examples/screens 以下の JSON をアセットから読み込んで
  * そのまま描画する。配信経路が変わってもクライアント側の処理は同じで、
  * 「JSON を受け取って描画し、操作に反応する」ところを確認できる。
  */

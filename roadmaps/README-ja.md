@@ -25,6 +25,7 @@
 | [SU-0008](SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md) | ケイパビリティネゴシエーションとノード単位のフォールバック | 互換性 |
 | [SU-0009](SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) | 実機ミラープレビュー | エディタ |
 | [SU-0010](SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md) | 範囲を絞った最初のパイロット | 導入 |
+| [SU-0011](SU-0011-english-first-documentation/SU-0011-english-first-documentation-ja.md) | 英語を主とするドキュメント | ドキュメント |
 
 この表は全項目を列挙するだけのものです。進捗の正となるのは、この表ではなく各項目の `Status`
 フィールドです。

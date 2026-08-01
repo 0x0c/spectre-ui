@@ -23,18 +23,20 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 
 ### 検証の分担
 
-開発環境によっては iOS / Android のコンパイル検証ができない (Swift ツールチェインが無い、
-`dl.google.com` に到達できず AGP と androidx を取得できない、など)。そのため
-`clients/android/settings.gradle.kts` は Android SDK が見つからないときに `:spectre-ui` と
-`:sample` をスキップし、**ロジックのテストだけはどこでも回る**ようにしてある。
+開発環境によっては、iOS と Android のコンパイルを検証できません。Swift のツールチェインが
+入っていない、`dl.google.com` へ到達できず AGP と androidx を取得できない、といった事情があるためです。
 
-コンパイル検証は CI が担う ([.github/workflows/ci.yml](../.github/workflows/ci.yml))。
+そこで `clients/android/settings.gradle.kts` は、Android SDK が見つからないときに `:spectre-ui` と
+`:sample` をスキップします。**ロジックのテストだけは、どの環境でも実行できます。**
+
+コンパイル検証は CI（Continuous Integration、継続的インテグレーション）が担います。
+ジョブの定義は [.github/workflows/ci.yml](../.github/workflows/ci.yml) にあります。
 
 | ジョブ | ランナー | 内容 |
 | --- | --- | --- |
-| `core` | ubuntu | `:spectre-core:test` — 適合性コーパスとランタイム |
-| `codegen` | ubuntu | 生成物がマニフェストとずれていないか + 仕様 JSON の構文 |
-| `android` | ubuntu | `:spectre-ui` / `:sample` のビルド |
+| `core` | Ubuntu | `:spectre-core:test` — 適合性コーパスとランタイム |
+| `codegen` | Ubuntu | 生成物がマニフェストとずれていないか + 仕様 JSON の構文 |
+| `android` | Ubuntu | `:spectre-ui` / `:sample` のビルド |
 | `ios` | macos | `swift build` / `swift test` + iOS 向け `xcodebuild` |
 | `ios-sample` | macos | XcodeGen でプロジェクトを生成してサンプルアプリをビルド |
 
