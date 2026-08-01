@@ -52,6 +52,9 @@ jobs:
       - name: 生成物がマニフェストと同期しているか
         run: node packages/codegen/generate.mjs --check
 
+      - name: 生成された TypeScript 型が正しく型検査を通るか
+        run: npx --yes -p typescript@5 tsc -p packages/manifest/tsconfig.json
+
       - name: 仕様 JSON の構文チェック
         run: |
           set -euo pipefail
