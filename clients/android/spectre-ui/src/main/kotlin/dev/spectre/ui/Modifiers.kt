@@ -11,11 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.spectre.core.RenderNode
@@ -93,7 +99,46 @@ internal fun Modifier.spectreStyle(node: RenderNode): Modifier {
 /** layout と style をまとめて適用する。順序が意味を持つのでこの関数経由で使う。 */
 @Composable
 internal fun Modifier.spectreNode(node: RenderNode): Modifier =
-    this.spectreLayout(node).spectreStyle(node)
+    this.spectreLayout(node).spectreStyle(node).spectreScrollTarget(node)
+
+/**
+ * `scrollTo` アクション (docs/spec/actions.md) の着地点。id を持つノードすべてに
+ * 適用しておき、コントローラの [dev.spectre.ui.SpectreScreenController.scrollRequest]
+ * が自分の id を指した時点でスクロールして知らせる。
+ */
+@Composable
+internal fun Modifier.spectreScrollTarget(node: RenderNode): Modifier {
+    val nodeId = node.id ?: return this
+    val controller = LocalSpectreController.current
+    val requester = remember(nodeId) { BringIntoViewRequester() }
+    val request = controller.scrollRequest
+    LaunchedEffect(request) {
+        if (request != null && request.nodeId == nodeId) {
+            requester.bringIntoView()
+            controller.consumeScrollRequest()
+        }
+    }
+    return this.bringIntoViewRequester(requester)
+}
+
+/**
+ * `focus` アクションの着地点。フォーカスを受けられるコンポーネント (今のところ
+ * [dev.spectre.ui.components.TextFieldView]) だけが使う — Card や Text に付けても
+ * 意味がないため [spectreNode] には含めない。
+ */
+@Composable
+internal fun Modifier.spectreFocusTarget(node: RenderNode): Modifier {
+    val nodeId = node.id ?: return this
+    val controller = LocalSpectreController.current
+    val requester = remember(nodeId) { FocusRequester() }
+    LaunchedEffect(controller.focusRequest) {
+        if (controller.focusRequest == nodeId) {
+            requester.requestFocus()
+            controller.consumeFocusRequest()
+        }
+    }
+    return this.focusRequester(requester)
+}
 
 /**
  * Stack の中でだけ意味を持つ `weight` / `alignSelf`。

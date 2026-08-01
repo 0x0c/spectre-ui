@@ -1,5 +1,6 @@
 package dev.spectre.sample
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,16 +31,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.spectre.core.Document
-import dev.spectre.core.DocumentParser
+import dev.spectre.core.DocumentLoadResult
+import dev.spectre.core.DocumentLoader
+import dev.spectre.core.DocumentSource
+import dev.spectre.core.SpectreDocumentTransport
+import dev.spectre.core.SpectreDocumentTransportResult
 import dev.spectre.ui.SpectreScreen
 import dev.spectre.ui.rememberSpectreEnv
+import java.io.File
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 
 /**
  * サーバードリブン UI のサンプル。
  *
- * サーバを立てる代わりに、examples/screens 以下の JSON をアセットから読み込んで
- * そのまま描画する。配信経路が変わってもクライアント側の処理は同じで、
- * 「JSON を受け取って描画し、操作に反応する」ところを確認できる。
+ * サーバを立てる代わりに [AssetDocumentTransport] が assets 以下の JSON をネットワーク
+ * 応答のふりをして返す。それでも [DocumentLoader] は本物の配信経路と同じ形
+ * (メモリ→ディスク→バンドルの3層キャッシュ + stale-while-revalidate) で動くので、
+ * 画面を切り替えて戻す・オフラインを試すと挙動の違いが観察できる
+ * (docs/architecture.md §2)。
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,10 +62,34 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private data class SampleScreen(val label: String, val screenId: String, val assetPath: String)
+
 private val SAMPLE_SCREENS = listOf(
-    "商品詳細" to "screens/product-detail.json",
-    "通知設定" to "screens/settings-form.json",
+    SampleScreen("商品詳細", "product_detail", "screens/product-detail.json"),
+    SampleScreen("通知設定", "settings_form", "screens/settings-form.json"),
 )
+
+/** サンプル用の DocumentTransport。実アプリではここが実際の HTTPS クライアントになる。 */
+private class AssetDocumentTransport(private val context: Context) : SpectreDocumentTransport {
+    override suspend fun fetch(
+        screenId: String,
+        params: Map<String, String>,
+        ifNoneMatch: String?,
+    ): SpectreDocumentTransportResult {
+        val screen = SAMPLE_SCREENS.firstOrNull { it.screenId == screenId }
+            ?: return SpectreDocumentTransportResult.Failure("未知の screenId: $screenId")
+        delay(600) // ネットワーク往復の体感を出すための待ち (SampleHostDelegate と揃える)
+        val body = context.assets.open(screen.assetPath).bufferedReader().use { it.readText() }
+        val etag = body.hashCode().toString()
+        if (ifNoneMatch == etag) return SpectreDocumentTransportResult.NotModified
+        return SpectreDocumentTransportResult.Fresh(body, etag, maxAgeSec = 60)
+    }
+}
+
+private fun bundledDocument(context: Context, screenId: String): String? {
+    val screen = SAMPLE_SCREENS.firstOrNull { it.screenId == screenId } ?: return null
+    return context.assets.open(screen.assetPath).bufferedReader().use { it.readText() }
+}
 
 @Composable
 private fun SampleApp() {
@@ -63,20 +97,35 @@ private fun SampleApp() {
     var selected by remember { mutableStateOf(0) }
     var document by remember { mutableStateOf<Document?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var loadSource by remember { mutableStateOf<DocumentSource?>(null) }
     val eventLog = remember { mutableStateListOf<String>() }
 
     val host = remember { SampleHostDelegate(context) { line -> eventLog.add(0, line) } }
     val env = rememberSpectreEnv(appVersion = "1.0.0")
 
+    // ディスク層はアプリのキャッシュディレクトリ配下。ホストアプリはここを完全に制御できる
+    // (例: ログアウト時に消す、サイズ上限を設ける、など)。
+    val loader = remember {
+        DocumentLoader(
+            transport = AssetDocumentTransport(context),
+            cacheDir = File(context.cacheDir, "spectre-documents"),
+            bundledProvider = { screenId -> bundledDocument(context, screenId) },
+        )
+    }
+
     LaunchedEffect(selected) {
         eventLog.clear()
         loadError = null
-        document = runCatching {
-            val json = context.assets.open(SAMPLE_SCREENS[selected].second)
-                .bufferedReader()
-                .use { it.readText() }
-            DocumentParser.parse(json)
-        }.onFailure { loadError = it.message ?: it.toString() }.getOrNull()
+        loader.load(SAMPLE_SCREENS[selected].screenId).collect { result ->
+            when (result) {
+                is DocumentLoadResult.Loaded -> {
+                    document = result.document
+                    loadSource = result.source
+                    loadError = null
+                }
+                is DocumentLoadResult.Failed -> loadError = result.message
+            }
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -85,19 +134,26 @@ private fun SampleApp() {
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SAMPLE_SCREENS.forEachIndexed { index, (label, _) ->
+            SAMPLE_SCREENS.forEachIndexed { index, screen ->
                 FilterChip(
                     selected = index == selected,
                     onClick = { selected = index },
-                    label = { Text(label) },
+                    label = { Text(screen.label) },
                 )
             }
+        }
+        loadSource?.let {
+            Text(
+                "読み込み元: $it",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
         }
 
         Box(Modifier.weight(1f)) {
             val doc = document
             when {
-                loadError != null -> ErrorPanel(loadError!!)
+                loadError != null && doc == null -> ErrorPanel(loadError!!)
                 doc != null -> SpectreScreen(document = doc, host = host, env = env)
                 else -> Unit
             }

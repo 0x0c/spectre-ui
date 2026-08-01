@@ -16,6 +16,18 @@ public final class SpectreScreenModel: ObservableObject {
     @Published public private(set) var activeToast: RenderOverlay?
     /// 実行中の request があるか。プルリフレッシュのインジケータなどに使う。
     @Published public private(set) var isBusy = false
+    /// `focus` アクションが指定した nodeId。ビュー側がこれを見てフォーカスを移す。
+    @Published public private(set) var focusRequest: String?
+    /// `scrollTo` アクションが指定した対象。同じ nodeId への連続リクエストも見分けられるよう連番を持つ。
+    @Published public private(set) var scrollRequest: ScrollRequest?
+
+    public struct ScrollRequest: Equatable, Sendable {
+        public let nodeID: String
+        public let animated: Bool
+        public let seq: Int
+    }
+
+    private var scrollRequestSeq = 0
 
     public private(set) var document: Document?
     public private(set) var store: Store?
@@ -26,6 +38,9 @@ public final class SpectreScreenModel: ObservableObject {
     private let dispatcher: ActionDispatcher
     private let env: SpValue
     private var toastTask: Task<Void, Never>?
+
+    /// 直近の解決結果。差分再解決の入力として次回に渡す (docs/architecture.md §2)。
+    private var traced: TracedResolveResult?
 
     // ホストアプリ側が差し込むコールバック。SDK が扱えない遷移をここで受ける。
     public var onBack: (() -> Void)?
@@ -46,22 +61,27 @@ public final class SpectreScreenModel: ObservableObject {
 
     public func load(_ document: Document) {
         self.document = document
-        self.store = Store(data: document.data, state: document.state, env: env)
+        let store = Store(data: document.data, state: document.state, env: env)
+        self.store = store
         visibleOverlays.removeAll()
         activeToast = nil
-        reresolve()
+        let fresh = resolver.resolveTraced(document, scope: store.scope())
+        traced = fresh
+        render = fresh.result
         if !document.onAppear.isEmpty { dispatch(document.onAppear) }
     }
 
-    /// 木全体を解決し直す。
+    /// 木を再解決する。
     ///
-    /// 差分再解決 (変更された state パスに依存するノードだけを解決し直す) は
-    /// `Expr.dependencies()` で依存パスを取れるところまで用意してあるが、
-    /// まだ接続していない。上限 2,000 ノードの全解決で足りているうちは、
-    /// 単純さを優先する。
+    /// 変更された state/data のパスに依存しないノードは、`Resolver.reresolveTraced` が
+    /// 前回の `RenderNode` をそのまま使い回す。初回 (`load`) だけは比較対象がないため
+    /// 常に全解決になる。
     public func reresolve() {
-        guard let document, let store else { return }
-        render = resolver.resolve(document, scope: store.scope())
+        guard let document, let store, let previous = traced else { return }
+        let changed = store.consumeChangedPaths()
+        let next = resolver.reresolveTraced(document, previous: previous, changedPaths: changed, scope: store.scope())
+        traced = next
+        render = next.result
     }
 
     /// 入力コンポーネントの双方向バインド。
@@ -107,6 +127,16 @@ public final class SpectreScreenModel: ObservableObject {
         }
     }
 
+    /// [focusRequest] を消費する。ビューがフォーカスを移し終えたら呼ぶ。
+    public func consumeFocusRequest() {
+        focusRequest = nil
+    }
+
+    /// [scrollRequest] を消費する。ビューがスクロールし終えたら呼ぶ。
+    public func consumeScrollRequest() {
+        scrollRequest = nil
+    }
+
     private func apply(_ effect: SpectreUIEffect) {
         switch effect {
         case .showOverlay(let id): showOverlay(id)
@@ -115,13 +145,30 @@ public final class SpectreScreenModel: ObservableObject {
         case .dismiss: onDismiss?()
         case .refresh(let preserveState): onRefreshRequested?(preserveState)
         case .replaceScreen(let document): onReplaceScreen?(document)
-
-        // フォーカス移動・スクロール・部分更新は未実装。黙って無視すると
-        // 「動いていないことに気づけない」ので、ホストに通知して可視化する。
-        case .focus: onUnimplementedEffect?("focus")
-        case .scrollTo: onUnimplementedEffect?("scrollTo")
-        case .applyPatch: onUnimplementedEffect?("applyPatch")
+        case .focus(let nodeID): focusRequest = nodeID
+        case .scrollTo(let nodeID, let animated):
+            scrollRequestSeq += 1
+            scrollRequest = ScrollRequest(nodeID: nodeID, animated: animated, seq: scrollRequestSeq)
+        case .applyPatch(let operations): applyPatch(operations)
         }
+    }
+
+    /// `applyPatch` (RFC 6902)。パース前の生 JSON (`Document.raw`) に適用してから
+    /// 再パースする — 木構造は差し替わるが `store` はそのまま使い続けるので
+    /// `state`/`data` は保持される (docs/spec/actions.md `applyPatch`)。
+    private func applyPatch(_ operations: [SpValue]) {
+        guard let currentDocument = document, let store else { return }
+        guard let raw = currentDocument.raw else {
+            // DocumentParser を経由しない手組みの Document には適用しようがない。
+            onUnimplementedEffect?("applyPatch")
+            return
+        }
+        guard let patched = try? JsonPatch.apply(raw, operations),
+              let newDocument = try? DocumentParser.parse(value: patched) else { return }
+        document = newDocument
+        let fresh = resolver.resolveTraced(newDocument, scope: store.scope())
+        traced = fresh
+        render = fresh.result
     }
 
     private func showOverlay(_ id: String) {

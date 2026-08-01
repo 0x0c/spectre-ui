@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.spectre.core.ActionDispatcher
 import dev.spectre.core.Document
+import dev.spectre.core.DocumentParser
 import dev.spectre.core.GeneratedCatalog
+import dev.spectre.core.JsonPatch
 import dev.spectre.core.OverlayKind
 import dev.spectre.core.RenderOverlay
 import dev.spectre.core.ResolveResult
@@ -16,6 +18,7 @@ import dev.spectre.core.SpValue
 import dev.spectre.core.SpectreHostDelegate
 import dev.spectre.core.SpectreUiEffect
 import dev.spectre.core.Store
+import dev.spectre.core.TracedResolveResult
 import dev.spectre.core.asIntOrNull
 import dev.spectre.core.expr.TemplateEvaluator
 import dev.spectre.core.path
@@ -54,6 +57,9 @@ class SpectreScreenController(
     var store: Store? = null
         private set
 
+    /** 直近の解決結果。差分再解決の入力として次回に渡す (docs/architecture.md §2)。 */
+    private var traced: TracedResolveResult? = null
+
     /** 現在開いているシート/アラートの id。 */
     val visibleOverlays = mutableStateListOf<String>()
 
@@ -64,6 +70,18 @@ class SpectreScreenController(
     /** 実行中の request があるか。プルリフレッシュのインジケータなどに使う。 */
     var isBusy by mutableStateOf(false)
         private set
+
+    /** `focus` アクションが指定した nodeId。レンダラ側がこれを見てフォーカスを移す。 */
+    var focusRequest: String? by mutableStateOf(null)
+        private set
+
+    /** `scrollTo` アクションが指定した対象。同じ nodeId への連続リクエストも見分けられるよう連番を持つ。 */
+    var scrollRequest: ScrollRequest? by mutableStateOf(null)
+        private set
+
+    private var scrollRequestSeq = 0L
+
+    data class ScrollRequest(val nodeId: String, val animated: Boolean, val seq: Long)
 
     private var toastJob: Job? = null
 
@@ -76,22 +94,27 @@ class SpectreScreenController(
         )
         visibleOverlays.clear()
         activeToast = null
-        reresolve()
+        val fresh = resolver.resolveTraced(document, requireNotNull(store).scope())
+        traced = fresh
+        render = fresh.result
         if (document.onAppear.isNotEmpty()) dispatch(document.onAppear)
     }
 
     /**
-     * 木全体を解決し直す。
+     * 木を再解決する。
      *
-     * 差分再解決 (変更された state パスに依存するノードだけを解決し直す) は
-     * [dev.spectre.core.expr.dependencies] で依存パスを取れるところまで用意してあるが、
-     * まだ接続していない。上限 2,000 ノードの全解決で足りているうちは、
-     * 単純さを優先する。
+     * 変更された state/data のパスに依存しないノードは、[Resolver.reresolveTraced] が
+     * 前回の [dev.spectre.core.RenderNode] をそのまま使い回す。初回 ([load]) だけは
+     * 比較対象がないため常に全解決になる。
      */
     fun reresolve() {
         val doc = document ?: return
         val currentStore = store ?: return
-        render = resolver.resolve(doc, currentStore.scope())
+        val previous = traced ?: return
+        val changed = currentStore.consumeChangedPaths()
+        val next = resolver.reresolveTraced(doc, previous, changed, currentStore.scope())
+        traced = next
+        render = next.result
     }
 
     /** 入力コンポーネントの双方向バインド。 */
@@ -129,13 +152,45 @@ class SpectreScreenController(
             is SpectreUiEffect.Back -> onBack?.invoke()
             is SpectreUiEffect.Dismiss -> onDismiss?.invoke()
             is SpectreUiEffect.ReplaceScreen -> onReplaceScreen?.invoke(effect.document)
-
-            // フォーカス移動・スクロール・部分更新は未実装。黙って無視すると
-            // 「動いていないことに気づけない」ので、ホストに通知して可視化する。
-            is SpectreUiEffect.Focus -> onUnimplementedEffect?.invoke("focus")
-            is SpectreUiEffect.ScrollTo -> onUnimplementedEffect?.invoke("scrollTo")
-            is SpectreUiEffect.ApplyPatch -> onUnimplementedEffect?.invoke("applyPatch")
+            is SpectreUiEffect.Focus -> focusRequest = effect.nodeId
+            is SpectreUiEffect.ScrollTo -> {
+                scrollRequestSeq++
+                scrollRequest = ScrollRequest(effect.nodeId, effect.animated, scrollRequestSeq)
+            }
+            is SpectreUiEffect.ApplyPatch -> applyPatch(effect.operations)
         }
+    }
+
+    /** [focusRequest] を消費する。レンダラがフォーカスを移し終えたら呼ぶ。 */
+    fun consumeFocusRequest() {
+        focusRequest = null
+    }
+
+    /** [scrollRequest] を消費する。レンダラがスクロールし終えたら呼ぶ。 */
+    fun consumeScrollRequest() {
+        scrollRequest = null
+    }
+
+    /**
+     * `applyPatch` (RFC 6902)。パース前の生 JSON ([Document.raw]) に適用してから
+     * 再パースする — 木構造は差し替わるが、[store] はそのまま使い続けるので
+     * `state`/`data` は保持される (docs/spec/actions.md `applyPatch`)。
+     */
+    private fun applyPatch(operations: List<SpValue>) {
+        val currentDocument = document ?: return
+        val currentStore = store ?: return
+        val raw = currentDocument.raw
+        if (raw == null) {
+            // DocumentParser を経由しない手組みの Document には適用しようがない。
+            onUnimplementedEffect?.invoke("applyPatch")
+            return
+        }
+        val patched = runCatching { JsonPatch.apply(raw, operations) as? SpValue.Obj }.getOrNull() ?: return
+        val newDocument = runCatching { DocumentParser.parse(patched) }.getOrNull() ?: return
+        document = newDocument
+        val fresh = resolver.resolveTraced(newDocument, currentStore.scope())
+        traced = fresh
+        render = fresh.result
     }
 
     private fun showOverlay(id: String) {

@@ -15,6 +15,14 @@ data class Document(
     val overlays: List<Overlay> = emptyList(),
     val onAppear: List<SpValue> = emptyList(),
     val onDisappear: List<SpValue> = emptyList(),
+    /**
+     * パース前の生の JSON 表現。`applyPatch` (RFC 6902) はここに対して適用し、
+     * その結果を再パースして新しい [Document] を作る — [root] は props/rawProps/nodeProps
+     * に振り分け済みで、その分割を逆変換せずに部分更新するのは壊れやすいため
+     * (docs/spec/actions.md `applyPatch`)。[DocumentParser] を経由せずに手で組み立てた
+     * ドキュメント (テストなど) では null になり、その場合 `applyPatch` は働かない。
+     */
+    val raw: SpValue.Obj? = null,
 )
 
 data class DocumentMeta(
@@ -129,6 +137,19 @@ data class ResolveResult(
     val overlays: List<RenderOverlay> = emptyList(),
     val degradations: List<Degradation> = emptyList(),
     val exprErrors: List<String> = emptyList(),
+)
+
+/**
+ * [Resolver.resolveTraced] / [Resolver.reresolveTraced] の戻り値。
+ *
+ * [nodeResults] は解決に使った未解決 [Node] を [RenderNode] の列に対応付けたもので、
+ * 差分再解決が「このノードは前回と同じ結果を返す」と判断したときに再利用する。
+ * 呼び出し側 (画面コントローラ) はこれを次回の差分再解決にそのまま渡す以外の用途では
+ * 使わない — [Node] は式評価の実装詳細であり、レンダラに公開する型ではない。
+ */
+class TracedResolveResult(
+    val result: ResolveResult,
+    internal val nodeResults: Map<Node, List<RenderNode>>,
 )
 
 /**

@@ -4,9 +4,10 @@ import SpectreUI
 
 /// サーバードリブン UI のサンプル。
 ///
-/// サーバを立てる代わりに、examples/screens 以下の JSON をバンドルから読み込んで
-/// そのまま描画する。配信経路が変わってもクライアント側の処理は同じで、
-/// 「JSON を受け取って描画し、操作に反応する」ところを確認できる。
+/// サーバを立てる代わりに `BundleDocumentTransport` がバンドル内の JSON をネットワーク
+/// 応答のふりをして返す。それでも `DocumentLoader` は本物の配信経路と同じ形
+/// (メモリ→ディスク→バンドルの3層キャッシュ + stale-while-revalidate) で動くので、
+/// 画面を切り替えて戻すと挙動の違いが観察できる (docs/architecture.md §2)。
 @main
 struct SpectreSampleApp: App {
     var body: some Scene {
@@ -16,16 +17,56 @@ struct SpectreSampleApp: App {
     }
 }
 
-private let sampleScreens: [(label: String, file: String)] = [
-    ("商品詳細", "product-detail"),
-    ("通知設定", "settings-form"),
+private struct SampleScreen {
+    let label: String
+    let screenID: String
+    let file: String
+}
+
+private let sampleScreens: [SampleScreen] = [
+    SampleScreen(label: "商品詳細", screenID: "product_detail", file: "product-detail"),
+    SampleScreen(label: "通知設定", screenID: "settings_form", file: "settings-form"),
 ]
+
+/// サンプル用の DocumentTransport。実アプリではここが実際の URLSession クライアントになる。
+private struct BundleDocumentTransport: SpectreDocumentTransport {
+    func fetch(screenId: String, params: [String: String], ifNoneMatch: String?) async -> SpectreDocumentTransportResult {
+        guard let screen = sampleScreens.first(where: { $0.screenID == screenId }) else {
+            return .failure(message: "未知の screenId: \(screenId)")
+        }
+        // ネットワーク往復の体感を出すための待ち (SampleHostDelegate と揃える)。
+        try? await Task.sleep(nanoseconds: 600_000_000)
+        guard let body = Self.readBundle(screen.file) else {
+            return .failure(message: "\(screen.file).json がバンドルに見つかりません")
+        }
+        let etag = String(body.hashValue)
+        if ifNoneMatch == etag { return .notModified }
+        return .fresh(body: body, etag: etag, maxAgeSec: 60)
+    }
+
+    static func readBundle(_ name: String) -> String? {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "examples/screens")
+            ?? Bundle.main.url(forResource: name, withExtension: "json") else { return nil }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+}
 
 struct SampleRootView: View {
     @State private var selected = 0
     @State private var document: Document?
     @State private var loadError: String?
+    @State private var loadSource: DocumentSource?
     @State private var eventLog: [String] = []
+    // ディスク層はアプリのキャッシュディレクトリ配下。ホストアプリはここを完全に制御できる
+    // (例: ログアウト時に消す、サイズ上限を設ける、など)。
+    @State private var loader = DocumentLoader(
+        transport: BundleDocumentTransport(),
+        cacheDir: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("spectre-documents"),
+        bundledProvider: { screenId in
+            sampleScreens.first(where: { $0.screenID == screenId }).flatMap { BundleDocumentTransport.readBundle($0.file) }
+        }
+    )
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -41,10 +82,15 @@ struct SampleRootView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
 
+                if let loadSource {
+                    Text("読み込み元: \(String(describing: loadSource))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 12)
+                }
+
                 Group {
-                    if let loadError {
-                        errorPanel(loadError)
-                    } else if let document {
+                    if let document {
                         SpectreScreen(
                             document: document,
                             host: host,
@@ -52,6 +98,8 @@ struct SampleRootView: View {
                         )
                         // ドキュメントが変わったら SpectreScreen を作り直す
                         .id(document.id)
+                    } else if let loadError {
+                        errorPanel(loadError)
                     } else {
                         ProgressView()
                     }
@@ -77,18 +125,18 @@ struct SampleRootView: View {
     private func reload() {
         eventLog.removeAll()
         loadError = nil
-        document = nil
-
-        let name = sampleScreens[selected].file
-        guard let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "examples/screens")
-            ?? Bundle.main.url(forResource: name, withExtension: "json") else {
-            loadError = "\(name).json がバンドルに見つかりません"
-            return
-        }
-        do {
-            document = try DocumentParser.parse(text: try String(contentsOf: url, encoding: .utf8))
-        } catch {
-            loadError = String(describing: error)
+        let screen = sampleScreens[selected]
+        Task { @MainActor in
+            for await result in loader.load(screenId: screen.screenID) {
+                switch result {
+                case .loaded(let doc, let source, _):
+                    document = doc
+                    loadSource = source
+                    loadError = nil
+                case .failed(let message):
+                    if document == nil { loadError = message }
+                }
+            }
         }
     }
 

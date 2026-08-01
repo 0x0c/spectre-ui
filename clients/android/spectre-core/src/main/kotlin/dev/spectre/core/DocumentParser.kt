@@ -54,6 +54,7 @@ object DocumentParser {
                 ?: emptyList(),
             onAppear = actionList(value.entries["onAppear"]),
             onDisappear = actionList(value.entries["onDisappear"]),
+            raw = value,
         )
     }
 

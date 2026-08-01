@@ -53,7 +53,8 @@ public enum DocumentParser {
                 try parseOverlay($0, counter)
             },
             onAppear: value["onAppear"]?.asArray ?? [],
-            onDisappear: value["onDisappear"]?.asArray ?? []
+            onDisappear: value["onDisappear"]?.asArray ?? [],
+            raw: value
         )
     }
 

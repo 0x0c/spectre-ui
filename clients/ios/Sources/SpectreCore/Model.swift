@@ -13,6 +13,12 @@ public struct Document: Sendable {
     public let overlays: [Overlay]
     public let onAppear: [SpValue]
     public let onDisappear: [SpValue]
+    /// パース前の生の JSON 表現。`applyPatch` (RFC 6902) はここに対して適用し、
+    /// その結果を再パースして新しい `Document` を作る — `root` は props/rawProps/nodeProps
+    /// に振り分け済みで、その分割を逆変換せずに部分更新するのは壊れやすいため
+    /// (docs/spec/actions.md `applyPatch`)。`DocumentParser` を経由せずに手で組み立てた
+    /// ドキュメント (テストなど) では nil になり、その場合 `applyPatch` は働かない。
+    public let raw: SpValue?
 
     public init(
         schemaVersion: String,
@@ -24,7 +30,8 @@ public struct Document: Sendable {
         root: Node,
         overlays: [Overlay] = [],
         onAppear: [SpValue] = [],
-        onDisappear: [SpValue] = []
+        onDisappear: [SpValue] = [],
+        raw: SpValue? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
@@ -36,6 +43,7 @@ public struct Document: Sendable {
         self.overlays = overlays
         self.onAppear = onAppear
         self.onDisappear = onDisappear
+        self.raw = raw
     }
 }
 
@@ -265,6 +273,17 @@ public struct ResolveResult: Sendable {
     public let overlays: [RenderOverlay]
     public let degradations: [Degradation]
     public let exprErrors: [String]
+}
+
+/// `Resolver.resolveTraced` / `Resolver.reresolveTraced` の戻り値。
+///
+/// `nodeResults` は解決に使った未解決 `Node` (のオブジェクト識別子) を `RenderNode` の列に
+/// 対応付けたもので、差分再解決が「このノードは前回と同じ結果を返す」と判断したときに
+/// 再利用する。呼び出し側 (画面のモデル) はこれを次回の差分再解決にそのまま渡す以外の
+/// 用途では使わない。
+public struct TracedResolveResult: Sendable {
+    public let result: ResolveResult
+    let nodeResults: [ObjectIdentifier: [RenderNode]]
 }
 
 /// 未対応コンポーネントに遭遇したときの劣化の記録。

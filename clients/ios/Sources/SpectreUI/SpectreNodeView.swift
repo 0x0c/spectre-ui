@@ -17,40 +17,57 @@ public struct SpectreNodeView: View {
     }
 
     public var body: some View {
-        switch node.type {
-        // レイアウト
-        case "VStack": AnyView(VStackView(node: node))
-        case "HStack": AnyView(HStackView(node: node))
-        case "ZStack": AnyView(ZStackView(node: node))
-        case "Spacer": AnyView(SpacerView(node: node))
-        case "Divider": AnyView(DividerView(node: node))
-        case "ScrollView": AnyView(ScrollViewView(node: node))
-        case "List": AnyView(ListView(node: node))
-        case "Grid": AnyView(GridView(node: node))
-        case "Card": AnyView(CardView(node: node))
-        case "Section": AnyView(SectionView(node: node))
-        case "Tabs": AnyView(TabsView(node: node))
+        Group {
+            switch node.type {
+            // レイアウト
+            case "VStack": AnyView(VStackView(node: node))
+            case "HStack": AnyView(HStackView(node: node))
+            case "ZStack": AnyView(ZStackView(node: node))
+            case "Spacer": AnyView(SpacerView(node: node))
+            case "Divider": AnyView(DividerView(node: node))
+            case "ScrollView": AnyView(ScrollViewView(node: node))
+            case "List": AnyView(ListView(node: node))
+            case "Grid": AnyView(GridView(node: node))
+            case "Card": AnyView(CardView(node: node))
+            case "Section": AnyView(SectionView(node: node))
+            case "Tabs": AnyView(TabsView(node: node))
 
-        // コンテンツ
-        case "Text": AnyView(TextView(node: node))
-        case "Image": AnyView(ImageView(node: node))
-        case "Icon": AnyView(IconView(node: node))
-        case "Badge": AnyView(BadgeView(node: node))
-        case "ProgressIndicator": AnyView(ProgressIndicatorView(node: node))
+            // コンテンツ
+            case "Text": AnyView(TextView(node: node))
+            case "Image": AnyView(ImageView(node: node))
+            case "Icon": AnyView(IconView(node: node))
+            case "Badge": AnyView(BadgeView(node: node))
+            case "ProgressIndicator": AnyView(ProgressIndicatorView(node: node))
 
-        // 入力
-        case "Button": AnyView(ButtonView(node: node))
-        case "TextField": AnyView(TextFieldView(node: node))
-        case "Toggle": AnyView(ToggleView(node: node))
-        case "Checkbox": AnyView(CheckboxView(node: node))
-        case "RadioGroup": AnyView(RadioGroupView(node: node))
-        case "Select": AnyView(SelectView(node: node))
-        case "Slider": AnyView(SliderView(node: node))
-        case "Stepper": AnyView(StepperView(node: node))
-        case "DatePicker": AnyView(DatePickerView(node: node))
+            // 入力
+            case "Button": AnyView(ButtonView(node: node))
+            case "TextField": AnyView(TextFieldView(node: node))
+            case "Toggle": AnyView(ToggleView(node: node))
+            case "Checkbox": AnyView(CheckboxView(node: node))
+            case "RadioGroup": AnyView(RadioGroupView(node: node))
+            case "Select": AnyView(SelectView(node: node))
+            case "Slider": AnyView(SliderView(node: node))
+            case "Stepper": AnyView(StepperView(node: node))
+            case "DatePicker": AnyView(DatePickerView(node: node))
 
-        // Screen はルート専用。SpectreScreen が直接処理するのでここには来ない。
-        default: AnyView(EmptyView())
+            // Screen はルート専用。SpectreScreen が直接処理するのでここには来ない。
+            default: AnyView(EmptyView())
+            }
+        }
+        // `scrollTo` アクション (docs/spec/actions.md) の着地点。id を持つノードすべてに
+        // 付けておき、ScreenContent の ScrollViewReader が id で見つけられるようにする。
+        .modifier(SpectreScrollTargetID(nodeID: node.nodeID))
+    }
+}
+
+private struct SpectreScrollTargetID: ViewModifier {
+    let nodeID: String?
+
+    func body(content: Content) -> some View {
+        if let nodeID {
+            content.id(nodeID)
+        } else {
+            content
         }
     }
 }

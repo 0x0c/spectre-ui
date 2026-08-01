@@ -66,7 +66,18 @@ private struct ScreenContent: View {
         VStack(spacing: 0) {
             Group {
                 if scrollable {
-                    ScrollView { content(node) }
+                    // ScrollViewReader を挟むのは `scrollTo` アクションの着地点にするため。
+                    // 対象ノードは SpectreNodeView が汎用的に `.id(nodeID)` を付けている。
+                    ScrollViewReader { proxy in
+                        ScrollView { content(node) }
+                            .onChange(of: model.scrollRequest) { request in
+                                guard let request else { return }
+                                withAnimation(request.animated ? .default : nil) {
+                                    proxy.scrollTo(request.nodeID, anchor: .center)
+                                }
+                                model.consumeScrollRequest()
+                            }
+                    }
                 } else {
                     content(node)
                 }

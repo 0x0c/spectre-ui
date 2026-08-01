@@ -6,19 +6,19 @@
 
 ## 実装状況 (現時点)
 
-M0 と M1 の大半が入っている。**まだ実装していないのはエディタ (M2) と配信基盤 (M3)**。
+M0 と M1 はファジング/スナップショットテストを除いて入っている。**まだ実装していないのはエディタ (M2) と配信基盤 (M3)**。
 
 | 領域 | 状態 | 検証 |
 | --- | --- | --- |
 | コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) + CI のドリフト検査 |
 | 適合性コーパス | 実装済み (234ケース) | — |
-| Kotlin ランタイム (spectre-core) | 実装済み | **265 テスト green** |
+| Kotlin ランタイム (spectre-core) | 実装済み | **277 テスト green** |
 | Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
 | Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
 | SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
-| 差分再解決 | 未実装 | 依存パス抽出まで用意、未接続 |
-| `applyPatch` / `focus` / `scrollTo` | 未実装 | 効果を通知するところまで |
-| 配信・キャッシュ (DocumentLoader) | 未実装 | サンプルはローカル JSON を読む |
+| 差分再解決 | 実装済み | `Resolver.reresolveTraced` が既存の依存パス抽出を接続 |
+| `applyPatch` / `focus` / `scrollTo` | 実装済み | RFC 6902 JSON Patch + フォーカス/スクロールの配線 |
+| 配信・キャッシュ (DocumentLoader) | 実装済み | 3層キャッシュ + stale-while-revalidate。サンプルも接続済み |
 | エディタ (M2) / 配信基盤 (M3) | 未実装 | — |
 
 ### 検証の分担

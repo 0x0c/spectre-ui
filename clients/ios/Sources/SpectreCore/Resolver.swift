@@ -15,6 +15,12 @@ public final class Resolver {
     /// ホストアプリが一部を無効化できるよう、カタログ全体とは別に受け取る。
     private let supportedComponents: Set<String>
 
+    /// `node` 以下が静的に参照しうるスコープ相対パスの和集合のメモ。`Node` は
+    /// クラス (参照型) なのでオブジェクト識別子でそのまま記憶できる — `repeat` の
+    /// 展開で使い回される同一の `template` ノードや、たまたま同じ内容の兄弟ノードを
+    /// 取り違えることがない。
+    private var depsCache: [ObjectIdentifier: Set<String>] = [:]
+
     public init(
         templates: TemplateEvaluator = TemplateEvaluator(),
         supportedComponents: Set<String> = GeneratedCatalog.componentNames
@@ -24,18 +30,101 @@ public final class Resolver {
     }
 
     public func resolve(_ document: Document, scope: EvalScope) -> ResolveResult {
-        var ctx = Context()
+        resolveTraced(document, scope: scope).result
+    }
+
+    /// ドキュメント全体を初回解決する。以後の `reresolveTraced` が参照するノード単位の
+    /// 解決結果 (`TracedResolveResult.nodeResults`) も同時に記録する。
+    public func resolveTraced(_ document: Document, scope: EvalScope) -> TracedResolveResult {
+        depsCache.removeAll() // 新しいドキュメント木なので、前のドキュメントの記憶は捨てる。
+        var output: [ObjectIdentifier: [RenderNode]] = [:]
+        var ctx = Context(diff: DiffContext(changed: nil, previous: [:], output: output))
         let roots = resolveNode(document.root, scope, &ctx)
         let overlays = document.overlays.map { resolveOverlay($0, scope, &ctx) }
-        return ResolveResult(
-            root: roots.first,
-            overlays: overlays,
-            degradations: ctx.degradations,
-            exprErrors: ctx.errors
+        output = ctx.diff?.output ?? [:]
+        let result = ResolveResult(
+            root: roots.first, overlays: overlays, degradations: ctx.degradations, exprErrors: ctx.errors
         )
+        return TracedResolveResult(result: result, nodeResults: output)
+    }
+
+    /// `changedPaths` に影響されないノードは前回の `RenderNode` をそのまま再利用し、
+    /// 影響されうる部分だけを再解決する (docs/architecture.md §2, §5)。
+    ///
+    /// `repeat` は要素単位では追跡しない — 展開後の各要素は同一の `template` ノード
+    /// インスタンスを共有しており個別の識別子を持てないため、`repeat` ノードは
+    /// 「丸ごと再利用」か「丸ごと再展開」のどちらかになる。それでも、影響を受けていない
+    /// 兄弟の部分木を再帰せずに済むため、ドキュメント全体を再解決するより十分に軽い。
+    public func reresolveTraced(
+        _ document: Document,
+        previous: TracedResolveResult,
+        changedPaths: Set<String>,
+        scope: EvalScope
+    ) -> TracedResolveResult {
+        guard !changedPaths.isEmpty else { return previous }
+        var ctx = Context(diff: DiffContext(changed: changedPaths, previous: previous.nodeResults, output: [:]))
+        let roots = resolveNode(document.root, scope, &ctx)
+        let overlays = document.overlays.map { resolveOverlay($0, scope, &ctx) }
+        let output = ctx.diff?.output ?? [:]
+        let result = ResolveResult(
+            root: roots.first, overlays: overlays, degradations: ctx.degradations, exprErrors: ctx.errors
+        )
+        return TracedResolveResult(result: result, nodeResults: output)
+    }
+
+    /// `node` 以下が参照しうる `data.*` / `state.*` パスの和集合。メモ化して繰り返し計算しない。
+    private func aggregateDependencies(_ node: Node) -> Set<String> {
+        let key = ObjectIdentifier(node)
+        if let cached = depsCache[key] { return cached }
+        var out = Set<String>()
+        if let visibleWhen = node.visibleWhen { out.formUnion(templates.dependencies(visibleWhen)) }
+        if let repeatSpec = node.repeatSpec { out.formUnion(templates.dependencies(repeatSpec.forExpression)) }
+        for value in node.props.values { collectValueDependencies(value, &out) }
+        for value in node.layout.values { collectValueDependencies(value, &out) }
+        for value in node.style.values { collectValueDependencies(value, &out) }
+        for value in node.a11y.values { collectValueDependencies(value, &out) }
+        // rawProps (アクション式) は意図的に含めない — アクション実行時点の state を
+        // その都度読むため、値そのものの再解決には関与しない。
+        for children in node.nodeProps.values {
+            for child in children { out.formUnion(aggregateDependencies(child)) }
+        }
+        for child in node.children { out.formUnion(aggregateDependencies(child)) }
+        if let emptyView = node.repeatSpec?.emptyView { out.formUnion(aggregateDependencies(emptyView)) }
+        if let fallback = node.fallback { out.formUnion(aggregateDependencies(fallback)) }
+        depsCache[key] = out
+        return out
+    }
+
+    private func collectValueDependencies(_ value: SpValue, _ out: inout Set<String>) {
+        switch value {
+        case .string(let text):
+            out.formUnion(templates.dependencies(text))
+        case .array(let items):
+            for item in items { collectValueDependencies(item, &out) }
+        case .object(let entries):
+            for entry in entries.values { collectValueDependencies(entry, &out) }
+        default:
+            break
+        }
+    }
+
+    /// `changed` のいずれかのパスが `deps` のいずれかと重なる (祖先/子孫を含む) か。
+    private func intersects(_ deps: Set<String>, _ changed: Set<String>) -> Bool {
+        deps.contains { d in
+            changed.contains { c in d == c || d.hasPrefix("\(c).") || c.hasPrefix("\(d).") }
+        }
+    }
+
+    /// 差分解決の文脈。`changed` が nil なら「初回解決 (常に再計算し、結果を記録するだけ)」、
+    /// 非 nil なら「差分解決 (未変化ならば再利用を試みる)」を表す。
+    private struct DiffContext {
+        let changed: Set<String>?
+        let previous: [ObjectIdentifier: [RenderNode]]
+        var output: [ObjectIdentifier: [RenderNode]]
     }
 
     private struct Context {
+        var diff: DiffContext?
         var degradations: [Degradation] = []
         var errors: [String] = []
     }
@@ -64,28 +153,38 @@ public final class Resolver {
     /// 1つの `Node` は 0個以上の `RenderNode` になる。
     /// - `visibleWhen` が偽 / 未対応で省略 -> 0個
     /// - `repeat` -> 要素数ぶん
+    ///
+    /// `ctx.diff` が差分解決中であれば、`node` 以下が `changed` のどれにも依存しないと
+    /// 分かった時点で、前回の結果をそのまま返して再帰を打ち切る。
     private func resolveNode(
         _ node: Node,
         _ scope: EvalScope,
         _ ctx: inout Context
     ) -> [RenderNode] {
+        let key = ObjectIdentifier(node)
+        if let changed = ctx.diff?.changed, let reused = ctx.diff?.previous[key],
+           !intersects(aggregateDependencies(node), changed) {
+            ctx.diff!.output[key] = reused
+            return reused
+        }
+
         // 1. repeat は最初に展開する。visibleWhen は展開後の各要素に対して評価される。
+        let result: [RenderNode]
         if let repeatSpec = node.repeatSpec {
-            return expandRepeat(node, repeatSpec, scope, &ctx)
+            result = expandRepeat(node, repeatSpec, scope, &ctx)
+        } else if let condition = node.visibleWhen, !evaluate(condition, scope, &ctx).isTruthy {
+            // 2. 可視性。除外されたノードは劣化の集計対象にもしない。
+            result = []
+        } else if !supportedComponents.contains(node.type) {
+            // 3. ケイパビリティによる劣化
+            result = degrade(node, scope, &ctx)
+        } else {
+            // 4. 実際の解決
+            result = [resolveSupported(node, scope, &ctx, key: nil, index: nil)]
         }
 
-        // 2. 可視性。除外されたノードは劣化の集計対象にもしない。
-        if let condition = node.visibleWhen, !evaluate(condition, scope, &ctx).isTruthy {
-            return []
-        }
-
-        // 3. ケイパビリティによる劣化
-        guard supportedComponents.contains(node.type) else {
-            return degrade(node, scope, &ctx)
-        }
-
-        // 4. 実際の解決
-        return [resolveSupported(node, scope, &ctx, key: nil, index: nil)]
+        if ctx.diff != nil { ctx.diff!.output[key] = result }
+        return result
     }
 
     private func resolveSupported(
@@ -150,47 +249,59 @@ public final class Resolver {
         return []
     }
 
+    /// `repeat` は要素ごとの識別子を持てないため、常に非差分 (`outerCtx.diff` を
+    /// 引き継がない) 経路で展開する。展開そのものを行うかどうかの判断
+    /// (再利用できるか) は呼び出し元の `resolveNode` がノード全体の依存で行う。
     private func expandRepeat(
         _ node: Node,
         _ repeatSpec: RepeatSpec,
         _ scope: EvalScope,
-        _ ctx: inout Context
+        _ outerCtx: inout Context
     ) -> [RenderNode] {
+        var ctx = Context(diff: nil)
         let source = evaluate(repeatSpec.forExpression, scope, &ctx)
-        guard let items = source.asArray, !items.isEmpty else {
-            // 配列でない場合も 0 件として扱う。式が壊れていても画面は壊れない。
-            guard let emptyView = repeatSpec.emptyView else { return [] }
-            return resolveNode(emptyView, scope, &ctx)
-        }
-
-        let limit = min(repeatSpec.limit ?? SpectreLimits.maxRepeatItems, SpectreLimits.maxRepeatItems)
-        if items.count > limit {
-            ctx.errors.append("repeat の件数 \(items.count) が上限 \(limit) を超えたため切り詰めました")
-        }
-
-        let template = node.withoutRepeat()
-        let condition = template.visibleWhen
-        var out: [RenderNode] = []
-        out.reserveCapacity(min(items.count, limit))
-
-        for (index, item) in items.enumerated() {
-            if index >= limit { break }
-            let itemScope = scope.withLocals([
-                repeatSpec.asName: item,
-                repeatSpec.indexName: .number(Double(index)),
-            ])
-
-            // visibleWhen は要素ごとに評価する (item を参照できる必要があるため)。
-            if let condition, !evaluate(condition, itemScope, &ctx).isTruthy { continue }
-
-            guard supportedComponents.contains(template.type) else {
-                out.append(contentsOf: degrade(template, itemScope, &ctx))
-                continue
+        let result: [RenderNode]
+        if let items = source.asArray, !items.isEmpty {
+            let limit = min(repeatSpec.limit ?? SpectreLimits.maxRepeatItems, SpectreLimits.maxRepeatItems)
+            if items.count > limit {
+                ctx.errors.append("repeat の件数 \(items.count) が上限 \(limit) を超えたため切り詰めました")
             }
-            let key = repeatSpec.key.map { evaluate($0, itemScope, &ctx).stringify() }
-            out.append(resolveSupported(template, itemScope, &ctx, key: key, index: index))
+
+            let template = node.withoutRepeat()
+            let condition = template.visibleWhen
+            var out: [RenderNode] = []
+            out.reserveCapacity(min(items.count, limit))
+
+            for (index, item) in items.enumerated() {
+                if index >= limit { break }
+                let itemScope = scope.withLocals([
+                    repeatSpec.asName: item,
+                    repeatSpec.indexName: .number(Double(index)),
+                ])
+
+                // visibleWhen は要素ごとに評価する (item を参照できる必要があるため)。
+                if let condition, !evaluate(condition, itemScope, &ctx).isTruthy { continue }
+
+                if !supportedComponents.contains(template.type) {
+                    out.append(contentsOf: degrade(template, itemScope, &ctx))
+                    continue
+                }
+                let key = repeatSpec.key.map { evaluate($0, itemScope, &ctx).stringify() }
+                out.append(resolveSupported(template, itemScope, &ctx, key: key, index: index))
+            }
+            result = out
+        } else {
+            // 配列でない場合も 0 件として扱う。式が壊れていても画面は壊れない。
+            if let emptyView = repeatSpec.emptyView {
+                result = resolveNode(emptyView, scope, &ctx)
+            } else {
+                result = []
+            }
         }
-        return out
+
+        outerCtx.degradations.append(contentsOf: ctx.degradations)
+        outerCtx.errors.append(contentsOf: ctx.errors)
+        return result
     }
 
     // MARK: - 値の解決
