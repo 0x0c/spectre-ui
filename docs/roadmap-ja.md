@@ -9,8 +9,11 @@
 ## 実装状況 (現時点)
 
 M0 と M1 は、ファジングとスナップショットテストを除いて入っている。M3（オーサリング・配信基盤）にも
-実質的なコードが載っており、ケイパビリティに基づく木の整形だけが未着手のまま残っている。
-**まだ実装していないのはエディタ (M2) です**。
+実質的なコードが載っており、ケイパビリティに基づく木の整形も含まれる。**エディタ (M2) は最初の
+一巡が入った。** パレット・キャンバス・インスペクタ・アクションエディタ・サンプルデータ・undo/redo
+は動く。実機ミラー（[SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md)、
+WebSocket 経由のデバイスプレビュー）はまだない。近似プレビューだけでは、公開前の確認を安全に
+行えない。
 
 | 領域 | 状態 | 検証 |
 | --- | --- | --- |
@@ -25,7 +28,7 @@ M0 と M1 は、ファジングとスナップショットテストを除いて�
 | 配信・キャッシュ (DocumentLoader) | 実装済み | 3層キャッシュ + stale-while-revalidate。サンプルも接続済み |
 | ケイパビリティネゴシエーションとノード単位のフォールバック劣化 | 実装済み | `Spectre-Schema`/`Spectre-Components` ヘッダ、サーバ側の `degradeDocumentTree`、クライアントの fallback → optional省略 → プレースホルダという決まった順序 (ADR-0006) |
 | オーサリング・配信API (M3) | 進行中 | `packages/server`。権限とワークフロー(項目3)はまだ仮の実装のまま |
-| エディタ (M2) | 未実装 | — |
+| エディタ (M2) | 進行中 | `packages/editor`。パレット・キャンバス・インスペクタ・アクションエディタ・サンプルデータ・undo/redoは動くが、実機ミラー(SU-0009)が欠けており、M2自身の受け入れ基準はまだ満たさない |
 
 ### 検証の分担
 
@@ -41,7 +44,8 @@ M0 と M1 は、ファジングとスナップショットテストを除いて�
 | ジョブ | ランナー | 内容 |
 | --- | --- | --- |
 | `core` | Ubuntu | `:spectre-core:test` — 適合性コーパスとランタイム |
-| `codegen` | Ubuntu | 生成物がマニフェストとずれていないか + 仕様 JSON の構文 |
+| `codegen` | Ubuntu | 生成物がマニフェストとずれていないか + 仕様 JSON の構文 + コーパス拡張規則 + マニフェストの加算のみ進化 |
+| `server` | Ubuntu | `packages/core` / `packages/manifest` / `packages/server` / `packages/editor` の型検査とテスト(PostgreSQL サービスコンテナつき) |
 | `android` | Ubuntu | `:spectre-ui` / `:sample` のビルド |
 | `ios` | macos | `swift build` / `swift test` + iOS 向け `xcodebuild` |
 | `ios-sample` | macos | XcodeGen でプロジェクトを生成してサンプルアプリをビルド |
@@ -85,14 +89,17 @@ cd clients/ios && swift test
 
 ### M2 — エディタ (6〜8週) — [SU-0003](../roadmaps/SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md)
 
-- [ ] マニフェスト駆動のパレット / インスペクタ
-- [ ] キャンバス（DnD、選択、木構造パネル）
-- [ ] 式のピッカーモード + 式モード（CodeMirror）
-- [ ] アクションエディタ
-- [ ] サンプルデータ管理
-- [ ] リント表示、undo/redo、差分表示
-- [ ] **実機ミラー（WebSocket）** ← 必須。後回しにしない
-- [ ] デバイス/ロケール/テーマ/フォントスケールの切り替え
+- [x] マニフェスト駆動のパレット / インスペクタ
+- [x] キャンバス（DnD、選択、木構造パネル）
+- [x] 式のピッカーモード（式モード = CodeMirrorによるテキストモードは未着手）
+- [x] アクションエディタ（マニフェスト由来のカタログ + パラメータ編集。サーバ応答プロトコルの
+      UXは薄い）
+- [x] サンプルデータ管理
+- [x] undo/redo（リント表示・差分表示は未着手）
+- [ ] **実機ミラー（WebSocket）** ← 必須。
+      [SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) として
+      追跡中、この一巡目のスコープ外
+- [x] デバイス/ロケール/テーマ/フォントスケールの切り替え（近似プレビュー内）
 
 ### M3 — 配信基盤 (4〜5週) — [SU-0004](../roadmaps/SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md)
 

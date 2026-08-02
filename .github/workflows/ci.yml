@@ -87,10 +87,11 @@ jobs:
       - name: マニフェストの加算のみ進化規則
         run: node packages/codegen/check-additive-evolution.mjs
 
-  # packages/core / packages/manifest / packages/server のテスト。実際の PostgreSQL に
-  # 対して統合テストを走らせる (SU-0004)。
+  # packages/core・packages/manifest・packages/server・packages/editor のテスト。実際の
+  # PostgreSQL に対して統合テストを走らせる (SU-0004)。editor はここに同居させている —
+  # 同じ pnpm ワークスペース・同じ Node セットアップを再利用でき、別ジョブに割る理由がないため。
   server:
-    name: TypeScript (core / manifest / server)
+    name: TypeScript (core / manifest / server / editor)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -138,6 +139,13 @@ jobs:
         run: |
           pnpm run typecheck
           pnpm run test
+
+      - name: packages/editor の型検査・テスト・ビルド
+        working-directory: packages/editor
+        run: |
+          pnpm run typecheck
+          pnpm run test
+          pnpm run build
 
   # Compose レンダラとサンプルアプリのコンパイル。
   # GitHub の ubuntu ランナーには Android SDK が入っているため、

@@ -34,7 +34,7 @@ export function validateDocument(doc: unknown, manifest: SpectreManifest): Valid
     return issues
   }
 
-  const byteLength = Buffer.byteLength(JSON.stringify(doc), 'utf8')
+  const byteLength = utf8ByteLength(JSON.stringify(doc))
   if (byteLength > SpectreLimits.maxDocumentBytes) {
     issues.push({
       path: '',
@@ -100,6 +100,15 @@ export function hasErrors(issues: ValidationIssue[]): boolean {
 }
 
 /**
+ * UTF-8 バイト長。`Buffer` は Node 専用で、このモジュールはブラウザ側
+ * (packages/editor、SU-0003) からも直接 import されるため、両方で動く
+ * `TextEncoder`（ブラウザ・Node どちらもグローバル）を使う。
+ */
+function utf8ByteLength(text: string): number {
+  return new TextEncoder().encode(text).length
+}
+
+/**
  * サイズ・ノード数・深さの上限だけを見る、軽量版の検証。
  *
  * `validateDocument` はマニフェスト適合性まで見るため下書きの途中経過には重すぎる。
@@ -113,7 +122,7 @@ export function checkResourceLimits(doc: unknown): ValidationIssue[] {
   const record = doc as Record<string, unknown>
   const issues: ValidationIssue[] = []
 
-  const byteLength = Buffer.byteLength(JSON.stringify(doc), 'utf8')
+  const byteLength = utf8ByteLength(JSON.stringify(doc))
   if (byteLength > SpectreLimits.maxDocumentBytes) {
     issues.push({
       path: '',

@@ -7,7 +7,11 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./generated": "./src/generated.ts",
+    "./validate": "./src/validate.ts",
+    "./editor-schema": "./src/editorSchema.ts",
+    "./editor-schema-loader": "./src/editorSchemaLoader.ts"
   },
   "scripts": {
     "generate": "node ../codegen/generate.mjs",

@@ -9,9 +9,13 @@ SU-0005.
 
 ## Implementation status (as of now)
 
-M0 and M1 are in, short of fuzz testing and snapshot testing. M3, the authoring and delivery
-platform, already has real code too. Capability-based tree shaping stays open there.
-**The editor (M2) is what still needs building.**
+M0 and M1 are in, short of fuzz testing and snapshot testing. M3 (the authoring and delivery
+platform) already has real code. That includes capability-based tree shaping.
+**The editor (M2) has its first pass in.** The palette, canvas, and inspector work. So do the
+action editor, sample data, and undo/redo. The device mirror does not exist yet. That is
+[SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), a
+WebSocket-based device preview. An approximate preview alone cannot confirm a screen is ready to
+publish.
 
 | Area | Status | Verification |
 | --- | --- | --- |
@@ -26,7 +30,7 @@ platform, already has real code too. Capability-based tree shaping stays open th
 | Delivery and caching (DocumentLoader) | Implemented | A three-tier cache plus stale-while-revalidate; the samples already use it |
 | Capability negotiation and per-node fallback degradation | Implemented | `Spectre-Schema`/`Spectre-Components` headers, server-side `degradeDocumentTree`, and the client's fixed fallback → optional-omission → placeholder order (ADR-0006) |
 | Authoring and delivery API (M3) | In progress | `packages/server`; permissions and workflow (item 3) is still a stand-in |
-| Editor (M2) | Not implemented | — |
+| Editor (M2) | In progress | `packages/editor`; the palette, canvas, inspector, action editor, sample data, and undo/redo work, but the device mirror (SU-0009) is missing, so M2's own acceptance bar isn't met yet |
 
 ### How verification splits
 
@@ -43,7 +47,8 @@ Continuous integration (CI) owns compile verification. The job definitions live 
 | Job | Runner | Contents |
 | --- | --- | --- |
 | `core` | Ubuntu | `:spectre-core:test` — the conformance corpus and the runtime |
-| `codegen` | Ubuntu | Whether the generated artifacts still match the manifest, plus the specification JSON's syntax |
+| `codegen` | Ubuntu | Whether the generated artifacts still match the manifest, the specification JSON's syntax, the corpus-extension rule, and additive-only manifest evolution |
+| `server` | Ubuntu | Type checks and tests for `packages/core` / `packages/manifest` / `packages/server` / `packages/editor` (with a PostgreSQL service container) |
 | `android` | Ubuntu | Building `:spectre-ui` / `:sample` |
 | `ios` | macOS | `swift build` / `swift test`, plus `xcodebuild` for iOS |
 | `ios-sample` | macOS | Generating the project with XcodeGen and building the sample app |
@@ -92,14 +97,17 @@ Android engineer, and one or two web/server engineers.
 
 ### M2 — The editor (6–8 weeks) — [SU-0003](../roadmaps/SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md)
 
-- [ ] A manifest-driven palette and inspector
-- [ ] The canvas (drag-and-drop, selection, a tree panel)
-- [ ] An expression picker mode and an expression mode (CodeMirror)
-- [ ] The action editor
-- [ ] Sample-data management
-- [ ] Lint display, undo/redo, a diff view
-- [ ] **The device mirror (WebSocket)** ← mandatory, not deferred
-- [ ] Switching device, locale, theme, and font scale
+- [x] A manifest-driven palette and inspector
+- [x] The canvas (drag-and-drop, selection, a tree panel)
+- [x] An expression picker mode (the CodeMirror text mode is not started yet)
+- [x] The action editor: a manifest-driven catalog plus parameter editing. The server-response
+      protocol's UX stays thin.
+- [x] Sample-data management
+- [x] Undo/redo (lint display and a diff view are not started yet)
+- [ ] **The device mirror (WebSocket)** ← mandatory, tracked as
+      [SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), out of
+      scope for this first pass
+- [x] Switching device, locale, theme, and font scale (inside the approximate preview)
 
 ### M3 — The delivery platform (4–5 weeks) — [SU-0004](../roadmaps/SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md)
 
