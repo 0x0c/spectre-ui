@@ -7,7 +7,7 @@
 |---|---|
 | 提案 | [SU-0012](SU-0012-apns-sdui-sample-app-ja.md) |
 | 提案者 | [@0x0c](https://github.com/0x0c) |
-| 状態 | **提案** |
+| 状態 | **実装済み** |
 | トピック | クライアントSDK |
 | 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md)、[SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md) |
 <!-- /SU-METADATA -->
@@ -88,11 +88,16 @@ Spectre UIドキュメントの想定サイズを5〜50KBとしています。�
 > 作業の進行に合わせて更新します。チェックリストは`詳細設計`の分解を写しており、ログは古い順に
 > 変更点を記録します。
 
-- [ ] 未着手
+- [x] 新しいサンプルターゲット `clients/ios/APNsSample`
+- [x] 通知許可とデリゲートの配線
+- [x] ドキュメントの取り出し
+- [x] 描画
+- [x] 例示ペイロード
 
 **ログ**
 
-- 作業はまだ始まっていません。リポジトリは設計フェーズにあります。
+- 2026-08-02: `clients/ios/APNsSample`、CIジョブ `ios-apns-sample`、いずれも2KB未満の
+  例示ペイロード2件を追加しました。`状態` を実装済みに更新します。
 
 ## 参考
 

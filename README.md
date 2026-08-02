@@ -36,6 +36,9 @@ cd clients/ios && swift test
 
 # iOS sample application (needs XcodeGen)
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+
+# iOS APNs sample application (needs XcodeGen)
+cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
 ```
 
 Continuous integration (CI) runs every command above on each pull request. The job definitions live

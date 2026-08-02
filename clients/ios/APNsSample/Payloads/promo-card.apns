@@ -1,0 +1,52 @@
+{
+  "Simulator Target Bundle": "dev.spectre.apnssample",
+  "aps": {
+    "alert": {
+      "title": "本日限定セール",
+      "body": "人気商品が最大30%オフ"
+    },
+    "sound": "default",
+    "badge": 1
+  },
+  "spectreDocument": {
+    "schemaVersion": "1.0",
+    "id": "push_promo_card",
+    "meta": { "title": "お知らせ" },
+    "root": {
+      "type": "Screen",
+      "props": { "scrollable": true, "background": "background" },
+      "children": [
+        {
+          "type": "VStack",
+          "props": { "spacing": "md", "alignment": "leading" },
+          "layout": { "padding": "md" },
+          "children": [
+            { "type": "Badge", "props": { "text": "NEW", "tone": "info" } },
+            { "type": "Text", "props": { "text": "本日限定セール", "typography": "titleLg" } },
+            {
+              "type": "Text",
+              "props": {
+                "text": "人気商品が最大30%オフ。今すぐチェックしてください。",
+                "typography": "bodyMd"
+              }
+            },
+            {
+              "type": "Button",
+              "props": {
+                "label": "見る",
+                "variant": "primary",
+                "onTap": [
+                  {
+                    "type": "track",
+                    "event": "push_card_tap",
+                    "properties": { "campaign": "summer_sale" }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

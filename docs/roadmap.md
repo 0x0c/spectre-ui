@@ -16,6 +16,7 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 | Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
 | Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
 | SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
+| APNs配信のiOSサンプル ([SU-0012](../roadmaps/SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md)) | 実装済み | CI (`ios-apns-sample` ジョブ) |
 | 差分再解決 | 未実装 | 依存パス抽出まで用意、未接続 |
 | `applyPatch` / `focus` / `scrollTo` | 未実装 | 効果を通知するところまで |
 | 配信・キャッシュ (DocumentLoader) | 未実装 | サンプルはローカル JSON を読む |
@@ -39,6 +40,7 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 | `android` | Ubuntu | `:spectre-ui` / `:sample` のビルド |
 | `ios` | macos | `swift build` / `swift test` + iOS 向け `xcodebuild` |
 | `ios-sample` | macos | XcodeGen でプロジェクトを生成してサンプルアプリをビルド |
+| `ios-apns-sample` | macos | 例示ペイロードの構文チェック + XcodeGen でAPNsサンプルをビルド |
 
 手元で全部を確かめたいときは、Android SDK と Xcode のある環境で以下を実行する。
 

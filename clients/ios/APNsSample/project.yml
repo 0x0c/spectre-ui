@@ -1,0 +1,41 @@
+# XcodeGen 用の定義。`xcodegen generate` で SpectreAPNsSample.xcodeproj を作る。
+#
+# .xcodeproj をリポジトリにコミットしないのは SampleApp と同じ理由 (project.yml を参照)。
+#
+#   brew install xcodegen
+#   cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
+#
+# 実行方法は README.md を参照。iOSシミュレータへ Payloads/*.apns をドラッグ&ドロップすると、
+# 埋め込まれた Spectre UI ドキュメントが画面に描画される。
+name: SpectreAPNsSample
+options:
+  bundleIdPrefix: dev.spectre
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  SpectreUI:
+    path: ../
+
+targets:
+  SpectreAPNsSample:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    dependencies:
+      - package: SpectreUI
+        product: SpectreUI
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Spectre APNs Sample
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.spectre.apnssample
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"

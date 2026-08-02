@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0012](SU-0012-apns-sdui-sample-app.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **Implemented** |
 | Topic | Client SDK |
 | Related | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md) |
 <!-- /SU-METADATA -->
@@ -88,11 +88,16 @@ sample's example payloads make that limit visible, not merely asserted in prose.
 > Keep this current as work proceeds. The checklist mirrors the *Detailed design* breakdown. The
 > log records what changed and when, oldest first.
 
-- [ ] Not started
+- [x] A new sample target, `clients/ios/APNsSample`
+- [x] Notification permission and delegate wiring
+- [x] Document extraction
+- [x] Rendering
+- [x] Example payloads
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- 2026-08-02: Landed `clients/ios/APNsSample`, its CI job, and two example payloads. Each stays
+  under 2 KB. `Status` moves to Implemented.
 
 ## References
 

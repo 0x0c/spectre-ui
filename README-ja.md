@@ -37,6 +37,9 @@ cd clients/ios && swift test
 
 # iOS サンプルアプリ（XcodeGen が必要）
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
+
+# iOS APNsサンプルアプリ（XcodeGen が必要）
+cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
 ```
 
 CI（Continuous Integration、継続的インテグレーション）は、上記のすべてのコマンドをプルリクエストごと
