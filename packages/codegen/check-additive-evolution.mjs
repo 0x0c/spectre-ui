@@ -52,12 +52,12 @@ function loadBaseManifest() {
   }
 }
 
-function parseVersion(v) {
+export function parseVersion(v) {
   const [major, minor] = String(v).split('.').map((n) => Number.parseInt(n, 10))
   return { major: Number.isFinite(major) ? major : 0, minor: Number.isFinite(minor) ? minor : 0 }
 }
 
-function compareVersion(a, b) {
+export function compareVersion(a, b) {
   if (a.major !== b.major) return a.major - b.major
   return a.minor - b.minor
 }
@@ -75,7 +75,7 @@ function propsOf(component) {
  * `oldManifest` の版が新しい版と同じメジャーで、かつマイナー以上であることは
  * 呼び出し側 (`main`) が保証してから呼ぶ。
  */
-function findViolations(oldManifest, newManifest) {
+export function findViolations(oldManifest, newManifest) {
   const violations = []
   const oldComponents = componentsByName(oldManifest)
   const newComponents = componentsByName(newManifest)
@@ -183,4 +183,9 @@ function main() {
   )
 }
 
-main()
+// The diagnostic rules are exported so the unit tests (test/additive-evolution.test.mjs) can
+// exercise them directly. Only call main() when started as a command, so importing the module
+// from a test does not run the diagnostic.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main()
+}
