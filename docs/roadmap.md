@@ -24,8 +24,8 @@ platform, already has real code too. Capability-based tree shaping stays open th
 | Diff-based re-resolution | Implemented | `Resolver.reresolveTraced` connects the dependency-path extraction that already existed |
 | `applyPatch` / `focus` / `scrollTo` | Implemented | RFC 6902 JSON Patch, plus the focus and scroll wiring |
 | Delivery and caching (DocumentLoader) | Implemented | A three-tier cache plus stale-while-revalidate; the samples already use it |
-| Per-node fallback degradation | Implemented | Fallback → optional-omission → a generic placeholder, in that fixed order (ADR-0006) |
-| Authoring and delivery API (M3) | In progress | `packages/server`; capability-based tree shaping waits on the rest of SU-0008 |
+| Capability negotiation and per-node fallback degradation | Implemented | `Spectre-Schema`/`Spectre-Components` headers, server-side `degradeDocumentTree`, and the client's fixed fallback → optional-omission → placeholder order (ADR-0006) |
+| Authoring and delivery API (M3) | In progress | `packages/server`; permissions and workflow (item 3) is still a stand-in |
 | Editor (M2) | Not implemented | — |
 
 ### How verification splits

@@ -23,6 +23,7 @@ final class DocumentLoaderTests: XCTestCase {
     private actor FakeTransport: SpectreDocumentTransport {
         var result: SpectreDocumentTransportResult
         var lastIfNoneMatch: String?
+        var lastCapabilities: SpectreCapabilities?
 
         init(_ result: SpectreDocumentTransportResult) {
             self.result = result
@@ -32,8 +33,14 @@ final class DocumentLoaderTests: XCTestCase {
             result = value
         }
 
-        func fetch(screenId: String, params: [String: String], ifNoneMatch: String?) async -> SpectreDocumentTransportResult {
+        func fetch(
+            screenId: String,
+            params: [String: String],
+            ifNoneMatch: String?,
+            capabilities: SpectreCapabilities
+        ) async -> SpectreDocumentTransportResult {
             lastIfNoneMatch = ifNoneMatch
+            lastCapabilities = capabilities
             return result
         }
     }
@@ -151,5 +158,16 @@ final class DocumentLoaderTests: XCTestCase {
             return XCTFail("expected .failed")
         }
         XCTAssertEqual(message, "network down")
+    }
+
+    func testDeclaresCapabilitiesOnEveryRequest() async throws {
+        let transport = FakeTransport(.fresh(body: documentBody("v1"), etag: "etag-1", maxAgeSec: 60))
+        let loader = DocumentLoader(transport: transport, supportedComponents: ["Text", "VStack"])
+
+        _ = await collectAll(loader.load(screenId: "s"))
+
+        let capabilities = await transport.lastCapabilities
+        XCTAssertEqual(capabilities?.schemaVersion, GeneratedCatalog.schemaVersion)
+        XCTAssertEqual(capabilities?.componentsHash, GeneratedCatalog.capabilityHash(supported: ["Text", "VStack"]))
     }
 }

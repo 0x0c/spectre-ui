@@ -23,8 +23,8 @@ M0 と M1 は、ファジングとスナップショットテストを除いて�
 | 差分再解決 | 実装済み | `Resolver.reresolveTraced` が既存の依存パス抽出を接続 |
 | `applyPatch` / `focus` / `scrollTo` | 実装済み | RFC 6902 JSON Patch + フォーカス/スクロールの配線 |
 | 配信・キャッシュ (DocumentLoader) | 実装済み | 3層キャッシュ + stale-while-revalidate。サンプルも接続済み |
-| ノード単位のフォールバック劣化 | 実装済み | fallback → optional省略 → 汎用プレースホルダの決まった順序 (ADR-0006) |
-| オーサリング・配信API (M3) | 進行中 | `packages/server`。ケイパビリティに基づく木の整形はSU-0008の残りを待つ |
+| ケイパビリティネゴシエーションとノード単位のフォールバック劣化 | 実装済み | `Spectre-Schema`/`Spectre-Components` ヘッダ、サーバ側の `degradeDocumentTree`、クライアントの fallback → optional省略 → プレースホルダという決まった順序 (ADR-0006) |
+| オーサリング・配信API (M3) | 進行中 | `packages/server`。権限とワークフロー(項目3)はまだ仮の実装のまま |
 | エディタ (M2) | 未実装 | — |
 
 ### 検証の分担

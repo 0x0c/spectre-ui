@@ -3,3 +3,4 @@
 export * from './generated'
 export * from './manifest'
 export * from './validate'
+export * from './degrade'

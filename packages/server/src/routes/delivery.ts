@@ -2,12 +2,15 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { FastifyInstance } from 'fastify'
+import { degradeDocumentTree, loadManifest } from '@spectre-ui/manifest'
 import type { Database } from '../db.ts'
 import { etagOf } from '../checksum.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const manifestJson = readFileSync(resolve(here, '../../../../spec/component-manifest.json'), 'utf8')
+const manifestPath = resolve(here, '../../../../spec/component-manifest.json')
+const manifestJson = readFileSync(manifestPath, 'utf8')
 const manifestData = JSON.parse(manifestJson) as { schemaVersion: string }
+const manifest = loadManifest(manifestPath)
 
 interface ActiveRelease {
   version_id: string
@@ -20,17 +23,20 @@ interface ActiveRelease {
  * 配信API: 現在の公開版の解決、イミュータブルな配信、クライアント検証用の
  * マニフェスト (SU-0004 Detailed design 項目2、docs/architecture.md §4)。
  *
- * ケイパビリティネゴシエーション (`Spectre-Capabilities` によるツリーの整形) は
- * まだ行わない — SU-0008 が受け持つ。ここではヘッダを読んでテレメトリに残すだけ。
+ * ケイパビリティネゴシエーション (`Spectre-Schema` / `Spectre-Components` による
+ * ツリーの整形、docs/compatibility.md §2、SU-0008 項目2) はここで行う。
  */
 export function registerDeliveryRoutes(app: FastifyInstance, db: Database): void {
   app.get<{ Params: { screenId: string }; Querystring: { channel?: string } }>(
     '/screens/:screenId',
     async (request, reply) => {
       const channel = request.query.channel ?? 'production'
-      const capabilities = request.headers['spectre-capabilities']
-      if (capabilities) {
-        request.log.info({ screenId: request.params.screenId, capabilities }, 'spectre.capabilities.declared')
+      const declared = {
+        schemaVersion: request.headers['spectre-schema'] as string | undefined,
+        componentsHash: request.headers['spectre-components'] as string | undefined,
+      }
+      if (declared.schemaVersion || declared.componentsHash) {
+        request.log.info({ screenId: request.params.screenId, ...declared }, 'spectre.capabilities.declared')
       }
 
       const result = await db.query<ActiveRelease>(
@@ -44,14 +50,18 @@ export function registerDeliveryRoutes(app: FastifyInstance, db: Database): void
       const release = result.rows[0]
       if (!release) return reply.code(404).send({ error: '公開されているドキュメントがありません' })
 
-      const etag = etagOf(release.checksum)
+      const shaped = degradeDocumentTree(release.body, manifest, declared)
+      // ケイパビリティ込みでハッシュを取る: CDN が新しいクライアント向けの応答を
+      // 古いクライアントへ誤って返さないようにするため (docs/compatibility.md §2)。
+      const etag = etagOf(`${release.checksum}:${declared.schemaVersion ?? ''}:${declared.componentsHash ?? ''}`)
       reply.header('ETag', etag)
       reply.header('Cache-Control', 'public, max-age=60')
+      reply.header('Vary', 'Spectre-Schema, Spectre-Components')
 
       if (request.headers['if-none-match'] === etag) {
         return reply.code(304).send()
       }
-      return reply.send(release.body)
+      return reply.send(shaped)
     },
   )
 

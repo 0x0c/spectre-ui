@@ -30,7 +30,15 @@ private let sampleScreens: [SampleScreen] = [
 
 /// サンプル用の DocumentTransport。実アプリではここが実際の URLSession クライアントになる。
 private struct BundleDocumentTransport: SpectreDocumentTransport {
-    func fetch(screenId: String, params: [String: String], ifNoneMatch: String?) async -> SpectreDocumentTransportResult {
+    func fetch(
+        screenId: String,
+        params: [String: String],
+        ifNoneMatch: String?,
+        capabilities: SpectreCapabilities
+    ) async -> SpectreDocumentTransportResult {
+        // 実アプリではここで `Spectre-Schema` / `Spectre-Components` ヘッダに
+        // capabilities を載せる (docs/compatibility.md §2)。バンドル読み込みには
+        // 相手サーバがいないので、ここでは使わない。
         guard let screen = sampleScreens.first(where: { $0.screenID == screenId }) else {
             return .failure(message: "未知の screenId: \(screenId)")
         }

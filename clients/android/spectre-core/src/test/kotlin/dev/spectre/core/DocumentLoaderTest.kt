@@ -31,14 +31,17 @@ class DocumentLoaderTest {
         var result: SpectreDocumentTransportResult,
     ) : SpectreDocumentTransport {
         var lastIfNoneMatch: String? = null
+        var lastCapabilities: SpectreCapabilities? = null
         var calls = 0
         override suspend fun fetch(
             screenId: String,
             params: Map<String, String>,
             ifNoneMatch: String?,
+            capabilities: SpectreCapabilities,
         ): SpectreDocumentTransportResult {
             calls++
             lastIfNoneMatch = ifNoneMatch
+            lastCapabilities = capabilities
             return result
         }
     }
@@ -149,5 +152,18 @@ class DocumentLoaderTest {
         assertEquals(1, results.size)
         val failed = assertIs<DocumentLoadResult.Failed>(results[0])
         assertEquals("network down", failed.message)
+    }
+
+    @Test
+    @DisplayName("毎リクエストでケイパビリティを申告する (docs/compatibility.md §2)")
+    fun declaresCapabilitiesOnEveryRequest() = runBlocking {
+        val transport = FakeTransport(SpectreDocumentTransportResult.Fresh(documentBody("v1"), "etag-1", 60))
+        val loader = DocumentLoader(transport, supportedComponents = setOf("Text", "VStack"))
+
+        loader.load("s").toList()
+
+        val capabilities = transport.lastCapabilities
+        assertEquals(GeneratedCatalog.SCHEMA_VERSION, capabilities?.schemaVersion)
+        assertEquals(GeneratedCatalog.capabilityHash(setOf("Text", "VStack")), capabilities?.componentsHash)
     }
 }

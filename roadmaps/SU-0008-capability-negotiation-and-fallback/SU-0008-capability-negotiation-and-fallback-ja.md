@@ -57,8 +57,8 @@
 > 作業の進行に合わせて更新します。チェックリストは*詳細設計*の分解を写したもので、ログは何がいつ
 > 変わったかを古い順に記録します。
 
-- [ ] 1. クライアントによるケイパビリティの申告
-- [ ] 2. サーバ側での木の整形
+- [x] 1. クライアントによるケイパビリティの申告
+- [x] 2. サーバ側での木の整形
 - [x] 3. ノードの `fallback` と `optional` フィールド
 - [x] 4. プレースホルダ段階を含む、決まった劣化の順序
 - [x] 5. 加算のみという進化の規則の CI 強制
@@ -93,21 +93,27 @@
   既存の `resolve/resolver.json` にあった「`fallback` も `optional` もない」ケースは、
   この変更が正確に置き換える挙動だったため、プレースホルダを期待するよう更新しました。
 
-  項目1と2は「省略」ではなく「ブロック」です。このワークツリーのブランチは、ヘッダ送信の入口となる
-  [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) の `DocumentLoader` にも、
-  木の整形先となる
-  [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md) の配信サービスにも
-  分岐する前の時点にあります。どちらもこのブランチの履歴にはまだ存在せず、まだマージされていない
-  並行ブランチで出荷済みです。この段階でどちらかをゼロから組み立てると、その並行作業と重複し、
-  マージ時に衝突する恐れがあるため、両方とも前提となる作業がこのブランチの履歴に入るまで待ちます。
-  設計自体はその並行ブランチのコードに対してすでに検討済みです — クライアントが `Spectre-Schema` と
-  `Spectre-Components` のハッシュを送り、サーバは `packages/manifest` に新設する
-  `degradeDocumentTree` で木を整形し、ハッシュが未知のときは各コンポーネントのマニフェストの
-  `since` フィールドを `docs/compatibility.md` §2 と整合する形で保守的な推定に使います。
-  ブランチが統合された後の実装は、新規の設計作業ではなく小さな追従作業で済むはずです。項目6が
-  ブロックされている理由は、作業指示にすでに書かれているとおりです。エディタがまだ存在しないため
-  （[SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md) はこのリポジトリでは
-  未着手です）、バージョンの下限を警告として出す場所がありません。
+  項目1と2は、後続の変更で実装しました。
+  [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) の `DocumentLoader` と
+  [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md) の配信サービスが
+  このブランチへ合流した後の対応です(上記の変更はどちらより前の時点にあり、それを見落としではなく
+  実在の前提条件の欠落として明記していました)。`DocumentLoader.load()` は、コンストラクタの
+  `supportedComponents` に対応する `SpectreCapabilities` の値
+  (`GeneratedCatalog.SCHEMA_VERSION` / `GeneratedCatalog.capabilityHash()`) を毎リクエスト計算し、
+  両プラットフォームで `SpectreDocumentTransport.fetch()` に渡すようになりました。ホスト側の
+  transport 実装は、これを `Spectre-Schema` と `Spectre-Components` ヘッダとして転送します
+  (`docs/compatibility.md` §2)。`packages/manifest` には `degradeDocumentTree()` を追加しました。
+  ハッシュが現行マニフェストと一致すれば木を歩かずに済み、一致しなければ `Spectre-Schema` と
+  各コンポーネントの `since` フィールドから保守的に見積もり、未対応ノードを
+  (再帰的に解決した) `fallback` に差し替えるか、`optional` なら省略します。どちらも
+  クライアント側 `Resolver.degrade()` の最初の2分岐をそのまま写したものです。第3の分岐
+  (`fallback` のない必須ノード) はあえて手を付けていません — サーバが独自のプレースホルダを
+  作ると実装が二重管理になるため、そこはクライアントの `Resolver` に最終防衛線として委ねます。
+  `packages/server` の配信ルートは `GET /screens/:screenId` のたびにこれを呼び、申告された
+  ケイパビリティを `ETag` に織り込みます。CDN が一方のクライアント向けに整形した応答を、別の
+  クライアントへ誤って返さないようにするためです。項目6は依然としてブロックされたままです。
+  バージョンの下限警告を出す場所となるエディタが、まだ存在しないからです
+  ([SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md))。
 
 ## 参考
 

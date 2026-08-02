@@ -8,7 +8,28 @@ import Foundation
 /// そのもの — ベース URL・CDN・署名検証など、性質が異なるからである
 /// (docs/architecture.md §3.1 のデータフロー図で SDK がサーバ/CDN に直接繋いでいる部分)。
 public protocol SpectreDocumentTransport: Sendable {
-    func fetch(screenId: String, params: [String: String], ifNoneMatch: String?) async -> SpectreDocumentTransportResult
+    func fetch(
+        screenId: String,
+        params: [String: String],
+        ifNoneMatch: String?,
+        capabilities: SpectreCapabilities
+    ) async -> SpectreDocumentTransportResult
+}
+
+/// クライアントのケイパビリティ申告 (docs/compatibility.md §2)。
+///
+/// 実際の HTTP リクエストを組み立てるのは `SpectreDocumentTransport` の実装 (ホストアプリ) の
+/// 責務だが、値そのもの (`GeneratedCatalog.schemaVersion` / `GeneratedCatalog.capabilityHash`)
+/// は SDK が持っているため、ここで計算して渡す。ホスト側は `Spectre-Schema` /
+/// `Spectre-Components` ヘッダとして転送する。
+public struct SpectreCapabilities: Sendable, Equatable {
+    public let schemaVersion: String
+    public let componentsHash: String
+
+    public init(schemaVersion: String, componentsHash: String) {
+        self.schemaVersion = schemaVersion
+        self.componentsHash = componentsHash
+    }
 }
 
 public enum SpectreDocumentTransportResult: Sendable {
@@ -50,6 +71,10 @@ public final class DocumentLoader: Sendable {
     private let cacheDir: URL?
     /// アプリ同梱のバンドル済みフォールバック (リソース等) を返す。ネットワークにもキャッシュにもない場合の最後の手段。
     private let bundledProvider: (@Sendable (_ screenId: String) -> String?)?
+    /// このクライアントが解釈できるコンポーネント名 (docs/compatibility.md §2)。
+    /// `Resolver` に渡すものと揃えるのが通常だが、ホストアプリが劣化検証専用に別の
+    /// 集合を渡したい場合のために独立させてある。
+    private let supportedComponents: Set<String>
     private let memoryCacheSize: Int
     private let clock: @Sendable () -> Int64
     private let memoryCache: MemoryCache
@@ -58,12 +83,14 @@ public final class DocumentLoader: Sendable {
         transport: SpectreDocumentTransport,
         cacheDir: URL? = nil,
         bundledProvider: (@Sendable (_ screenId: String) -> String?)? = nil,
+        supportedComponents: Set<String> = GeneratedCatalog.componentNames,
         memoryCacheSize: Int = 20,
         clock: @escaping @Sendable () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }
     ) {
         self.transport = transport
         self.cacheDir = cacheDir
         self.bundledProvider = bundledProvider
+        self.supportedComponents = supportedComponents
         self.memoryCacheSize = memoryCacheSize
         self.clock = clock
         self.memoryCache = MemoryCache(capacity: memoryCacheSize)
@@ -106,7 +133,16 @@ public final class DocumentLoader: Sendable {
             emittedFromCache = true
         }
 
-        let transportResult = await transport.fetch(screenId: screenId, params: params, ifNoneMatch: cached?.etag)
+        let capabilities = SpectreCapabilities(
+            schemaVersion: GeneratedCatalog.schemaVersion,
+            componentsHash: GeneratedCatalog.capabilityHash(supported: supportedComponents)
+        )
+        let transportResult = await transport.fetch(
+            screenId: screenId,
+            params: params,
+            ifNoneMatch: cached?.etag,
+            capabilities: capabilities
+        )
 
         switch transportResult {
         case .fresh(let body, let etag, let maxAgeSec):

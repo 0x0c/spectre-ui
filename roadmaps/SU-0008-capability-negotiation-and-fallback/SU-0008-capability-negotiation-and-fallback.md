@@ -60,8 +60,8 @@ version floor a screen implies before it is published.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] 1. Client capability declaration
-- [ ] 2. Server-side tree shaping
+- [x] 1. Client capability declaration
+- [x] 2. Server-side tree shaping
 - [x] 3. The `fallback` and `optional` node fields
 - [x] 4. The fixed degradation order, including the placeholder tier
 - [x] 5. The additive-only evolution rule, enforced in CI
@@ -96,22 +96,28 @@ version floor a screen implies before it is published.
   no-`fallback`/non-`optional` path was updated to expect a placeholder, since that is precisely the
   behavior this change replaces.
 
-  Points 1 and 2 are blocked, not skipped. This worktree's branch predates both
-  [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md)'s `DocumentLoader`, the transport
-  entry point a header-sending change needs, and
-  [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md)'s delivery service, the
-  route a tree-shaping change needs. Neither exists yet in this branch's history, though both are
-  shipped on a sibling branch not yet merged here. Building either from scratch in this pass would
-  duplicate that concurrent work and risk conflicting with it once merged, so both wait for that
-  prerequisite work to land first. The design is already worked out against the sibling branch's
-  code, so implementing it once the branches combine should be a small follow-up rather than fresh
-  design work: the client sends `Spectre-Schema` and a `Spectre-Components` hash; the server shapes
-  the tree with a new `degradeDocumentTree` in `packages/manifest`, using each component's manifest
-  `since` field as the conservative estimate when the hash is unrecognized, consistent with
-  `docs/compatibility.md` §2. Point 6 is blocked for the reason the task instructions already name:
-  there is no editor yet
-  ([SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md) is unstarted in this
-  repository), so there is nowhere to surface a version-floor warning.
+  Points 1 and 2 landed in a follow-up change, once
+  [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md)'s `DocumentLoader` and
+  [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md)'s delivery service
+  merged into this branch (the change above predates both, and named this as a real prerequisite
+  gap rather than an omission). `DocumentLoader.load()` now computes a `SpectreCapabilities` value
+  (`GeneratedCatalog.SCHEMA_VERSION` / `GeneratedCatalog.capabilityHash()`, matching the constructor's
+  `supportedComponents`) and passes it to `SpectreDocumentTransport.fetch()` on every request, on
+  both platforms; the transport implementation the host application supplies carries it onward as
+  `Spectre-Schema` and `Spectre-Components` headers, per `docs/compatibility.md` §2.
+  `packages/manifest` gained `degradeDocumentTree()`: a hash match against the current manifest
+  skips tree-walking entirely; otherwise it estimates conservatively from `Spectre-Schema` against
+  each component's `since` field, replacing an unsupported node with its (recursively resolved)
+  `fallback` or dropping it if `optional`. Both branches mirror `Resolver.degrade()`'s first two
+  branches on the client, rather than inventing new behavior. The third branch (a required node with
+  no fallback) stays untouched on purpose: the server does not manufacture its own placeholder, so
+  as not to duplicate the client's one implementation of it, and the client's own `Resolver` still
+  catches it as the documented last line of defense.
+  `packages/server`'s delivery route calls this on every `GET /screens/:screenId`, and folds the
+  declared capability into the `ETag` so a CDN cannot serve a response shaped for one client to
+  another. Point 6 stays blocked: there is still no editor
+  ([SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md)) to surface a version-floor
+  warning in.
 
 ## References
 

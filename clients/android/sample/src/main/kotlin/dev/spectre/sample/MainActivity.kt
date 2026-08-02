@@ -75,7 +75,11 @@ private class AssetDocumentTransport(private val context: Context) : SpectreDocu
         screenId: String,
         params: Map<String, String>,
         ifNoneMatch: String?,
+        capabilities: SpectreCapabilities,
     ): SpectreDocumentTransportResult {
+        // 実アプリではここで `Spectre-Schema` / `Spectre-Components` ヘッダに
+        // capabilities を載せる (docs/compatibility.md §2)。アセット読み込みには
+        // 相手サーバがいないので、ここでは使わない。
         val screen = SAMPLE_SCREENS.firstOrNull { it.screenId == screenId }
             ?: return SpectreDocumentTransportResult.Failure("未知の screenId: $screenId")
         delay(600) // ネットワーク往復の体感を出すための待ち (SampleHostDelegate と揃える)

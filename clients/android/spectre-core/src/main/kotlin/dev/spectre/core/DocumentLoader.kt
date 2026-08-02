@@ -19,8 +19,19 @@ interface SpectreDocumentTransport {
         screenId: String,
         params: Map<String, String>,
         ifNoneMatch: String?,
+        capabilities: SpectreCapabilities,
     ): SpectreDocumentTransportResult
 }
+
+/**
+ * クライアントのケイパビリティ申告 (docs/compatibility.md §2)。
+ *
+ * 実際の HTTP リクエストを組み立てるのは [SpectreDocumentTransport] の実装 (ホストアプリ) の
+ * 責務だが、値そのもの ([GeneratedCatalog.SCHEMA_VERSION] / [GeneratedCatalog.capabilityHash])
+ * は SDK が持っているため、ここで計算して渡す。ホスト側は `Spectre-Schema` /
+ * `Spectre-Components` ヘッダとして転送する。
+ */
+data class SpectreCapabilities(val schemaVersion: String, val componentsHash: String)
 
 sealed interface SpectreDocumentTransportResult {
     /** 200 とドキュメント本文。 */
@@ -56,6 +67,12 @@ class DocumentLoader(
     private val cacheDir: File? = null,
     /** アプリ同梱のバンドル済みフォールバック (アセット等) を返す。ネットワークにもキャッシュにもない場合の最後の手段。 */
     private val bundledProvider: ((screenId: String) -> String?)? = null,
+    /**
+     * このクライアントが解釈できるコンポーネント名 (docs/compatibility.md §2)。
+     * [Resolver] に渡すものと揃えるのが通常だが、ホストアプリが劣化検証専用に別の
+     * 集合を渡したい場合のために独立させてある。
+     */
+    private val supportedComponents: Set<String> = GeneratedCatalog.componentNames,
     private val memoryCacheSize: Int = 20,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
@@ -77,6 +94,7 @@ class DocumentLoader(
      * (キャッシュがなければネットワーク到達を待つ1件だけになる)。
      */
     fun load(screenId: String, params: Map<String, String> = emptyMap()): Flow<DocumentLoadResult> = flow {
+        val capabilities = SpectreCapabilities(GeneratedCatalog.SCHEMA_VERSION, GeneratedCatalog.capabilityHash(supportedComponents))
         val key = cacheKey(screenId, params)
         val fromMemory = readMemory(key)
         val cacheSource = if (fromMemory != null) DocumentSource.MEMORY else DocumentSource.DISK
@@ -97,7 +115,7 @@ class DocumentLoader(
             }
         }
 
-        val transportResult = runCatching { transport.fetch(screenId, params, cached?.etag) }
+        val transportResult = runCatching { transport.fetch(screenId, params, cached?.etag, capabilities) }
             .getOrElse { SpectreDocumentTransportResult.Failure(it.message ?: "ネットワークエラー") }
 
         when (transportResult) {

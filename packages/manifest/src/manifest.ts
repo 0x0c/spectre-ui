@@ -14,6 +14,8 @@ export interface ComponentSpec {
   propNames: Set<string>
   actionPaths: string[]
   nodePaths: string[]
+  /** このコンポーネントを追加した schemaVersion。ケイパビリティ整形が使う (docs/compatibility.md §2)。 */
+  since: string
 }
 
 export interface SpectreManifest {
@@ -50,7 +52,7 @@ interface RawPropSpec {
   items?: RawPropSpec
 }
 
-function classify(component: { name: string; category: string; children?: unknown; props?: Record<string, RawPropSpec> }): ComponentSpec {
+function classify(component: { name: string; category: string; children?: unknown; props?: Record<string, RawPropSpec>; since?: string }): ComponentSpec {
   const actionPaths: string[] = []
   const nodePaths: string[] = []
   const propNames: string[] = []
@@ -80,5 +82,6 @@ function classify(component: { name: string; category: string; children?: unknow
     propNames: new Set(propNames),
     actionPaths,
     nodePaths,
+    since: component.since ?? '0.0',
   }
 }
