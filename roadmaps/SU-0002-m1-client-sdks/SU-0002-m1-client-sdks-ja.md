@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **進行中** |
 | トピック | クライアントSDK |
-| 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md) |
+| 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md)、[SU-0013](../SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに
@@ -86,6 +86,10 @@ SDUI（Server-Driven UI、サーバードリブンUI）が信頼を得るか失�
 - 両サンプルアプリも、バンドル済み JSON を直接読まず `DocumentLoader` 経由で読み込むようになりました。
 - 残るのはファジングテストとスナップショットテスト（項目7）だけです。
 - 詳細設計のそれ以外は、両プラットフォームで動作しテスト済みの実装が揃いました。
+- 2026-08-02: 項目7のうちスナップショットテストは
+  [SU-0013](../SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing-ja.md)
+  へ移し、レンダラごとのビジュアルリグレッションテストとして扱います。ファジングテストは本項目に
+  残るため、チェックは外したままにします。
 
 ## 参考
 

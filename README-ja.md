@@ -42,6 +42,17 @@ cd clients/android && ./gradlew :sample:installDebug
 # iOS のランタイムテスト（Xcode が必要）
 cd clients/ios && swift test
 
+# Compose レンダラのビジュアルリグレッションテスト（Android SDK が必要）。
+# 参照画像を記録し直すときは -Pspectre.vrt.record=true を付ける。
+cd clients/android && ./gradlew :spectre-ui:testDebugUnitTest \
+  --tests 'dev.spectre.ui.SpectreScreenSnapshotTest'
+
+# SwiftUI レンダラのビジュアルリグレッションテスト（Xcode が必要）。
+# 参照画像を記録し直すときは SPECTRE_VRT_RECORD=1 を渡す。
+cd clients/ios && xcodebuild test -scheme SpectreUI \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:SpectreUISnapshotTests
+
 # iOS サンプルアプリ（XcodeGen が必要）
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 

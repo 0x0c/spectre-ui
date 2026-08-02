@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      record_vrt:
+        description: 'VRT のゴールデン画像を記録し直す (SU-0013)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -203,6 +208,127 @@ jobs:
         with:
           name: sample-debug-apk
           path: clients/android/sample/build/outputs/apk/debug/*.apk
+          retention-days: 7
+
+  # Compose レンダラのビジュアルリグレッションテスト (SU-0013)。
+  # Roborazzi が Robolectric 上で描画するので、エミュレータを起動せず
+  # android ジョブと同じ ubuntu ランナーで回る。
+  android-vrt:
+    name: Android VRT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # ゴールデン画像がまだ1枚もない間は記録モードで走り、成果物として出す。
+      # 比較対象がない状態での検証は、退行がなくても必ず落ちるため。
+      - name: 実行モードの決定
+        id: mode
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.inputs.record_vrt }}" = "true" ]; then
+            echo "::notice::VRT を記録モードで実行します (workflow_dispatch の指定)。"
+            echo "record=true" >> "$GITHUB_OUTPUT"
+          elif ls clients/android/spectre-ui/src/test/snapshots/*.png >/dev/null 2>&1; then
+            echo "record=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::ゴールデン画像がないため記録モードで実行します。成果物 android-vrt-images を確認し、内容が正しければコミットしてください。"
+            echo "record=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: VRT
+        working-directory: clients/android
+        env:
+          RECORD: ${{ steps.mode.outputs.record }}
+        run: |
+          set -euo pipefail
+          args=""
+          if [ "$RECORD" = "true" ]; then args="-Pspectre.vrt.record=true"; fi
+          ./gradlew --no-daemon :spectre-ui:testDebugUnitTest \
+            --tests 'dev.spectre.ui.SpectreScreenSnapshotTest' $args
+
+      # 記録した画像と、検証に失敗したときの差分画像の両方を出す。
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-vrt-images
+          path: |
+            clients/android/spectre-ui/src/test/snapshots
+            clients/android/spectre-ui/build/outputs/roborazzi
+          retention-days: 7
+
+  # SwiftUI レンダラのビジュアルリグレッションテスト (SU-0013)。
+  # ios ジョブの swift test は macOS 上で走るため、iOS の描画は固定できない。
+  # こちらは iOS シミュレータ上でテストを実行する。
+  ios-vrt:
+    name: iOS VRT
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 実行モードの決定
+        id: mode
+        run: |
+          set -euo pipefail
+          goldens='clients/ios/Tests/SpectreUISnapshotTests/__Snapshots__/SpectreScreenSnapshotTests'
+          if [ "${{ github.event.inputs.record_vrt }}" = "true" ]; then
+            echo "::notice::VRT を記録モードで実行します (workflow_dispatch の指定)。"
+            echo "record=1" >> "$GITHUB_OUTPUT"
+          elif ls "$goldens"/*.png >/dev/null 2>&1; then
+            echo "record=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::ゴールデン画像がないため記録モードで実行します。成果物 ios-vrt-images を確認し、内容が正しければコミットしてください。"
+            echo "record=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      # TEST_RUNNER_ 接頭辞つきの環境変数は、xcodebuild が接頭辞を外して
+      # テストプロセスへ渡す。シミュレータ上のテストへ値を届ける経路はこれ。
+      - name: VRT
+        working-directory: clients/ios
+        env:
+          SPECTRE_VRT_RECORD: ${{ steps.mode.outputs.record }}
+          TEST_RUNNER_SPECTRE_VRT_RECORD: ${{ steps.mode.outputs.record }}
+        run: |
+          set -uo pipefail
+          xcodebuild test \
+            -scheme SpectreUI \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -only-testing:SpectreUISnapshotTests \
+            -resultBundlePath vrt-result.xcresult \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO
+          status=$?
+          # 記録モードでは swift-snapshot-testing が意図的にテストを失敗させる
+          # (記録したまま気付かず通過するのを防ぐため)。記録が目的の実行では、
+          # 画像が実際に残ったかどうかで成否を判断する。
+          if [ "$SPECTRE_VRT_RECORD" = "1" ]; then
+            goldens='Tests/SpectreUISnapshotTests/__Snapshots__/SpectreScreenSnapshotTests'
+            if ls "$goldens"/*.png >/dev/null 2>&1; then
+              echo "::notice::ゴールデン画像を記録しました。成果物 ios-vrt-images から取得してコミットしてください。"
+              exit 0
+            fi
+            echo "::error::記録モードで実行しましたが、ゴールデン画像が1枚も生成されていません。"
+            exit 1
+          fi
+          exit $status
+
+      # 記録した画像と、テスト結果バンドルの両方を出す。検証に失敗したときの
+      # 実画像と差分は、swift-snapshot-testing が後者に添付として残す。
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-vrt-images
+          path: |
+            clients/ios/Tests/SpectreUISnapshotTests/__Snapshots__
+            clients/ios/vrt-result.xcresult
           retention-days: 7
 
   # Unit tests for the Python scripts that assemble the docs site.

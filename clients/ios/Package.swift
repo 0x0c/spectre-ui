@@ -8,6 +8,11 @@ let package = Package(
         .iOS(.v16),
         .macOS(.v13),
     ],
+    // VRT (SU-0013) だけが使う。SwiftPM はテストターゲットからしか参照されない依存を
+    // 利用側パッケージへ持ち込まないので、ホストアプリの依存は増えない。
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
+    ],
     products: [
         // ロジックだけが必要なホスト (サーバサイド検証・CLI・テスト) 向け。
         // Foundation にしか依存しないため、SwiftUI が使えない環境でも取り込める。
@@ -27,5 +32,17 @@ let package = Package(
         // layer that can be checked without building a SwiftUI view — rather than screen
         // assembly itself.
         .testTarget(name: "SpectreUITests", dependencies: ["SpectreUI", "SpectreCore"]),
+        // VRT (SU-0013)。中身は iOS 向けにのみコンパイルする — SwiftUI ビューを
+        // UIHostingController に載せて撮る方式が UIKit を要求するのと、固定したい
+        // 描画がホストアプリの出荷する iOS のものであるため。macOS 上の
+        // `swift test` では空のターゲットになる。
+        .testTarget(
+            name: "SpectreUISnapshotTests",
+            dependencies: [
+                "SpectreUI",
+                "SpectreCore",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ]
+        ),
     ]
 )
