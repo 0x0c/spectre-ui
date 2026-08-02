@@ -59,10 +59,11 @@ jobs:
             | xargs -0 -I{} node -e 'JSON.parse(require("fs").readFileSync("{}","utf8"))'
           echo "すべての JSON が解析できました"
 
-  # packages/manifest と packages/server のテスト。実際の PostgreSQL に対して
-  # 統合テストを走らせる (SU-0004)。
+  # packages/manifest・packages/server・packages/editor のテスト。実際の PostgreSQL に
+  # 対して統合テストを走らせる (SU-0004)。editor はここに同居させている — 同じ pnpm
+  # ワークスペース・同じ Node セットアップを再利用でき、別ジョブに割る理由がないため。
   server:
-    name: Server (TypeScript)
+    name: Server + Editor (TypeScript)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -105,6 +106,13 @@ jobs:
         run: |
           pnpm run typecheck
           pnpm run test
+
+      - name: packages/editor の型検査・テスト・ビルド
+        working-directory: packages/editor
+        run: |
+          pnpm run typecheck
+          pnpm run test
+          pnpm run build
 
   # Compose レンダラとサンプルアプリのコンパイル。
   # GitHub の ubuntu ランナーには Android SDK が入っているため、
