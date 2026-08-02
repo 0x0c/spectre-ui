@@ -44,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 加算のみチェック (下) が比較元の版を `git show` で読むために全履歴が要る。
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -58,6 +61,11 @@ jobs:
           find spec examples -name '*.json' -print0 \
             | xargs -0 -I{} node -e 'JSON.parse(require("fs").readFileSync("{}","utf8"))'
           echo "すべての JSON が解析できました"
+
+      # schemaVersion のマイナー増加が加算のみであること (docs/compatibility.md §5, ADR-0006)。
+      # origin/main と比較するため、上の fetch-depth: 0 で全履歴を取得しておく。
+      - name: マニフェストの加算のみ進化規則
+        run: node packages/codegen/check-additive-evolution.mjs
 
   # Compose レンダラとサンプルアプリのコンパイル。
   # GitHub の ubuntu ランナーには Android SDK が入っているため、
