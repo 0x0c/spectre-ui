@@ -8,6 +8,7 @@ import SpectreCore
 /// 登録しない。`track` と `openURL` だけ、操作したことがその場で見えるように配線する。
 final class APNsSampleHostDelegate: SpectreHostDelegate {
     private let allowedURLHosts: Set<String> = ["example.com", "www.example.com"]
+    private let registeredHostActions: Set<String> = []
     private let onEvent: (String) -> Void
 
     init(onEvent: @escaping (String) -> Void = { _ in }) {
@@ -24,6 +25,9 @@ final class APNsSampleHostDelegate: SpectreHostDelegate {
     }
 
     func performHostAction(name: String, params: SpValue) async throws -> SpValue? {
+        guard registeredHostActions.contains(name) else {
+            throw APNsSampleHostError.unregisteredAction(name)
+        }
         onEvent("host:\(name)")
         return nil
     }
@@ -40,5 +44,16 @@ final class APNsSampleHostDelegate: SpectreHostDelegate {
         onEvent("openUrl \(url)")
         Task { @MainActor in UIApplication.shared.open(parsed) }
         return true
+    }
+}
+
+enum APNsSampleHostError: LocalizedError {
+    case unregisteredAction(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .unregisteredAction(let name):
+            return "host アクション '\(name)' は登録されていません"
+        }
     }
 }
