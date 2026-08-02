@@ -14,7 +14,7 @@ Android のネイティブSDK（Software Development Kit、ソフトウェア開
 iOS と Android のランタイムと、プラットフォームごとのレンダラを置いています。サーバを立てずに
 UI定義ドキュメントを描画するサンプルアプリもあります。エディタ（マイルストーンM2）と配信基盤
 （マイルストーンM3）は未着手です。各部分が何を含み、どう検証しているかは
-[docs/roadmap.md](docs/roadmap.md) に記録しています。
+[docs/roadmap.md](docs/roadmap-ja.md) に記録しています。
 
 ## 動かす
 
@@ -55,15 +55,15 @@ MkDocs で https://0x0c.github.io/spectre-ui/docs/ に置いています。
 | --- | --- |
 | [docs/adr/](docs/adr/README-ja.md) | ADR（アーキテクチャ決定記録）。1決定1ディレクトリ、英語と日本語の両方 |
 | [roadmaps/](roadmaps/README-ja.md) | ロードマップ項目。1項目1ディレクトリ、英語と日本語の両方 |
-| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定の索引。前提とする制約と、ADRの一覧 |
-| [docs/architecture.md](docs/architecture.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
+| [docs/tech-selection.md](docs/tech-selection-ja.md) | 技術選定の索引。前提とする制約と、ADRの一覧 |
+| [docs/architecture.md](docs/architecture-ja.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
 | [docs/spec/schema.md](docs/spec/schema.md) | UI定義ドキュメントのスキーマ仕様 v0.1 |
 | [docs/spec/components.md](docs/spec/components.md) | コンポーネントカタログ v0.1 とデザイントークン |
 | [docs/spec/expression.md](docs/spec/expression.md) | 式言語 SpectreExpr とデータバインディング |
 | [docs/spec/actions.md](docs/spec/actions.md) | アクション仕様とサーバ応答プロトコル |
-| [docs/editor.md](docs/editor.md) | Web WYSIWYGエディタの設計 |
-| [docs/compatibility.md](docs/compatibility.md) | バージョニング、前方互換、配信とロールバックの戦略 |
-| [docs/roadmap.md](docs/roadmap.md) | マイルストーンの概観、見積もり、未決事項、リスク |
+| [docs/editor.md](docs/editor-ja.md) | Web WYSIWYGエディタの設計 |
+| [docs/compatibility.md](docs/compatibility-ja.md) | バージョニング、前方互換、配信とロールバックの戦略 |
+| [docs/roadmap.md](docs/roadmap-ja.md) | マイルストーンの概観、見積もり、未決事項、リスク |
 
 ADRとロードマップ項目は永続的な番号を持ち、1件につき1ディレクトリを占めます。各ディレクトリには、
 英語版 `X.md` と日本語版 `X-ja.md` を組で置きます。採番と書式の規則は
@@ -71,8 +71,8 @@ ADRとロードマップ項目は永続的な番号を持ち、1件につき1デ
 あります。執筆時の文章規範と手順は [.agent-workflows/](.agent-workflows/README.md) にあり、
 `.claude/skills/` のアダプタがそれを Claude Code へ読み込みます。
 
-英語が主、日本語が従です。例外は `docs/adr/` を除く `docs/` 以下のドキュメントで、現時点では日本語
-だけがあります。
+英語が主、日本語が従です。例外は `docs/spec/` 以下の仕様4文書で、マイルストーンM0が仕様を凍結する
+まで日本語だけが残ります（[SU-0011](roadmaps/SU-0011-english-first-documentation/SU-0011-english-first-documentation-ja.md)）。
 
 ## 成果物（設計サンプル）
 

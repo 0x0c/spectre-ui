@@ -66,6 +66,6 @@
 ## 参考
 
 - [ADR-0006 — バージョニングと前方互換性](../../docs/adr/ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility-ja.md) — この項目が実装する決定です。
-- [`docs/compatibility.md`](../../docs/compatibility.md) — ロールバック戦略を含む仕組みの全体です。
+- [`docs/compatibility.md`](../../docs/compatibility-ja.md) — ロールバック戦略を含む仕組みの全体です。
 - [SU-0007 — 適合性コーパス](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md) — 両ランタイムを同じ劣化に縛る `compat/` のケースです。
 - [SU-0005 — M4、運用の成熟](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity-ja.md) — このテレメトリの上に作る対応率フィードバックです。

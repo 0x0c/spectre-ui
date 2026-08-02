@@ -72,4 +72,4 @@ SDUI（Server-Driven UI、サーバードリブンUI）が信頼を得るか失�
 - [SU-0001 — M0、仕様の凍結](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md) — このマイルストーンが使う仕様と生成された型です。
 - [SU-0007 — 適合性コーパス](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md) — ランタイム間の一致に対する受け入れ基準です。
 - [SU-0008 — ケイパビリティネゴシエーションとノード単位のフォールバック](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md) — ここで実装する劣化の挙動です。
-- [`docs/architecture.md`](../../docs/architecture.md) — ランタイムの層構成です。
+- [`docs/architecture.md`](../../docs/architecture-ja.md) — ランタイムの層構成です。

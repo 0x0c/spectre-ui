@@ -51,6 +51,10 @@ jobs:
         with:
           enablement: true
 
+      # docs/ の英語・日本語ページが対で揃っているか（spec/ は既知の例外として除外）
+      - name: Check docs/ language mirror completeness
+        run: python3 scripts/check_docs_mirror.py
+
       # ドキュメント → site/docs/。--strict なのでリンク切れがあれば落ちる
       - name: Build documentation
         run: mkdocs build --strict

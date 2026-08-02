@@ -79,12 +79,13 @@ markdown_extensions:
       alternate_style: true
 
 nav:
-  - ホーム: index.md
+  - ホーム: index-ja.md
+  - Home (English): index.md
   - 設計:
-      - 技術選定: tech-selection.md
-      - アーキテクチャ: architecture.md
-      - エディタ: editor.md
-      - 互換性・配信戦略: compatibility.md
+      - 技術選定: tech-selection-ja.md
+      - アーキテクチャ: architecture-ja.md
+      - エディタ: editor-ja.md
+      - 互換性・配信戦略: compatibility-ja.md
       - ADR:
           - 一覧: adr/README-ja.md
           - Index (English): adr/README.md
@@ -101,12 +102,17 @@ nav:
       - コンポーネントカタログ v0.1: spec/components.md
       - 式言語 SpectreExpr: spec/expression.md
       - アクション: spec/actions.md
-  - ロードマップ: roadmap.md
+  - ロードマップ: roadmap-ja.md
 
 # 英語版のページはナビには載せず、各ページの言語切り替えリンクから辿る
 not_in_nav: |
   adr/*/*.md
   !adr/*/*-ja.md
+  tech-selection.md
+  architecture.md
+  editor.md
+  compatibility.md
+  roadmap.md
 
 extra:
   social:

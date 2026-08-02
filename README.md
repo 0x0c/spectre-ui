@@ -71,8 +71,10 @@ formatting rules live in [docs/adr/README.md](docs/adr/README.md) and
 [.agent-workflows/](.agent-workflows/README.md). The adapters under `.claude/skills/` load that
 norm for Claude Code.
 
-English leads and the mirror follows it. The documents under `docs/` outside `docs/adr/` are the
-exception, with no English version today.
+English leads and the mirror follows it. The four specification documents under `docs/spec/` are the
+exception. They remain Japanese until milestone M0 freezes the specification, so a page does not get
+translated twice
+([SU-0011](roadmaps/SU-0011-english-first-documentation/SU-0011-english-first-documentation.md)).
 
 ## Deliverables (design samples)
 

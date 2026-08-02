@@ -1,23 +1,28 @@
-# バージョニングと前方互換性
+**English** · [日本語](compatibility-ja.md)
 
-SDUIの導入が失敗するとき、原因はほぼここに集中する。
-**アプリのバージョンは強制更新しない限り古いまま残り続ける**。半年前のアプリが、今日追加したコンポーネントを含むドキュメントを受け取る。
+# Versioning and forward compatibility
 
-「サーバから何でも変えられる」の裏には必ず「クライアントが対応していないものは送れない」がある。この非対称性を設計で扱う。
+When an SDUI adoption fails, the cause almost always traces back here.
+**An app version stays old until the user force-updates it.** A device running an app from six
+months ago still receives a document that carries a component added today.
 
-## 1. 三層の防御
+Behind "the server can change anything" always sits "the server cannot send what the client does not
+support." The design has to handle this asymmetry directly.
 
-| 層 | 責務 | 失敗時の影響 |
+## 1. Three layers of defense
+
+| Layer | Responsibility | Impact on failure |
 | --- | --- | --- |
-| ① ケイパビリティネゴシエーション | サーバが古いクライアント向けの木を返す | 最良。編集者が意識せずに済む |
-| ② ノード単位のフォールバック | 未知ノードを編集者が指定した代替に置換 | 良。劣化の見た目を編集者が設計できる |
-| ③ 未知ノードの安全な省略 | クラッシュせずに落とす | 最低限。穴が空くが壊れない |
+| （1） Capability negotiation | The server returns a tree shaped for the older client | Best. The author never has to think about it |
+| （2） Per-node fallback | An unknown node is replaced with an alternative the author specified | Good. The author designs how the degradation looks |
+| （3） Safe omission of an unknown node | Drop it without crashing | Minimum. A gap appears, but nothing breaks |
 
-①で防ぎきれないものを②が拾い、②もないものを③が受け止める。**③が発動したことは必ずテレメトリに残す**。
+Layer （2） catches what （1） cannot prevent, and layer （3） catches what ② has no answer for either.
+**Whenever （3） fires, telemetry always records it.**
 
-## 2. ① ケイパビリティネゴシエーション
+## 2. （1） Capability negotiation
 
-クライアントは毎リクエストで自分の能力を申告する。
+The client declares its own capabilities on every request.
 
 ```http
 GET /screens/product_detail HTTP/2
@@ -29,110 +34,137 @@ Spectre-SDK-Version: 1.3.2
 If-None-Match: "01J8XKQ...-7f3a9c21"
 ```
 
-- `Spectre-Components` は SDK がビルド時に埋め込む、**対応コンポーネント名の集合のハッシュ**。SDKバージョンとは独立に持つ（ホストアプリがコンポーネントを部分的に無効化できるため）。
-- サーバはこのハッシュを既知の集合と照合し、未知なら `Spectre-Schema` から保守的に推定する。
+- `Spectre-Components` is a hash of **the set of supported component names**, embedded by the SDK at
+  build time. We keep it independent of the SDK version, because a host application can disable a
+  component partway.
+- The server matches this hash against the set it knows; if it is unknown, the server estimates
+  conservatively from `Spectre-Schema`.
 
-サーバ側の処理:
+Server-side processing:
 
 ```
-1. screenId から公開中のドキュメントを解決
-2. クライアントのケイパビリティで木を走査
-3. 未対応ノードを fallback で置換、または optional なら除去
-4. 結果に対する ETag を返す（ETag はケイパビリティを含む）
+1. Resolve the currently published document from screenId
+2. Walk the tree against the client's capabilities
+3. Replace an unsupported node with its fallback, or drop it if it is optional
+4. Return an ETag for the result (the ETag carries the capabilities)
 ```
 
-**ETag にケイパビリティのハッシュを含める**のが重要。含めないと、CDNが新しいクライアント向けの応答を古いクライアントに返してしまう。CDN のキャッシュキーにも `Vary: Spectre-Schema, Spectre-Components` を設定する。
+**Including the capability hash in the ETag matters**: without it, a CDN can serve a response meant
+for a newer client to an older one. Set `Vary: Spectre-Schema, Spectre-Components` on the CDN's cache
+key too.
 
-> CDNのキャッシュ効率とのトレードオフがある。ケイパビリティの組み合わせ数だけキャッシュエントリが増えるため、**ケイパビリティは「集合そのもの」ではなく数個の離散的なティアに丸めて**キャッシュキーにする（例: `tier=A|B|C`）。実際に流通しているSDKバージョンは数種類しかないため、これで十分に効く。
+> This trades off against CDN cache efficiency: the number of cache entries grows with the number of
+> capability combinations, so we round the capability set down to a handful of discrete tiers (for
+> example, `tier=A|B|C`) rather than keying the cache on the raw set itself, for the cache key. Only
+> a handful of SDK versions are ever in circulation at once, so this works well in practice.
 
-## 3. ② ノード単位のフォールバック
+## 3. （2） Per-node fallback
 
 ```jsonc
 {
-  "type": "Carousel",              // v1.4 で追加された新コンポーネント
+  "type": "Carousel",              // a new component added in v1.4
   "props": { "items": "${data.banners}" },
   "fallback": {
-    "type": "Image",               // v1.0 から存在するコンポーネント
+    "type": "Image",               // a component that has existed since v1.0
     "props": { "url": "${first(data.banners).imageUrl}" }
   }
 }
 ```
 
-未知の `type` に遭遇したクライアントの動作:
+What a client does on encountering an unknown `type`:
 
 ```
-type が未知
-  ├─ fallback がある     → fallback を（再帰的に）解決して描画
-  ├─ optional: true      → ノードごと省略
-  └─ どちらもない        → 省略 + spectre.node.unknown を記録
-                            （デバッグビルドでは赤いプレースホルダを表示）
+type is unknown
+  ├─ a fallback exists    → resolve the fallback (recursively) and render it
+  ├─ optional: true       → omit the node entirely
+  └─ neither applies      → omit it, and record spectre.node.unknown
+                            (a debug build shows a red placeholder)
 ```
 
-プロパティ単位でも同じ規則を適用する。未知の `props` キーは**黙って無視する**。未知の列挙値（例: 新しい `variant`）は**そのプロパティの既定値にフォールバックする**。
+The same rule applies at the property level. An unknown `props` key is **silently ignored**. An
+unknown enum value (a new `variant`, for example) **falls back to that property's default**.
 
-**フォールバックを言語仕様に入れる理由**: 未知ノードの扱いをクライアントの実装詳細（`default: break`）に任せると、劣化の仕方が iOS と Android でずれる。仕様の一部にすることで挙動が揃い、かつ**エディタ上で「古いアプリではこう見えます」をプレビューできる**。
+**Why fallback belongs in the language specification**: leaving how to handle an unknown node to a
+client's implementation detail (a `default: break`) lets the degradation drift between iOS and
+Android. Making it part of the specification keeps the behavior aligned, and it lets **the editor
+preview "here's how this looks on an old app"**.
 
-## 4. ③ 安全な省略とクラッシュ耐性
+## 4. （3） Safe omission and crash resilience
 
-クライアントSDKの不変条件:
+An invariant every client SDK holds:
 
-- **ドキュメントの内容が原因でクラッシュしてはならない**。未知の型、欠けたプロパティ、壊れた式、想定外のネスト、循環参照、いずれも。
-- 検証に失敗したドキュメントは適用せず、**キャッシュ済みの直前の正常版**を使う。それもなければホストアプリの `fallbackView` を出す。
-- 上限値（ノード数・深さ・サイズ）は受信時に強制する（[architecture.md](architecture.md) §5）。
+- **The document's content must never crash the app.** Not an unknown type, not a missing property,
+  not a broken expression, not an unexpected nesting depth, not a circular reference.
+- A document that fails validation is never applied; the client uses **the last cached, valid
+  version** instead. Absent that, it shows the host application's `fallbackView`.
+- The client enforces the limits (node count, depth, size) on receipt ([architecture.md](architecture.md)
+  §5).
 
-これを担保するため、両SDKに**ファジングテスト**を置く: 正常なドキュメントをランダムに変異させて（型の入れ替え、キーの削除、深いネスト、巨大配列）クラッシュしないことを検証する。
+To back this up, both SDKs carry a **fuzzing test**: it mutates a valid document at random (swapping
+types, deleting keys, deep nesting, oversized arrays) and verifies that nothing crashes.
 
-## 5. スキーマの進化規則
+## 5. Schema evolution rules
 
-`schemaVersion` は `major.minor`。
+`schemaVersion` is `major.minor`.
 
-### minor の増加でやってよいこと（加算のみ）
+### What a minor bump may do (additive only)
 
-- 新しいコンポーネントの追加
-- 既存コンポーネントへの**任意プロパティ**の追加（既定値は既存挙動と同じでなければならない）
-- 既存の列挙型への値の追加
-- 新しい組み込み関数の追加
-- 新しいアクション種別の追加
+- Add a new component
+- Add an **optional property** to an existing component (its default must match existing behavior)
+- Add a value to an existing enum
+- Add a new built-in function
+- Add a new action kind
 
-### major の増加が必要なこと
+### What requires a major bump
 
-- コンポーネント・プロパティの削除・改名
-- 既定値の変更
-- プロパティの意味の変更
-- 必須プロパティの追加
-- 式の評価規則の変更
+- Removing or renaming a component or a property
+- Changing a default value
+- Changing what a property means
+- Adding a required property
+- Changing an expression's evaluation rule
 
-**major の移行**: サーバは両メジャーバージョンを並行配信する。エディタはドキュメントを新メジャーで保存し、配信時に旧メジャー向けへダウングレード変換する（変換不能な場合は旧クライアントに旧版の公開ポインタを返す）。移行期間は「対象メジャー未対応のクライアントが全体の1%を切るまで」を目安にする。
+**Migrating a major version**: the server delivers both major versions in parallel. The editor saves
+a document under the new major version, and converts it down to the old major version at delivery
+time (when conversion is impossible, the server returns the old published pointer to old clients
+instead). We treat the migration period as done once "clients that do not support the target major
+version fall under 1% of the total."
 
-### 破ってはいけない規則
+### The rule we never break
 
-> **一度公開したプロパティ名の意味を変えてはならない。**
+> **We never change what an already-published property name means.**
 
-削除するより、非推奨にして無視するほうが常に安い。マニフェストに `deprecated: true` と `deprecatedSince` を持たせ、エディタはパレットから隠すが既存ドキュメントは動き続ける。
+Deprecating and ignoring a property is always cheaper than deleting it. The manifest carries
+`deprecated: true` and `deprecatedSince`; the editor hides it from the palette, but an existing
+document that uses it keeps working.
 
-## 6. 実測に基づく編集者へのフィードバック
+## 6. Feedback to the author, grounded in measurement
 
-これが運用を成立させる鍵になる。
+This is the key that makes the whole approach operable.
 
-クライアントSDKは `spectre.node.unknown` イベントを送る（[architecture.md](architecture.md) §8）。
-サーバはこれと配信ログを集計し、**各コンポーネントの「対応済みユーザ比率」**を持つ。
+The client SDK sends a `spectre.node.unknown` event ([architecture.md](architecture.md) §8).
+The server aggregates this against the delivery log and keeps **each component's "share of supported
+users"**.
 
-エディタはこれをパレットとキャンバスに反映する:
+The editor reflects this in the palette and on the canvas:
 
 ```
-┌─ コンポーネント ────────────────┐
+┌─ Components ────────────────────┐
 │  Text          ✓ 100%           │
 │  Button        ✓ 100%           │
 │  Tabs          ✓  99.2%         │
-│  Carousel      ⚠  73.4%   NEW   │  ← 26.6% のユーザには fallback が表示される
+│  Carousel      ⚠  73.4%   NEW   │  ← 26.6% of users see the fallback instead
 └─────────────────────────────────┘
 ```
 
-`Carousel` をキャンバスに置くと、エディタは自動的に **fallback の設定を促す**。fallback がないまま公開しようとすると `compat/unsupported-component` の警告が出る（閾値は設定可能、既定は対応率95%未満で警告）。
+Placing `Carousel` on the canvas automatically prompts the editor to **ask for a fallback
+configuration**. Publishing without one triggers a `compat/unsupported-component` warning (the
+threshold is configurable; the default warns below 95% support).
 
-**「古いアプリのことは考えなくていい」状態を作るのではなく、「古いアプリで何が起きるかが編集画面から見える」状態を作る**。前者は不可能で、後者は運用できる。
+**We do not aim for a state where "old apps need no thought at all"; we aim for a state where "what
+happens on an old app is visible from the editing screen."** The first is impossible; the second is
+operable.
 
-## 7. 公開とロールバック
+## 7. Publishing and rollback
 
 ```
 Draft ──validate──► Staged ──approve──► Released
@@ -140,28 +172,37 @@ Draft ──validate──► Staged ──approve──► Released
   │                    │  internal          │  production
   │                    │  canary (N%)       │  100%
   │                    │                    │
-  └──── 実機ミラーで確認 ──┘                 └─► Rollback（ポインタ差し替え、数秒）
+  └──── confirm on the device mirror ──┘    └─► Rollback (a pointer swap, seconds)
 ```
 
-- 公開されたバージョンは**イミュータブル**。`/d/{documentId}/{versionId}` は永久にキャッシュ可能。
-- `releases` テーブルの公開ポインタを差し替えるだけでロールバックできる。ビルドもデプロイも不要。
-- 段階公開: `rollout_percent` と `targeting`（アプリバージョン範囲・プラットフォーム・ユーザセグメント）。同じ仕組みで A/B テストも表現する。
-- クライアント側のキャッシュTTLがロールバックの反映速度の下限になる。**`/screens/:id` の `max-age` は 60 秒程度に抑え**、その代わり `stale-while-revalidate` で体感速度を確保する。緊急時のためのキルスイッチ（全クライアントに即時再取得を促す仕組み）は M4 で検討。
+- A published version is **immutable**. `/d/{documentId}/{versionId}` is cacheable forever.
+- Rollback swaps the published pointer in the `releases` table, nothing more. It needs no build and no
+  deploy.
+- Staged rollout: `rollout_percent` and `targeting` (the app version range, the platform, the user
+  segment). A/B testing shares the same mechanism.
+- The client-side cache TTL is the floor on how fast a rollback takes effect. **Keep `/screens/:id`'s
+  `max-age` around 60 seconds**, and rely on `stale-while-revalidate` to keep the perceived speed up
+  instead. An emergency kill switch (a mechanism that pushes every client to refetch without delay) is
+  under consideration for M4.
 
-## 8. SDKリリースとコンポーネント追加の運用
+## 8. Operating an SDK release and adding a component
 
-新コンポーネントを追加するときの流れ:
+The flow for adding a new component:
 
 ```
-1. spec/component-manifest.json にコンポーネントを追加 (minor bump)
-2. codegen 実行 → TS/Swift/Kotlin の型が生成される
-3. iOS/Android のレンダラを実装（生成された型に対して未実装ならコンパイルエラーになる設計）
-4. spec/conformance/ にケースを追加
-5. エディタは自動的にパレットに現れる（マニフェスト駆動なので実装不要）
-6. SDK をリリース → ホストアプリが取り込む → ストア審査 → 配布
-7. 対応率が閾値を超えるまでエディタが警告を出し続ける
+1. Add the component to spec/component-manifest.json (a minor bump)
+2. Run codegen → the TS/Swift/Kotlin types are generated
+3. Implement the iOS/Android renderer (the design makes an unimplemented case a compile error against the generated types)
+4. Add cases to spec/conformance/
+5. The editor picks it up in the palette automatically (manifest-driven, no implementation needed)
+6. Release the SDK → the host application adopts it → store review → distribution
+7. The editor keeps warning until the adoption rate crosses the threshold
 ```
 
-**3 の「未実装ならコンパイルエラー」が効く**。生成されるレンダラのディスパッチを網羅的な `switch` にすることで、Swift/Kotlin のコンパイラが実装漏れを検出する。
+**Step 3's "an unimplemented case is a compile error" is what makes this work.** Making the generated
+renderer's dispatch an exhaustive `switch` lets the Swift and Kotlin compilers catch a missing
+implementation.
 
-コンポーネントの追加はSDKリリースを伴うため、**カタログの設計を最初に十分に議論することの価値が高い**。逆に言えば、カタログが十分なら以降の画面変更はすべてサーバ側で完結する。これがSDUIの本来の利益で、そこに到達するために §6 のフィードバックループが要る。
+Adding a component requires an SDK release, so **investing in the catalog design up front pays off
+heavily**. Conversely, once the catalog covers enough ground, every later screen change stays entirely
+server-side. That is SDUI's real payoff, and reaching it needs the feedback loop in §6.
