@@ -44,7 +44,8 @@ export const DEFAULT_SIZES: WorkspaceSizes = {
 
 /**
  * 下限。ドラッグでパネルを消してしまえないようにする (SU-0013 Detailed design 項目2)。
- * 上限は「反対側のパネルが下限を割らないこと」で決まるため、実行時に画面幅から求める。
+ * 上限は画面の大きさに依存するので、ここではなく App.tsx がスプリッタへ渡す。
+ * ストアは、渡ってきた値を下限だけで丸める。
  */
 export const MIN_SIZES = {
   leftWidth: 140,

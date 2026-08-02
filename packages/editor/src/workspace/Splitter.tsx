@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 const KEYBOARD_STEP = 16
 
@@ -21,42 +21,52 @@ export interface SplitterProps {
  *
  * ポインタでドラッグして動かすほか、フォーカスを当てて矢印キーでも動かせる。
  * ポインティングデバイスを持たない利用者を締め出さないための経路であって、
- * 飾りではない。値の下限・上限は呼び出し側が渡す。
+ * 飾りではない。値は [min, max] に丸めてから渡す — 下限だけでなく上限も要る。
+ * 上限がないと、反対側のパネルを画面の外へ押し出せてしまう。
  */
 export function Splitter({ orientation, label, value, min, max, fromPointer, onChange, step = KEYBOARD_STEP }: SplitterProps) {
+  // ドラッグ中に onChange が呼ばれるたび、呼び出し側は新しいクロージャを渡してくる
+  // （インラインのアロー関数）。listener 側がその識別子に依存すると、値が動くたびに
+  // 付け外しが起き、2回目以降の pointermove を取り逃がす。最新の関数は ref で持つ。
+  const latest = useRef({ fromPointer, onChange, min, max })
+  latest.current = { fromPointer, onChange, min, max }
+
   const draggingRef = useRef(false)
 
-  const handlePointerMove = useCallback(
-    (event: PointerEvent) => {
+  // listener は識別子が変わらない1組だけを使い回す。
+  const handlersRef = useRef<{ move: (event: PointerEvent) => void; up: () => void } | null>(null)
+  if (handlersRef.current === null) {
+    const move = (event: PointerEvent) => {
       if (!draggingRef.current) return
-      onChange(fromPointer(event))
-    },
-    [fromPointer, onChange],
-  )
+      const { fromPointer: from, onChange: change, min: lo, max: hi } = latest.current
+      change(Math.min(hi, Math.max(lo, from(event))))
+    }
+    const up = () => {
+      draggingRef.current = false
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    handlersRef.current = { move, up }
+  }
+  const handlers = handlersRef.current
 
-  const stopDragging = useCallback(() => {
-    draggingRef.current = false
-    window.removeEventListener('pointermove', handlePointerMove)
-    window.removeEventListener('pointerup', stopDragging)
-  }, [handlePointerMove])
+  // ドラッグの途中でこのスプリッタが消える（パネルが別のスロットへ移るなど）と、
+  // pointerup が来ないまま listener だけが残る。アンマウント時に必ず外す。
+  useEffect(() => () => handlers.up(), [handlers])
 
   function startDragging(event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault()
     draggingRef.current = true
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', stopDragging)
+    window.addEventListener('pointermove', handlers.move)
+    window.addEventListener('pointerup', handlers.up)
   }
-
-  // ドラッグの途中でこのスプリッタが消える（パネルが別のスロットへ移るなど）と、
-  // pointerup が来ないまま listener だけが残る。アンマウント時に必ず外す。
-  useEffect(() => stopDragging, [stopDragging])
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     const decrease = orientation === 'vertical' ? 'ArrowLeft' : 'ArrowUp'
     const increase = orientation === 'vertical' ? 'ArrowRight' : 'ArrowDown'
     if (event.key !== decrease && event.key !== increase) return
     event.preventDefault()
-    onChange(value + (event.key === increase ? step : -step))
+    onChange(Math.min(max, Math.max(min, value + (event.key === increase ? step : -step))))
   }
 
   return (

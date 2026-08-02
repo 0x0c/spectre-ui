@@ -64,6 +64,11 @@ export default function App() {
     })
   }
 
+  // 上限は画面の大きさから決める。定数にすると、狭い画面で反対側のパネルを
+  // 画面の外へ押し出せてしまう (SU-0013 Detailed design 項目2)。
+  const maxSide = Math.max(MIN_SIZES.leftWidth, Math.round((globalThis.innerWidth ?? 1280) * 0.45))
+  const maxBottom = Math.max(MIN_SIZES.bottomHeight, Math.round((globalThis.innerHeight ?? 800) * 0.6))
+
   const leftFromPointer = useCallback(
     (event: { clientX: number }) => event.clientX - (mainRef.current?.getBoundingClientRect().left ?? 0),
     [],
@@ -113,7 +118,7 @@ export default function App() {
             label="左パネルの幅"
             value={sizes.leftWidth}
             min={MIN_SIZES.leftWidth}
-            max={800}
+            max={maxSide}
             fromPointer={leftFromPointer}
             onChange={(value) => setSize('leftWidth', value)}
           />
@@ -123,7 +128,7 @@ export default function App() {
             label="右パネルの幅"
             value={sizes.rightWidth}
             min={MIN_SIZES.rightWidth}
-            max={800}
+            max={maxSide}
             fromPointer={rightFromPointer}
             onChange={(value) => setSize('rightWidth', value)}
           />
@@ -134,7 +139,7 @@ export default function App() {
           label="下パネルの高さ"
           value={sizes.bottomHeight}
           min={MIN_SIZES.bottomHeight}
-          max={800}
+          max={maxBottom}
           fromPointer={bottomFromPointer}
           onChange={(value) => setSize('bottomHeight', value)}
         />

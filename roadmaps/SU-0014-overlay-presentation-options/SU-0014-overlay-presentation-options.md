@@ -92,10 +92,12 @@ one today. Every default names today's behavior.
    alert that sets none of the three keeps the system alert it uses today.
 5. **The Android renderer.** `SpectreScreen` maps `sheet` to `ModalBottomSheet`. For `fullScreen`
    it uses a `Dialog` that releases the platform width. The surface then fills the screen. For
-   `dialog` it uses a `Dialog` holding a centered surface. Both `dismissOnBackdrop` and the back
-   gesture map onto `DialogProperties`. `dimBackground: false` drops the scrim. `AlertDialog` already takes an icon
-   slot, which `icon` fills, and `tone` tints that icon. `buttonLayout: "vertical"` stacks the
-   buttons in the dialog's button slot.
+   `dialog` it uses a `Dialog` holding a centered surface. On the two `Dialog` styles,
+   `dismissOnBackdrop` and the back gesture map onto `DialogProperties`. A bottom sheet routes the
+   scrim tap and the drag through one path, so the two keys collapse into one gesture switch there,
+   and the specification records that. `dimBackground: false` drops the scrim. `AlertDialog` takes
+   an icon slot, which `icon` fills, and `tone` tints that icon. `buttonLayout: "vertical"` stacks
+   the buttons in the dialog's button slot.
 6. **The conformance corpus.** New cases join `spec/conformance/resolve/resolver.json`. Each one
    resolves a document that carries a `presentation` block. Swift and Kotlin run the resolve
    corpus, so both then agree on two points. The block survives resolution unchanged. An absent
@@ -153,6 +155,11 @@ one today. Every default names today's behavior.
   generator. Both renderers, three corpus cases, the editor panel, and the specification page
   landed with them. The Kotlin resolve corpus runs green. The Swift and Android builds run in
   continuous integration. `Status` moves to Implemented.
+- 2026-08-02: An adversarial review pass followed, and four fixes landed. A bottom sheet could
+  strand itself off-screen. `Window.setDimAmount` needs a newer software development kit than
+  this library targets. The schema let an alert's own keys through on a sheet. A `neutral` tone
+  gave up the system alert for nothing. The specification also gained the platform notes those
+  fixes made necessary.
 
 ## References
 

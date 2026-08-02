@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { SpectreOverlay } from '@spectre-ui/manifest/generated'
 import { type OverlayKind, useDocumentStore } from '../store/documentStore'
 
@@ -24,6 +25,7 @@ type OverlayRecord = SpectreOverlay & Record<string, unknown>
  * ドキュメントに残せない。
  */
 export function OverlayPanel() {
+  const [idError, setIdError] = useState<string | null>(null)
   const doc = useDocumentStore((s) => s.document)
   const selectedId = useDocumentStore((s) => s.selectedOverlayId)
   const selectOverlay = useDocumentStore((s) => s.selectOverlay)
@@ -33,6 +35,21 @@ export function OverlayPanel() {
 
   const overlays = (doc.overlays ?? []) as OverlayRecord[]
   const selected = overlays.find((overlay) => overlay.id === selectedId) ?? null
+
+  /**
+   * IDの変更。選択も一緒に移す — 移さないと、名前を変えた直後に編集面が空になる。
+   * 重複は拒む。`showOverlay` はIDで開くので、2件が同じIDを名乗ると片方へ届かなくなる。
+   */
+  function renameOverlay(from: string, to: string): void {
+    if (to === from) return
+    if (to === '' || overlays.some((overlay) => overlay.id === to)) {
+      setIdError(`ID「${to}」は空か、すでに使われています`)
+      return
+    }
+    setIdError(null)
+    update(from, ['id'], to)
+    selectOverlay(to)
+  }
 
   return (
     <div className="overlay-panel">
@@ -71,12 +88,17 @@ export function OverlayPanel() {
               </button>
             </div>
 
-            <TextField label="id" value={selected.id} onCommit={(v) => update(selected.id, ['id'], v)} />
+            <TextField
+              label="id"
+              value={selected.id}
+              onCommit={(v) => renameOverlay(selected.id, v)}
+            />
             <TextField
               label="title"
               value={(selected.title as string) ?? ''}
               onCommit={(v) => update(selected.id, ['title'], v || undefined)}
             />
+            {idError && <p className="field-error">{idError}</p>}
             {selected.kind !== 'sheet' && (
               <TextField
                 label="message"
@@ -237,7 +259,15 @@ function ToastFields({ overlay, update }: { overlay: OverlayRecord; update: Upda
           min={1000}
           max={10000}
           defaultValue={(overlay.durationMs as number | undefined) ?? ''}
-          onBlur={(e) => update(overlay.id, ['durationMs'], e.target.value === '' ? undefined : Number(e.target.value))}
+          onBlur={(e) =>
+            update(
+              overlay.id,
+              ['durationMs'],
+              // スキーマの範囲 (1000〜10000) をここで丸める。input の min/max は
+              // フォーム送信時にしか効かず、blur では素通りする。
+              e.target.value === '' ? undefined : Math.min(10000, Math.max(1000, Math.round(Number(e.target.value)))),
+            )
+          }
         />
       </div>
       <p className="field-hint">トーストは `presentation` を取りません（docs/spec/schema.md §3.1）。</p>

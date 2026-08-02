@@ -95,8 +95,24 @@ private struct ScreenContent: View {
         .toolbar {
             ToolbarItemGroup(placement: spectreToolbarTrailingPlacement) {
                 ForEach(Array(node.nodes("appBar.actions[]").enumerated()), id: \.offset) { _, action in
-                    SpectreNodeView(action)
+                    // レンダラが描くダイアログ (style: "dialog" と装飾つきアラート) は
+                    // このビューの内側にあり、ナビゲーションバーまでは覆えない。
+                    // 覆えない以上、出ているあいだは押せないようにしておく。
+                    SpectreNodeView(action).disabled(hasRendererDrawnDialog)
                 }
+            }
+        }
+    }
+
+    /// レンダラ自身が描くダイアログが出ているか。SwiftUI の提示に載せたシートや
+    /// システムのアラートは、そちらが入力を止めるのでここには含めない。
+    private var hasRendererDrawnDialog: Bool {
+        (model.render?.overlays ?? []).contains { overlay in
+            guard model.visibleOverlays.contains(overlay.id) else { return false }
+            switch overlay.kind {
+            case .sheet: return OverlayPresentation(overlay).style == .dialog
+            case .alert: return AlertDialogContent.needsCustomDialog(overlay)
+            case .toast: return false
             }
         }
     }
@@ -279,10 +295,15 @@ private struct AlertDialogContent: View {
     @Environment(\.spectreTheme) private var theme
 
     /// システムの `.alert` が表現できない指定があるか。なければ従来どおりシステムに任せる。
+    ///
+    /// どのキーも「既定値を書いただけ」では切り替えない。`tone: "neutral"` と
+    /// `buttonLayout: "auto"` は既定そのものなので、書いてもシステムのアラートで足りる。
     static func needsCustomDialog(_ overlay: RenderOverlay) -> Bool {
-        overlay.props["tone"]?.asString != nil
+        let tone = overlay.props["tone"]?.asString
+        let layout = overlay.props["buttonLayout"]?.asString
+        return (tone != nil && tone != "neutral")
             || overlay.props["icon"]?.asString != nil
-            || (overlay.props["buttonLayout"]?.asString.map { $0 != "auto" } ?? false)
+            || (layout != nil && layout != "auto")
     }
 
     var body: some View {

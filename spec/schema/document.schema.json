@@ -181,7 +181,10 @@
             "properties": {
               "root":         { "$ref": "#/$defs/node" },
               "detents":      { "type": "array", "items": { "enum": ["small", "medium", "large"] } },
-              "presentation": { "$ref": "#/$defs/presentationSheet" }
+              "presentation": { "$ref": "#/$defs/presentationSheet" },
+              "tone":         false,
+              "icon":         false,
+              "buttonLayout": false
             }
           }
         },
@@ -204,9 +207,11 @@
                 }
               },
               "tone":         { "enum": ["neutral", "success", "warning", "error"], "default": "neutral" },
-              "icon":         { "type": "string", "description": "マニフェストのアイコン名。iconToken" },
+              "icon":         { "type": "string", "description": "アイコントークン名 (docs/spec/components.md のアイコン集合)" },
               "buttonLayout": { "enum": ["auto", "horizontal", "vertical"], "default": "auto" },
-              "presentation": { "$ref": "#/$defs/presentationAlert" }
+              "presentation": { "$ref": "#/$defs/presentationAlert" },
+              "detents":      false,
+              "root":         false
             }
           }
         },
@@ -216,7 +221,12 @@
             "properties": {
               "tone":         { "enum": ["neutral", "success", "warning", "error"], "default": "neutral" },
               "durationMs":   { "type": "integer", "minimum": 1000, "maximum": 10000, "default": 3000 },
-              "presentation": false
+              "presentation": false,
+              "detents":      false,
+              "root":         false,
+              "buttons":      false,
+              "icon":         false,
+              "buttonLayout": false
             }
           }
         }

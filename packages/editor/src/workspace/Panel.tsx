@@ -52,7 +52,12 @@ export function Panel({ id, slot, title, children }: PanelProps) {
           type="button"
           className="panel-handle"
           aria-label={`${title}を移動`}
-          onPointerDown={() => beginPanelDrag(id)}
+          onPointerDown={(event) => {
+            // タッチでは pointerdown の対象へ暗黙のポインタキャプチャが付き、
+            // pointerup が掴んだハンドルにしか来ない。外して、落とした先のヘッダへ届かせる。
+            event.currentTarget.releasePointerCapture?.(event.pointerId)
+            beginPanelDrag(id)
+          }}
           onKeyDown={handleHandleKeyDown}
         >
           ⠿

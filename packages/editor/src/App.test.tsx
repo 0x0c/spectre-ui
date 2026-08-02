@@ -48,6 +48,41 @@ describe('App', () => {
     expect(useWorkspaceStore.getState().sizes.leftWidth).toBe(140)
   })
 
+  it('keeps following the pointer for the whole drag, not just the first move', () => {
+    render(<App />)
+    const splitter = screen.getByRole('separator', { name: '左パネルの幅' })
+
+    // jsdom の getBoundingClientRect は 0 を返すので、clientX がそのまま幅になる。
+    fireEvent.pointerDown(splitter)
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 300 }))
+    expect(useWorkspaceStore.getState().sizes.leftWidth).toBe(300)
+
+    // 2回目以降も届くこと。listener の付け外しで取り逃がしていた回帰の番人。
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 360 }))
+    expect(useWorkspaceStore.getState().sizes.leftWidth).toBe(360)
+
+    // 上限を超えるドラッグは丸められ、反対側のパネルを画面外へ押し出さない。
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 99999 }))
+    const max = Math.round(window.innerWidth * 0.45)
+    expect(useWorkspaceStore.getState().sizes.leftWidth).toBe(max)
+
+    // 離した後のポインタ移動は効かない。
+    fireEvent(window, new MouseEvent('pointerup'))
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 200 }))
+    expect(useWorkspaceStore.getState().sizes.leftWidth).toBe(max)
+  })
+
+  it('restores the shipped arrangement from the toolbar', () => {
+    render(<App />)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'パレットを移動' }), { key: 'ArrowRight' })
+    expect(useWorkspaceStore.getState().slots.center).toBe('palette')
+
+    fireEvent.click(screen.getByRole('button', { name: '配置を戻す' }))
+
+    expect(useWorkspaceStore.getState().slots.center).toBe('canvas')
+    expect(useWorkspaceStore.getState().sizes.leftWidth).toBe(200)
+  })
+
   it('sends a panel to the next slot from its handle, swapping with whichever panel is there', () => {
     render(<App />)
 

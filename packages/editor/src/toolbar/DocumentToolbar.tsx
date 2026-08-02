@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { checkResourceLimits, hasErrors } from '@spectre-ui/manifest/validate'
 import type { SpectreDocument } from '@spectre-ui/manifest/generated'
 import { EMPTY_DOCUMENT, useDocumentStore } from '../store/documentStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import productDetail from '../sample/productDetail'
 
 /** インポートされた JSON が、少なくとも `loadDocument` に安全に渡せる最低限の形をしているか。 */
@@ -27,6 +28,7 @@ export function DocumentToolbar() {
   const loadDocument = useDocumentStore((s) => s.loadDocument)
   const lastError = useDocumentStore((s) => s.lastError)
   const clearError = useDocumentStore((s) => s.clearError)
+  const resetLayout = useWorkspaceStore((s) => s.resetLayout)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function exportJson() {
@@ -81,6 +83,10 @@ export function DocumentToolbar() {
       </button>
       <button type="button" onClick={() => fileInputRef.current?.click()}>
         インポート (JSON)
+      </button>
+      {/* ドラッグでは元に戻せない配置を保存してしまったときの復旧経路 (SU-0013)。 */}
+      <button type="button" onClick={resetLayout}>
+        配置を戻す
       </button>
       <input
         ref={fileInputRef}

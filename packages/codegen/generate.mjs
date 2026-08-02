@@ -503,7 +503,7 @@ export type SpectreOverlay =
       buttons: { label: Expression; role?: 'default' | 'cancel' | 'destructive'; actions?: SpectreAction[] }[]
       dismissible?: boolean
       tone?: 'neutral' | 'success' | 'warning' | 'error'
-      icon?: string
+      icon?: IconToken
       buttonLayout?: 'auto' | 'horizontal' | 'vertical'
       presentation?: Pick<SpectrePresentation, 'dimBackground' | 'dismissOnBackdrop'>
     }

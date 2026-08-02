@@ -1,5 +1,6 @@
 package dev.spectre.ui
 
+import android.view.WindowManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -195,8 +196,21 @@ private fun OverlayView(controller: SpectreScreenController, overlay: RenderOver
             ) {
                 // Compose の Dialog はスクリムの濃さを DialogProperties で指定できない。
                 // dimBackground を反映するには、ダイアログのウィンドウ側を触るしかない。
+                // Window.setDimAmount は API 26 なので、minSdk 24 のここでは使えない。
+                // LayoutParams.dimAmount と FLAG_DIM_BEHIND は API 1 からある。
                 val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-                SideEffect { dialogWindow?.setDimAmount(if (presentation.dimBackground) 0.6f else 0f) }
+                SideEffect {
+                    dialogWindow?.let { window ->
+                        val params = window.attributes
+                        params.dimAmount = if (presentation.dimBackground) 0.6f else 0f
+                        window.attributes = params
+                        if (presentation.dimBackground) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                        }
+                    }
+                }
 
                 Surface(
                     modifier = if (presentation.style == "fullScreen") Modifier.fillMaxSize() else Modifier.fillMaxWidth(),
@@ -213,14 +227,18 @@ private fun OverlayView(controller: SpectreScreenController, overlay: RenderOver
             }
 
             else -> {
-                // ドラッグで閉じるかは値の遷移そのものを拒否して制御する。スクリムのタップと
-                // 戻る操作は onDismissRequest に来るので、そちらは dismissOnBackdrop で見る。
+                // ModalBottomSheet はスクリムのタップもドラッグも同じ経路
+                // (Hidden への遷移 -> onDismissRequest) を通るため、2つを別々には
+                // 制御できない。どちらのジェスチャで閉じるかは confirmValueChange
+                // 1箇所で決め、onDismissRequest は必ず閉じる。ここで条件を付けると、
+                // 画面外へ滑ったシートが visibleOverlays に残って戻せなくなる。
+                val gestureDismissible = presentation.dragToDismiss || presentation.dismissOnBackdrop
                 val sheetState = rememberModalBottomSheetState(
                     skipPartiallyExpanded = false,
-                    confirmValueChange = { target -> target != SheetValue.Hidden || presentation.dragToDismiss },
+                    confirmValueChange = { target -> target != SheetValue.Hidden || gestureDismissible },
                 )
                 ModalBottomSheet(
-                    onDismissRequest = { if (presentation.dismissOnBackdrop) controller.dismissOverlay(overlay.id) },
+                    onDismissRequest = { controller.dismissOverlay(overlay.id) },
                     sheetState = sheetState,
                     scrimColor = if (presentation.dimBackground) BottomSheetDefaults.ScrimColor else Color.Transparent,
                     dragHandle = if (presentation.dragToDismiss) { { BottomSheetDefaults.DragHandle() } } else null,
@@ -237,7 +255,9 @@ private fun OverlayView(controller: SpectreScreenController, overlay: RenderOver
 
         OverlayKind.ALERT -> {
             // ボタンは role で振り分ける。cancel が dismissButton、それ以外が confirmButton。
-            val confirm = overlay.buttons.firstOrNull { it.role != "cancel" }
+            // 仕様は3つまで許すので、cancel 以外が複数あれば confirm 側に並べる
+            // (先頭だけを描くと、3つ目が黙って消える)。
+            val confirms = overlay.buttons.filter { it.role != "cancel" }
             val cancel = overlay.buttons.firstOrNull { it.role == "cancel" }
             val theme = LocalSpectreTheme.current
             val iconName = overlay.props["icon"]?.asStringOrNull
@@ -248,7 +268,7 @@ private fun OverlayView(controller: SpectreScreenController, overlay: RenderOver
                 else -> theme.color("onSurfaceVariant", MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val confirmButton: @Composable () -> Unit = {
-                confirm?.let { button ->
+                confirms.forEach { button ->
                     TextButton(onClick = {
                         controller.dismissOverlay(overlay.id)
                         controller.dispatch(button.actions)

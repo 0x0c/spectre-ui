@@ -7,6 +7,12 @@ import { colorValue } from '../canvas/tokens'
 
 type OverlayRecord = SpectreOverlay & Record<string, unknown>
 
+/** `tone` の色。トーストと同じトークンを使い、既定 (neutral) は本文色のまま。 */
+function toneColor(tone: string | undefined, theme: 'light' | 'dark'): string | undefined {
+  if (tone === undefined || tone === 'neutral') return undefined
+  return colorValue(tone === 'success' ? 'success' : tone === 'warning' ? 'warning' : 'error', theme)
+}
+
 interface Props {
   scope: InterpolationScope
   theme: 'light' | 'dark'
@@ -37,8 +43,12 @@ export function OverlayPreview({ scope, theme }: Props) {
   if (!overlay) return null
 
   const presentation = (overlay.presentation ?? {}) as Record<string, unknown>
+  // 閉じ方の既定は dismissible に従う。クライアントと同じ導出をここでも使う
+  // (docs/spec/schema.md §3.1)。
   const dismissible = overlay.dismissible !== false
+  const dismissOnBackdrop = (presentation.dismissOnBackdrop as boolean | undefined) ?? dismissible
   const dimBackground = presentation.dimBackground !== false
+  const tone = overlay.tone as string | undefined
   const style = overlay.kind === 'sheet' ? ((presentation.style as string | undefined) ?? 'sheet') : 'dialog'
   const text = (value: unknown) => (value == null ? '' : previewText(value, scope))
 
@@ -51,7 +61,7 @@ export function OverlayPreview({ scope, theme }: Props) {
       // 背景の暗転は presentation.dimBackground の指定そのもの。既定は暗転する。
       style={{ background: dimBackground && overlay.kind !== 'toast' ? 'rgba(0,0,0,0.4)' : 'transparent' }}
       onClick={() => {
-        if (dismissible) selectOverlay(null)
+        if (dismissOnBackdrop) selectOverlay(null)
       }}
     >
       <div
@@ -64,8 +74,16 @@ export function OverlayPreview({ scope, theme }: Props) {
           <span>{text(overlay.message)}</span>
         ) : (
           <>
-            {overlay.icon != null && <div className="overlay-preview-icon">{String(overlay.icon)}</div>}
-            {overlay.title != null && <strong className="overlay-preview-title">{text(overlay.title)}</strong>}
+            {overlay.icon != null && (
+              <div className="overlay-preview-icon" style={{ color: toneColor(tone, theme) }}>
+                {String(overlay.icon)}
+              </div>
+            )}
+            {overlay.title != null && (
+              <strong className="overlay-preview-title" style={{ color: toneColor(tone, theme) }}>
+                {text(overlay.title)}
+              </strong>
+            )}
             {overlay.message != null && <p className="overlay-preview-message">{text(overlay.message)}</p>}
             {overlay.kind === 'sheet' && overlay.root != null && (
               <StaticNode node={overlay.root as never} scope={scope} theme={theme} />

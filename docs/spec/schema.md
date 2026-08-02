@@ -176,12 +176,15 @@
 | `alert` | 可 | `dimBackground`、`dismissOnBackdrop`（アラートは常にダイアログで、ドラッグでは閉じない） |
 | `toast` | 不可 | — （トーストは `durationMs` で自動的に消えるバナー） |
 
-省略時のデフォルト値は、いずれも**現在のクライアントが描いているもの**と一致する。したがって `presentation` のない時代のクライアントは、未知のキーを無視して従来どおり描く（[compatibility.md](../compatibility.md) の劣化規則、ADR-0006）。
+`presentation` を書かなければ、クライアントはこのブロックがなかった頃と同じ描き方をする（[compatibility.md](../compatibility.md) の劣化規則、ADR-0006）。ブロックを解さない古いクライアントも、未知のキーを無視して同じ描き方に落ちる。
 
-プラットフォームの制約で実現できない指定が2つある。仕様として次を認める。
+> **`dismissible` はこの版から効きはじめる。** 閉じ方の2つのキーは、省略時に `dismissible` を引き継ぐ。`dismissible` はもともと仕様にあったが、どちらのクライアントも読んでいなかった。したがって `dismissible: false` を書いた既存のドキュメントは、この版から実際に閉じられなくなる。書いた意図どおりの挙動だが、見え方は変わる。
 
-- **iOS のシート形式では `dismissOnBackdrop` が効かない。** SwiftUI の `.sheet` は外側のタップを提供しない。ドラッグによる閉じ操作（`dragToDismiss`）は `interactiveDismissDisabled` で制御できる。
-- **iOS では、装飾を指定したアラートがシステムのアラートでなくなる。** SwiftUI の `.alert` は装飾を受け付けず、`tone` と `icon` のどちらも描けない。そこで、`tone`、`icon`、`buttonLayout` のいずれかを指定したアラートに限り、レンダラ自身が描くダイアログに切り替える。どれも指定しなければ従来どおりシステムのアラートを使う。Android の `AlertDialog` はアイコンのスロットを持つため、この切り替えは要らない。
+プラットフォームの制約で実現できない指定がある。仕様として次を認める。
+
+- **iOS のシートは背景を制御できない。** `dismissOnBackdrop` と `dimBackground` が効かない。SwiftUI の `.sheet` と `.fullScreenCover` が、どちらも開放していないからだ。ドラッグによる閉じ操作だけは `interactiveDismissDisabled` で制御できる。
+- **Android のボトムシートでは、スクリムのタップとドラッグを区別できない。** `ModalBottomSheet` はどちらも同じ経路（`Hidden` への遷移）を通る。`dismissOnBackdrop` と `dragToDismiss` の**どちらかが `true` なら両方のジェスチャで閉じ、両方 `false` ならどちらでも閉じない**。全画面形式とダイアログ形式は `Dialog` を使うので、この制約はない。
+- **iOS では、装飾を指定したアラートがシステムのアラートでなくなる。** SwiftUI の `.alert` は装飾を受け付けず、`tone` と `icon` のどちらも描けない。そこで、`tone`（`neutral` 以外）、`icon`、`buttonLayout`（`auto` 以外）のいずれかを指定したアラートに限り、レンダラ自身が描くダイアログに切り替える。デフォルト値だけを書いた場合は切り替えない。Android の `AlertDialog` はアイコンのスロットを持つため、この切り替えは要らない。
 
 ### 3.2 アラートの表示オプション
 
