@@ -29,7 +29,9 @@
 | [SU-0010](SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md) | 範囲を絞った最初のパイロット | 導入 |
 | [SU-0011](SU-0011-english-first-documentation/SU-0011-english-first-documentation-ja.md) | 英語を主とするドキュメント | ドキュメント |
 | [SU-0012](SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md) | APNsペイロードで配信するSDUIサンプル | クライアントSDK |
-| [SU-0013](SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing-ja.md) | レンダラのビジュアルリグレッションテスト | クライアントSDK |
+| [SU-0013](SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout-ja.md) | パネルを並べ替えられるエディタの作業領域 | エディタ |
+| [SU-0014](SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md) | オーバレイの表示オプション | 仕様 |
+| [SU-0015](SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing-ja.md) | レンダラのビジュアルリグレッションテスト | クライアントSDK |
 
 この表は全項目を列挙するだけのものです。進捗の正となるのは、この表ではなく各項目の `Status`
 フィールドです。

@@ -138,6 +138,7 @@
     "detents": ["medium", "large"],   // sheet のみ
     "dismissible": true,
     "title": "サイズを選択",
+    "presentation": { "style": "sheet" },   // 見え方。§3.1
     "root": { ...Node... }       // sheet のみ。alert/toast は宣言的なプロパティで表現
   },
   {
@@ -145,6 +146,7 @@
     "kind": "alert",
     "title": "削除しますか?",
     "message": "この操作は取り消せません",
+    "tone": "error",
     "buttons": [
       { "label": "キャンセル", "role": "cancel", "actions": [] },
       { "label": "削除", "role": "destructive", "actions": [ ... ] }
@@ -154,6 +156,47 @@
 ```
 
 木の中にモーダルを埋めない理由: iOS/Android でモーダル表示の仕組みが大きく異なり、木の位置に依存させると挙動が揃わない。画面レベルの状態として扱うほうが両プラットフォームで一致させやすい。
+
+### 3.1 `presentation` — 見え方の指定
+
+`kind` は**中身の形**（ノード木、ボタンの集合、消えるメッセージ）を決める。**見え方**は `presentation` が決める。同じ `kind: "sheet"` でも、ボトムシート、全画面モーダル、中央のダイアログのいずれにもできる。
+
+| キー | 型 | デフォルト | 意味 |
+| --- | --- | --- | --- |
+| `style` | `sheet` \| `fullScreen` \| `dialog` | `sheet` | 画面をどう占めるか |
+| `dimBackground` | boolean | `true` | 背後を暗転させるか |
+| `dismissOnBackdrop` | boolean | そのオーバレイの `dismissible` | 外側のタップで閉じるか |
+| `dragToDismiss` | boolean | そのオーバレイの `dismissible` | ドラッグで閉じるか |
+
+種別ごとの適用範囲は次のとおり。スキーマは範囲外のキーを**拒否する**（黙って無視しない）。
+
+| `kind` | `presentation` | 使えるキー |
+| --- | --- | --- |
+| `sheet` | 可 | 上記4つすべて |
+| `alert` | 可 | `dimBackground`、`dismissOnBackdrop`（アラートは常にダイアログで、ドラッグでは閉じない） |
+| `toast` | 不可 | — （トーストは `durationMs` で自動的に消えるバナー） |
+
+`presentation` を書かなければ、クライアントはこのブロックがなかった頃と同じ描き方をする（[compatibility.md](../compatibility.md) の劣化規則、ADR-0006）。ブロックを解さない古いクライアントも、未知のキーを無視して同じ描き方に落ちる。
+
+> **`dismissible` はこの版から効きはじめる。** 閉じ方の2つのキーは、省略時に `dismissible` を引き継ぐ。`dismissible` はもともと仕様にあったが、どちらのクライアントも読んでいなかった。したがって `dismissible: false` を書いた既存のドキュメントは、この版から実際に閉じられなくなる。書いた意図どおりの挙動だが、見え方は変わる。
+
+プラットフォームの制約で実現できない指定がある。仕様として次を認める。
+
+- **iOS のシートは背景を制御できない。** `dismissOnBackdrop` と `dimBackground` が効かない。SwiftUI の `.sheet` と `.fullScreenCover` が、どちらも開放していないからだ。ドラッグによる閉じ操作だけは `interactiveDismissDisabled` で制御できる。
+- **Android のボトムシートでは、スクリムのタップとドラッグを区別できない。** `ModalBottomSheet` はどちらも同じ経路（`Hidden` への遷移）を通る。`dismissOnBackdrop` と `dragToDismiss` の**どちらかが `true` なら両方のジェスチャで閉じ、両方 `false` ならどちらでも閉じない**。全画面形式とダイアログ形式は `Dialog` を使うので、この制約はない。
+- **iOS では、装飾を指定したアラートがシステムのアラートでなくなる。** SwiftUI の `.alert` は装飾を受け付けず、`tone` と `icon` のどちらも描けない。そこで、`tone`（`neutral` 以外）、`icon`、`buttonLayout`（`auto` 以外）のいずれかを指定したアラートに限り、レンダラ自身が描くダイアログに切り替える。デフォルト値だけを書いた場合は切り替えない。Android の `AlertDialog` はアイコンのスロットを持つため、この切り替えは要らない。
+
+### 3.2 アラートの表示オプション
+
+`kind: "alert"` には、`presentation` とは別に、アラート自身の見せ方を決めるキーがある。
+
+| キー | 型 | デフォルト | 意味 |
+| --- | --- | --- | --- |
+| `tone` | `neutral` \| `success` \| `warning` \| `error` | `neutral` | アラート全体の調子。アイコンと強調色に反映される |
+| `icon` | iconToken | なし | 見出しに添えるアイコン |
+| `buttonLayout` | `auto` \| `horizontal` \| `vertical` | `auto` | ボタンの並べ方。`auto` はプラットフォームに委ねる |
+
+ボタンの `role: "destructive"` はそのボタン1つを赤くする指定であって、アラート全体の調子ではない。破壊的な確認では、`role` と `tone: "error"` を併せて指定する。
 
 ## 4. ノード木の例
 

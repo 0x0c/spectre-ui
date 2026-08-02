@@ -2,7 +2,7 @@
 import Foundation
 import SpectreCore
 
-/// VRT (ビジュアルリグレッションテスト) のケース1件 (SU-0013)。
+/// VRT (ビジュアルリグレッションテスト) のケース1件 (SU-0015)。
 ///
 /// ケースの実体は `spec/vrt/cases.json` にあり、Android 側の `VrtCases.kt` が同じ
 /// ファイルを読む。どの画面をどの条件で描くかを両プラットフォームで揃えるためで、

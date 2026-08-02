@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 /**
- * VRT (ビジュアルリグレッションテスト) のフィクスチャを検証する (SU-0013)。
+ * VRT (ビジュアルリグレッションテスト) のフィクスチャを検証する (SU-0015)。
  *
  * このテストが spectre-ui ではなく spectre-core にあるのは、[RendererCoverageTest] と
  * 同じ理由による。読むのは JSON だけなので、Android SDK も Xcode もない環境で走る。

@@ -77,6 +77,11 @@ in [.github/workflows/ci.yml](.github/workflows/ci.yml).
 One list, filtered by status and by topic. The item bodies live in `roadmaps/`. MkDocs serves the
 design documents at https://0x0c.github.io/spectre-ui/docs/.
 
+**Editor: https://0x0c.github.io/spectre-ui/editor/**
+
+The published build of `packages/editor`. It runs in the browser with no server behind it. Compose
+a screen, edit its actions, and export the document as JSON.
+
 ---
 
 ## Documents

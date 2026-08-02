@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Compose レンダラのビジュアルリグレッションテスト (SU-0013)。
+ * Compose レンダラのビジュアルリグレッションテスト (SU-0015)。
  *
  * `spec/vrt/cases.json` のケースを1件ずつ描画し、`src/test/snapshots/` の
  * ゴールデン画像と突き合わせる。実行モードは Roborazzi のシステムプロパティで決まり、

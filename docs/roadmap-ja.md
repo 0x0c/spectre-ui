@@ -11,7 +11,7 @@
 M0 と M1 は、ファジングとスナップショットテストを除いて入っている。M3（オーサリング・配信基盤）にも
 実質的なコードが載っており、ケイパビリティに基づく木の整形も含まれる。**エディタ (M2) は最初の
 一巡が入った。** パレット・キャンバス・インスペクタ・アクションエディタ・サンプルデータ・undo/redo
-は動く。実機ミラー（[SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md)、
+は動く。作業領域は並べ替えられ、オーバレイパネルがドキュメントの表示オプションを編集できる。実機ミラー（[SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md)、
 WebSocket 経由のデバイスプレビュー）はまだない。近似プレビューだけでは、公開前の確認を安全に
 行えない。
 
@@ -28,9 +28,10 @@ WebSocket 経由のデバイスプレビュー）はまだない。近似プレ�
 | `applyPatch` / `focus` / `scrollTo` | 実装済み | RFC 6902 JSON Patch + フォーカス/スクロールの配線 |
 | 配信・キャッシュ (DocumentLoader) | 実装済み | 3層キャッシュ + stale-while-revalidate。サンプルも接続済み |
 | ケイパビリティネゴシエーションとノード単位のフォールバック劣化 | 実装済み | `Spectre-Schema`/`Spectre-Components` ヘッダ、サーバ側の `degradeDocumentTree`、クライアントの fallback → optional省略 → プレースホルダという決まった順序 (ADR-0006) |
-| 2つのレンダラのビジュアルリグレッションテスト ([SU-0013](../roadmaps/SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing-ja.md)) | 進行中 | テスト一式、`spec/vrt/` の共有フィクスチャ、`android-vrt` / `ios-vrt` ジョブは揃っている。最初のゴールデン画像を記録してコミットするまで、両方とも検証をスキップする |
+| 2つのレンダラのビジュアルリグレッションテスト ([SU-0015](../roadmaps/SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing-ja.md)) | 進行中 | テスト一式、`spec/vrt/` の共有フィクスチャ、`android-vrt` / `ios-vrt` ジョブは揃っている。最初のゴールデン画像を記録してコミットするまで、両方とも検証をスキップする |
 | オーサリング・配信API (M3) | 進行中 | `packages/server`。権限とワークフロー(項目3)はまだ仮の実装のまま |
-| エディタ (M2) | 進行中 | `packages/editor`。パレット・キャンバス・インスペクタ・アクションエディタ・サンプルデータ・undo/redoは動くが、実機ミラー(SU-0009)が欠けており、M2自身の受け入れ基準はまだ満たさない |
+| エディタ (M2) | 進行中 | `packages/editor`。パレット・キャンバス・インスペクタ・アクションエディタ・サンプルデータ・undo/redo、並べ替えられる作業領域（[SU-0013](../roadmaps/SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout-ja.md)）、オーバレイの編集（[SU-0014](../roadmaps/SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md)）は動くが、実機ミラー(SU-0009)が欠けており、M2自身の受け入れ基準はまだ満たさない |
+| オーバレイの表示オプション（[SU-0014](../roadmaps/SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md)） | 実装済み | `presentation` ブロックとアラートの表示オプション。スキーマ・両レンダラ・解決コーパスの3ケース |
 
 ### 検証の分担
 
@@ -88,7 +89,7 @@ cd clients/ios && swift test
 - [ ] 3層キャッシュ + stale-while-revalidate
 - [ ] 互換性の劣化処理（fallback / optional / 上限値の強制）
 - [ ] ファジングテスト、スナップショットテスト。後者は
-      [SU-0013](../roadmaps/SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing-ja.md)
+      [SU-0015](../roadmaps/SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing-ja.md)
       が、レンダラごとのビジュアルリグレッションテストとして扱う
 - [ ] サンプルアプリ
 

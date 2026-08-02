@@ -108,20 +108,86 @@ textarea {
 .app-main {
   flex: 1;
   display: grid;
-  grid-template-columns: 200px 1fr 300px;
   min-height: 0;
 }
 
-.app-palette,
-.app-inspector {
-  overflow-y: auto;
-  border-right: 1px solid var(--chrome-border);
+/* パネルの外枠 (SU-0013)。スロットの大きさは App.tsx がインラインで与える */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-drop-target .panel-header {
+  outline: 2px dashed var(--chrome-accent);
+  outline-offset: -2px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--chrome-border);
+  background: var(--chrome-bg);
+  font-size: 11px;
+  color: var(--chrome-text-muted);
+  flex: 0 0 auto;
+}
+
+.panel-handle {
+  border: none;
+  background: transparent;
+  padding: 0 2px;
+  cursor: grab;
+  color: var(--chrome-text-muted);
+}
+
+.panel-handle:focus-visible {
+  outline: 2px solid var(--chrome-accent);
+}
+
+.panel-title {
+  font-weight: 700;
+}
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* パレットとインスペクタは中身に余白が要る。キャンバスは自前で持っている */
+.panel[data-panel='palette'] .panel-body,
+.panel[data-panel='inspector'] .panel-body,
+.panel[data-panel='data'] .panel-body {
   padding: 10px;
 }
 
-.app-inspector {
-  border-right: none;
-  border-left: 1px solid var(--chrome-border);
+/* 境界 (SU-0013 Detailed design 項目2) */
+.splitter {
+  background: var(--chrome-border);
+  flex: 0 0 auto;
+}
+
+.splitter:focus-visible {
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: -2px;
+}
+
+.splitter-vertical {
+  cursor: col-resize;
+  width: 6px;
+}
+
+.splitter-horizontal {
+  cursor: row-resize;
+  height: 6px;
 }
 
 .app-canvas-col {
@@ -129,10 +195,11 @@ textarea {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  flex: 1;
 }
 
 .canvas-scroll {
-  flex: 1 1 60%;
+  flex: 1;
   overflow: auto;
   display: flex;
   justify-content: center;
@@ -144,10 +211,20 @@ textarea {
   border-radius: 20px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   overflow: auto;
+  position: relative;
+}
+
+.canvas-empty {
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--chrome-text-muted);
+  line-height: 1.8;
 }
 
 .tree-panel {
-  flex: 1 1 40%;
+  flex: 1;
   overflow-y: auto;
   border-top: 1px solid var(--chrome-border);
   font-size: 12px;
@@ -477,10 +554,130 @@ textarea {
 }
 
 .app-bottom {
-  height: 220px;
   border-top: 1px solid var(--chrome-border);
-  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 0 0 auto;
+}
+
+/* オーバレイの一覧と編集 (SU-0014) */
+.overlay-panel {
+  display: flex;
+  gap: 12px;
+  height: 100%;
+  font-size: 12px;
+}
+
+.overlay-list {
+  flex: 0 0 240px;
   overflow-y: auto;
+}
+
+.overlay-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.overlay-list-actions button {
+  white-space: nowrap;
+}
+
+.overlay-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overlay-editor {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* キャンバス上のオーバレイプレビュー。device-frame の内側に重ねる */
+.overlay-preview {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 2;
+}
+
+.overlay-preview-sheet {
+  align-items: flex-end;
+}
+
+.overlay-preview-dialog {
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.overlay-preview-fullScreen {
+  align-items: stretch;
+}
+
+.overlay-preview-toast {
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 24px;
+  pointer-events: none;
+}
+
+.overlay-preview-surface {
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  overflow: auto;
+  max-height: 100%;
+}
+
+.overlay-preview-sheet .overlay-preview-surface {
+  width: 100%;
+  border-radius: 16px 16px 0 0;
+}
+
+.overlay-preview-fullScreen .overlay-preview-surface {
+  width: 100%;
+  border-radius: 0;
+}
+
+.overlay-preview-toast .overlay-preview-surface {
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.overlay-preview-title {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.overlay-preview-icon {
+  text-align: center;
+  font-size: 11px;
+  color: var(--chrome-text-muted);
+}
+
+.overlay-preview-message {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.overlay-preview-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.overlay-preview-buttons-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .data-panel {

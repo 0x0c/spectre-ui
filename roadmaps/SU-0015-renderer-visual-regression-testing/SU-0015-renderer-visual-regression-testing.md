@@ -1,11 +1,11 @@
-**English** · [日本語](SU-0013-renderer-visual-regression-testing-ja.md)
+**English** · [日本語](SU-0015-renderer-visual-regression-testing-ja.md)
 
-# SU-0013 — Visual regression testing for the renderers
+# SU-0015 — Visual regression testing for the renderers
 
 <!-- SU-METADATA -->
 | Field | Value |
 |---|---|
-| Proposal | [SU-0013](SU-0013-renderer-visual-regression-testing.md) |
+| Proposal | [SU-0015](SU-0015-renderer-visual-regression-testing.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
 | Status | **In progress** |
 | Topic | Client SDK |

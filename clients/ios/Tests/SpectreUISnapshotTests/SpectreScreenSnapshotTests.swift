@@ -5,7 +5,7 @@ import XCTest
 import SpectreCore
 import SpectreUI
 
-/// SwiftUI レンダラのビジュアルリグレッションテスト (SU-0013)。
+/// SwiftUI レンダラのビジュアルリグレッションテスト (SU-0015)。
 ///
 /// `spec/vrt/cases.json` のケースを1件ずつ描画し、`__Snapshots__/` のゴールデン画像と
 /// 突き合わせる。実行モードは環境変数 `SPECTRE_VRT_RECORD` で決まる。

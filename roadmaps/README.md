@@ -30,7 +30,9 @@ client-implementation phase, and product code already exists under `clients/`, `
 | [SU-0010](SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot.md) | A narrow-scope first pilot | Adoption |
 | [SU-0011](SU-0011-english-first-documentation/SU-0011-english-first-documentation.md) | English-first documentation | Documentation |
 | [SU-0012](SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md) | The APNs-delivered SDUI sample | Client SDK |
-| [SU-0013](SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing.md) | Visual regression testing for the renderers | Client SDK |
+| [SU-0013](SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout.md) | A rearrangeable editor workspace | Editor |
+| [SU-0014](SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md) | Overlay presentation options | Specification |
+| [SU-0015](SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing.md) | Visual regression testing for the renderers | Client SDK |
 
 The table lists every item; an item's `Status` field, not this table, is the single source of truth
 for how far along it is.

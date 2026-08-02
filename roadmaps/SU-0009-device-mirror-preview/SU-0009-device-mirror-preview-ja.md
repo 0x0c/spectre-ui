@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **提案** |
 | トピック | エディタ |
-| 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0013](../SU-0013-renderer-visual-regression-testing/SU-0013-renderer-visual-regression-testing-ja.md) |
+| 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0013](../SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout-ja.md), [SU-0015](../SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       record_vrt:
-        description: 'VRT のゴールデン画像を記録し直す (SU-0013)'
+        description: 'VRT のゴールデン画像を記録し直す (SU-0015)'
         type: boolean
         default: false
 
@@ -210,7 +210,7 @@ jobs:
           path: clients/android/sample/build/outputs/apk/debug/*.apk
           retention-days: 7
 
-  # Compose レンダラのビジュアルリグレッションテスト (SU-0013)。
+  # Compose レンダラのビジュアルリグレッションテスト (SU-0015)。
   # Roborazzi が Robolectric 上で描画するので、エミュレータを起動せず
   # android ジョブと同じ ubuntu ランナーで回る。
   android-vrt:
@@ -265,7 +265,7 @@ jobs:
             clients/android/spectre-ui/build/outputs/roborazzi
           retention-days: 7
 
-  # SwiftUI レンダラのビジュアルリグレッションテスト (SU-0013)。
+  # SwiftUI レンダラのビジュアルリグレッションテスト (SU-0015)。
   # ios ジョブの swift test は macOS 上で走るため、iOS の描画は固定できない。
   # こちらは iOS シミュレータ上でテストを実行する。
   ios-vrt:

@@ -84,6 +84,26 @@ enum Conformance {
         return .object(out)
     }
 
+    /// `RenderOverlay` をコーパスの期待値と同じ形に正規化する。
+    ///
+    /// `presentation` のような見え方のオプション (SU-0014) は `props` にそのまま入る。
+    /// 解決を経ても形が変わらないこと、書かれていないキーが既定値で補われないことを、
+    /// ここを通してコーパスから確かめられる。
+    static func normalizeRenderOverlay(_ overlay: RenderOverlay) -> SpValue {
+        var out: [String: SpValue] = [
+            "id": .string(overlay.id),
+            "kind": .string(overlay.kind.rawValue),
+        ]
+        if !overlay.props.isEmpty { out["props"] = .object(overlay.props) }
+        if let root = overlay.root { out["root"] = normalizeRenderNode(root) }
+        if !overlay.buttons.isEmpty {
+            out["buttons"] = .array(overlay.buttons.map {
+                .object(["label": .string($0.label), "role": .string($0.role)])
+            })
+        }
+        return .object(out)
+    }
+
     /// 「document + capabilities -> 正規化された RenderTree + degradations」のケースを1件実行する。
     ///
     /// `resolve/resolver.json` (基本の解決規則) と `compat/` (ケイパビリティ由来の劣化) の
@@ -113,6 +133,24 @@ enum Conformance {
                   実際: \(actual.stringify())
                 """
             )
+        }
+
+        if let expectedOverlays = raw["expectOverlays"]?.asArray {
+            let actual = result.overlays.map(normalizeRenderOverlay)
+            XCTAssertEqual(
+                actual.count, expectedOverlays.count,
+                "\(name): オーバレイの件数が異なります (実際: \(SpValue.array(actual).stringify()))"
+            )
+            for (i, expected) in expectedOverlays.enumerated() where i < actual.count {
+                XCTAssertTrue(
+                    valuesEqual(actual[i], expected),
+                    """
+                    \(name): オーバレイ[\(i)] が期待と異なります
+                      期待: \(expected.stringify())
+                      実際: \(actual[i].stringify())
+                    """
+                )
+            }
         }
 
         if let expectedDegradations = raw["expectDegradations"]?.asArray {
