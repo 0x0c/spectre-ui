@@ -49,7 +49,7 @@ cd clients/android && ./gradlew :spectre-ui:testDebugUnitTest \
 
 # SwiftUI レンダラのビジュアルリグレッションテスト（Xcode が必要）。
 # 参照画像を記録し直すときは SPECTRE_VRT_RECORD=1 を渡す。
-cd clients/ios && xcodebuild test -scheme SpectreUI \
+cd clients/ios && xcodebuild test -scheme SpectreUI-Package \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
   -only-testing:SpectreUISnapshotTests
 

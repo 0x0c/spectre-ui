@@ -49,7 +49,7 @@ cd clients/android && ./gradlew :spectre-ui:testDebugUnitTest \
 
 # Visual regression testing for the SwiftUI renderer (needs Xcode).
 # Set SPECTRE_VRT_RECORD=1 to re-record the reference images.
-cd clients/ios && xcodebuild test -scheme SpectreUI \
+cd clients/ios && xcodebuild test -scheme SpectreUI-Package \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
   -only-testing:SpectreUISnapshotTests
 

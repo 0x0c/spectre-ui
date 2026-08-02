@@ -11,7 +11,7 @@ import SpectreUI
 /// 突き合わせる。実行モードは環境変数 `SPECTRE_VRT_RECORD` で決まる。
 ///
 /// - 検証 (既定):
-///   `xcodebuild test -scheme SpectreUI -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:SpectreUISnapshotTests`
+///   `xcodebuild test -scheme SpectreUI-Package -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:SpectreUISnapshotTests`
 /// - 記録: 同じコマンドを `SPECTRE_VRT_RECORD=1` を渡して実行する。
 ///
 /// iOS シミュレータ上でしか走らない。`swift build` / `swift test` が使う macOS の

@@ -298,8 +298,18 @@ jobs:
           TEST_RUNNER_SPECTRE_VRT_RECORD: ${{ steps.mode.outputs.record }}
         run: |
           set -uo pipefail
+          # ライブラリ製品と同名のスキームにはテストアクションがない。パッケージを
+          # 開いたときに生成される集約スキーム (通常 `<名前>-Package`) だけが
+          # テストターゲットを含むので、名前を決め打ちせず列挙して選ぶ。
+          scheme=$(xcodebuild -list | tr -d ' \t' | grep -E -- '-Package$' | head -1)
+          if [ -z "$scheme" ]; then
+            echo "::error::テストアクションを持つスキームが見つかりません。存在するスキーム:"
+            xcodebuild -list
+            exit 1
+          fi
+          echo "使用するスキーム: $scheme"
           xcodebuild test \
-            -scheme SpectreUI \
+            -scheme "$scheme" \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             -only-testing:SpectreUISnapshotTests \
             -resultBundlePath vrt-result.xcresult \
