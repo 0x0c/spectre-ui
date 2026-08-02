@@ -34,6 +34,7 @@ import dev.spectre.core.Document
 import dev.spectre.core.DocumentLoadResult
 import dev.spectre.core.DocumentLoader
 import dev.spectre.core.DocumentSource
+import dev.spectre.core.SpectreCapabilities
 import dev.spectre.core.SpectreDocumentTransport
 import dev.spectre.core.SpectreDocumentTransportResult
 import dev.spectre.ui.SpectreScreen
