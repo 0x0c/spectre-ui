@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0008](SU-0008-capability-negotiation-and-fallback.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Compatibility |
 | Related | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus.md) |
 <!-- /SU-METADATA -->
@@ -60,11 +60,58 @@ version floor a screen implies before it is published.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [ ] 1. Client capability declaration
+- [ ] 2. Server-side tree shaping
+- [x] 3. The `fallback` and `optional` node fields
+- [x] 4. The fixed degradation order, including the placeholder tier
+- [x] 5. The additive-only evolution rule, enforced in CI
+- [ ] 6. Editor warnings
+- [x] 7. `compat/` corpus cases
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- 2026-08-02: Landed points 3, 4, 5, and 7. The `fallback` and `optional` fields were already
+  honored by both `Resolver` implementations. This change adds the missing third degradation tier —
+  a generic placeholder — for a required node with no `fallback`. ADR-0006's fixed order (fallback,
+  then omission, then placeholder) now holds on both platforms without ever crashing.
+  `Model.kt`/`Model.swift` gained `DegradedTo.PLACEHOLDER` and a synthetic
+  `Spectre.UnsupportedComponent` node type outside the manifest's namespace; `Resolver.kt`/
+  `Resolver.swift`'s `degrade()` now falls through to it, threading the `repeat` element's stable
+  key through fallback and placeholder results alike (a related, previously untested gap: a
+  `fallback` resolved inside a `repeat` lost its element's key). `SpectreNodeView`
+  (Compose/SwiftUI) renders it as a bordered box with a warning icon and an accessibility label,
+  carrying the original unknown `type` in a `componentType` prop for diagnosis. `docs/compatibility.md`
+  §3 is rewritten to match ADR-0006's three-tier order (it previously described only two tiers, with
+  a placeholder mentioned as a debug-build aside — that text had drifted from the already-accepted
+  ADR). Point 5's additive-only rule is enforced by a new script,
+  `packages/codegen/check-additive-evolution.mjs`, wired into the CI `codegen` job: it diffs
+  `spec/component-manifest.json` against the merge base with `origin/main` and fails a minor
+  `schemaVersion` bump that removes a component/prop/action/enum value, changes a `default`, or adds
+  a `required` property to an existing component; it skips (not passes) when the base version can't
+  be resolved, and does nothing when the major version changes. Point 7 adds
+  `spec/conformance/compat/degradation.json` (nine cases covering each tier, recursive fallback,
+  mixed trees, and `repeat` interaction) plus a generic directory-reading harness on both platforms
+  (`ConformanceCompatTest.kt`, `ConformanceCompatTests` in `ConformanceTests.swift`) instead of the
+  single-file pattern the `resolve/` harness used; the existing `resolve/resolver.json` case for the
+  no-`fallback`/non-`optional` path was updated to expect a placeholder, since that is precisely the
+  behavior this change replaces.
+
+  Points 1 and 2 are blocked, not skipped. This worktree's branch predates both
+  [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md)'s `DocumentLoader`, the transport
+  entry point a header-sending change needs, and
+  [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md)'s delivery service, the
+  route a tree-shaping change needs. Neither exists yet in this branch's history, though both are
+  shipped on a sibling branch not yet merged here. Building either from scratch in this pass would
+  duplicate that concurrent work and risk conflicting with it once merged, so both wait for that
+  prerequisite work to land first. The design is already worked out against the sibling branch's
+  code, so implementing it once the branches combine should be a small follow-up rather than fresh
+  design work: the client sends `Spectre-Schema` and a `Spectre-Components` hash; the server shapes
+  the tree with a new `degradeDocumentTree` in `packages/manifest`, using each component's manifest
+  `since` field as the conservative estimate when the hash is unrecognized, consistent with
+  `docs/compatibility.md` §2. Point 6 is blocked for the reason the task instructions already name:
+  there is no editor yet
+  ([SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md) is unstarted in this
+  repository), so there is nowhere to surface a version-floor warning.
 
 ## References
 
