@@ -71,15 +71,19 @@ key too.
 }
 ```
 
-What a client does on encountering an unknown `type`:
+ADR-0006 fixes this order, shared by both SDKs, for an unknown `type`:
 
 ```
 type is unknown
-  ├─ a fallback exists    → resolve the fallback (recursively) and render it
-  ├─ optional: true       → omit the node entirely
-  └─ neither applies      → omit it, and record spectre.node.unknown
-                            (a debug build shows a red placeholder)
+  ├─ a fallback exists                → resolve the fallback (recursively) and render it
+  ├─ optional: true                   → omit the node entirely
+  └─ neither applies (required, no fallback) → replace it with a generic placeholder
 ```
+
+Every path records the degradation, as `spectre.node.unknown` (see §6). Omission and the placeholder
+differ in one way. The placeholder leaves a visible trace on screen. A user and the host application
+can both see that a node did not render. This is not a debug-build behavior; both platforms render in
+this order in production too.
 
 The same rule applies at the property level. An unknown `props` key is **silently ignored**. An
 unknown enum value (a new `variant`, for example) **falls back to that property's default**.
@@ -105,7 +109,9 @@ types, deleting keys, deep nesting, oversized arrays) and verifies that nothing 
 
 ## 5. Schema evolution rules
 
-`schemaVersion` is `major.minor`.
+`schemaVersion` is `major.minor`. `packages/codegen/check-additive-evolution.mjs` mechanically
+enforces, in CI, that a minor bump stays additive-only. When it cannot resolve a comparison version,
+the check skips itself — and always logs that skip, so a skip is never mistaken for a pass.
 
 ### What a minor bump may do (additive only)
 

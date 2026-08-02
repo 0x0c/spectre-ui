@@ -152,6 +152,36 @@ struct ProgressIndicatorView: View {
     }
 }
 
+/// 未対応コンポーネントの劣化の最終手段 (docs/compatibility.md §3, ADR-0006)。
+///
+/// `RenderNode.placeholderType` に対して描く汎用プレースホルダ。省略と違って画面上に
+/// 痕跡を残すことで、「何かが表示されないまま失われた」ことを利用者・ホストアプリの
+/// どちらから見ても分かるようにする。`componentType` prop に元の未知の型名を積んでいる
+/// (`Resolver` 参照)。
+struct UnsupportedComponentView: View {
+    let node: RenderNode
+    @Environment(\.spectreTheme) private var theme
+
+    var body: some View {
+        let outline = theme.color("outline", default: Color.spectreSeparator)
+        let label = node.a11yLabel() ?? "表示できないコンテンツです (\(node.string("componentType", default: "unknown")))"
+
+        ZStack {
+            Image(systemName: theme.symbol("warning"))
+                .foregroundStyle(outline)
+        }
+        .frame(minWidth: 32, minHeight: 32)
+        .padding(theme.space("sm"))
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.corner("sm"), style: .continuous)
+                .stroke(outline, lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .spectreNode(node)
+    }
+}
+
 /// テキスト選択の可否。
 ///
 /// `.enabled` と `.disabled` は別々の型 (`EnabledTextSelectability` /

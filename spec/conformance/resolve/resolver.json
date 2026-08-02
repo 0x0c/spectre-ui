@@ -276,7 +276,8 @@
     },
 
     {
-      "name": "未知の type で fallback も optional もなければ省略し、劣化として記録する",
+      "name": "未知の type で fallback も optional もなければプレースホルダに置き換え、劣化として記録する",
+      "$comment": "ADR-0006 / docs/compatibility.md §3 の劣化の最終手段。省略と違い木から消えない。",
       "capabilities": { "components": ["VStack", "Text"] },
       "document": {
         "schemaVersion": "1.0",
@@ -285,15 +286,23 @@
           "type": "VStack",
           "children": [
             { "type": "Text", "id": "a", "props": { "text": "before" } },
-            { "type": "Carousel", "id": "car" }
+            { "type": "Carousel", "id": "car", "layout": { "width": "fill" } }
           ]
         }
       },
       "expect": {
         "type": "VStack",
-        "children": [{ "type": "Text", "id": "a", "props": { "text": "before" } }]
+        "children": [
+          { "type": "Text", "id": "a", "props": { "text": "before" } },
+          {
+            "type": "Spectre.UnsupportedComponent",
+            "id": "car",
+            "props": { "componentType": "Carousel" },
+            "layout": { "width": "fill" }
+          }
+        ]
       },
-      "expectDegradations": [{ "nodeType": "Carousel", "degradedTo": "omitted" }]
+      "expectDegradations": [{ "nodeType": "Carousel", "degradedTo": "placeholder" }]
     },
 
     {

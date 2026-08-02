@@ -50,6 +50,10 @@ public struct SpectreNodeView: View {
             case "Stepper": AnyView(StepperView(node: node))
             case "DatePicker": AnyView(DatePickerView(node: node))
 
+            // 未対応コンポーネントの劣化の最終手段 (docs/compatibility.md §3, ADR-0006)。
+            // Resolver が fallback も optional もない未知ノードをここに置き換えて渡す。
+            case RenderNode.placeholderType: AnyView(UnsupportedComponentView(node: node))
+
             // Screen はルート専用。SpectreScreen が直接処理するのでここには来ない。
             default: AnyView(EmptyView())
             }

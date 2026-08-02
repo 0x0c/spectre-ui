@@ -16,15 +16,16 @@ platform, already has real code too. Capability-based tree shaping stays open th
 | Area | Status | Verification |
 | --- | --- | --- |
 | Component manifest + codegen | Implemented | The catalog-sync tests (both Kotlin and Swift) + a drift check in CI |
-| Conformance corpus | Implemented (234 cases, verified by three implementations: Swift, Kotlin, and TypeScript) | `pnpm --filter @spectre-ui/core run test` (the TypeScript SpectreExpr) |
-| Kotlin runtime (spectre-core) | Implemented | **277 tests green** |
+| Conformance corpus | Implemented (242 cases, verified by three implementations: Swift, Kotlin, and TypeScript) | `pnpm --filter @spectre-ui/core run test` (the TypeScript SpectreExpr) |
+| Kotlin runtime (spectre-core) | Implemented | **297 tests green** |
 | Compose renderer + Android sample | Implemented | CI (the `android` job) |
 | Swift runtime (SpectreCore) | Implemented | CI (the `ios` job) |
 | SwiftUI renderer + iOS sample | Implemented | CI (the `ios` / `ios-sample` jobs) |
 | Diff-based re-resolution | Implemented | `Resolver.reresolveTraced` connects the dependency-path extraction that already existed |
 | `applyPatch` / `focus` / `scrollTo` | Implemented | RFC 6902 JSON Patch, plus the focus and scroll wiring |
 | Delivery and caching (DocumentLoader) | Implemented | A three-tier cache plus stale-while-revalidate; the samples already use it |
-| Authoring and delivery API (M3) | In progress | `packages/server`; capability-based tree shaping waits on SU-0008 |
+| Per-node fallback degradation | Implemented | Fallback → optional-omission → a generic placeholder, in that fixed order (ADR-0006) |
+| Authoring and delivery API (M3) | In progress | `packages/server`; capability-based tree shaping waits on the rest of SU-0008 |
 | Editor (M2) | Not implemented | — |
 
 ### How verification splits

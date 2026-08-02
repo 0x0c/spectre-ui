@@ -15,15 +15,16 @@ M0 と M1 は、ファジングとスナップショットテストを除いて�
 | 領域 | 状態 | 検証 |
 | --- | --- | --- |
 | コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) + CI のドリフト検査 |
-| 適合性コーパス | 実装済み (234ケース、Swift/Kotlin/TypeScript の3実装で検証) | `pnpm --filter @spectre-ui/core run test` (TypeScript版 SpectreExpr) |
-| Kotlin ランタイム (spectre-core) | 実装済み | **277 テスト green** |
+| 適合性コーパス | 実装済み (242ケース、Swift/Kotlin/TypeScript の3実装で検証) | `pnpm --filter @spectre-ui/core run test` (TypeScript版 SpectreExpr) |
+| Kotlin ランタイム (spectre-core) | 実装済み | **297 テスト green** |
 | Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
 | Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
 | SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
 | 差分再解決 | 実装済み | `Resolver.reresolveTraced` が既存の依存パス抽出を接続 |
 | `applyPatch` / `focus` / `scrollTo` | 実装済み | RFC 6902 JSON Patch + フォーカス/スクロールの配線 |
 | 配信・キャッシュ (DocumentLoader) | 実装済み | 3層キャッシュ + stale-while-revalidate。サンプルも接続済み |
-| オーサリング・配信API (M3) | 進行中 | `packages/server`。ケイパビリティに基づく木の整形はSU-0008待ち |
+| ノード単位のフォールバック劣化 | 実装済み | fallback → optional省略 → 汎用プレースホルダの決まった順序 (ADR-0006) |
+| オーサリング・配信API (M3) | 進行中 | `packages/server`。ケイパビリティに基づく木の整形はSU-0008の残りを待つ |
 | エディタ (M2) | 未実装 | — |
 
 ### 検証の分担

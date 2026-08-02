@@ -44,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 加算のみチェック (下) が比較元の版を `git show` で読むために全履歴が要る。
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -78,6 +81,11 @@ jobs:
             exit 1
           fi
           echo "OK: 仕様変更なし、またはコーパスも同じ変更で拡張されています。"
+
+      # schemaVersion のマイナー増加が加算のみであること (docs/compatibility.md §5, ADR-0006)。
+      # origin/main と比較するため、上の fetch-depth: 0 で全履歴を取得しておく。
+      - name: マニフェストの加算のみ進化規則
+        run: node packages/codegen/check-additive-evolution.mjs
 
   # packages/core / packages/manifest / packages/server のテスト。実際の PostgreSQL に
   # 対して統合テストを走らせる (SU-0004)。
