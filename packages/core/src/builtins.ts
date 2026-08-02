@@ -1,7 +1,7 @@
 import type { EvalScope } from './evaluator.js'
 import type { ExprError } from './expr.js'
 import type { SpValue } from './value.js'
-import { deepEquals, formatNumberPlain, isBlank, isTruthy, path, stringify } from './value.js'
+import { deepEquals, formatNumberPlain, isBlank, isTruthy, path, stringify, toIntTruncating } from './value.js'
 
 /**
  * 組み込み関数のホワイトリスト。
@@ -132,14 +132,13 @@ export function invokeBuiltin(name: string, args: SpValue[], scope: EvalScope, e
         return found === null && args.length === 3 ? args[2] : found
       })
     case 'first':
-      return ctx.arity(1, () => {
-        const arr = ctx.arr(0)
-        return arr === null ? ctx.typeError() : (arr[0] ?? null)
-      })
+      // Kotlin: `ctx.arr(0)?.firstOrNull() ?: SpValue.Null` — a non-array argument resolves to
+      // null without recording an error, so this stays silent rather than calling ctx.typeError().
+      return ctx.arity(1, () => ctx.arr(0)?.[0] ?? null)
     case 'last':
       return ctx.arity(1, () => {
         const arr = ctx.arr(0)
-        return arr === null ? ctx.typeError() : (arr[arr.length - 1] ?? null)
+        return arr === null ? null : (arr[arr.length - 1] ?? null)
       })
     case 'indexOf':
       return ctx.arity(2, () => {
@@ -183,13 +182,13 @@ function slice(ctx: Ctx): SpValue {
   if (hasEnd && end === null) return ctx.typeError()
   const target = ctx.args[0]
   if (typeof target === 'string') {
-    const from = clamp(Math.trunc(start), 0, target.length)
-    const to = clamp(hasEnd ? Math.trunc(end as number) : target.length, from, target.length)
+    const from = clamp(toIntTruncating(start), 0, target.length)
+    const to = clamp(hasEnd ? toIntTruncating(end as number) : target.length, from, target.length)
     return target.substring(from, to)
   }
   if (Array.isArray(target)) {
-    const from = clamp(Math.trunc(start), 0, target.length)
-    const to = clamp(hasEnd ? Math.trunc(end as number) : target.length, from, target.length)
+    const from = clamp(toIntTruncating(start), 0, target.length)
+    const to = clamp(hasEnd ? toIntTruncating(end as number) : target.length, from, target.length)
     return target.slice(from, to)
   }
   return ctx.typeError('slice は文字列または配列にのみ適用できます')
@@ -203,10 +202,12 @@ function round(ctx: Ctx): SpValue {
   const n = ctx.num(0)
   if (n === null) return ctx.typeError()
   const hasDigits = ctx.args.length === 2
-  const digits = hasDigits ? ctx.num(1) : 0
-  if (hasDigits && digits === null) return ctx.typeError()
-  if (!digits) return roundHalfUp(n)
-  const factor = 10 ** (digits as number)
+  const rawDigits = hasDigits ? ctx.num(1) : 0
+  if (hasDigits && rawDigits === null) return ctx.typeError()
+  // Kotlin reads `digits` via `ctx.num(1)?.toInt()`, truncating a fractional digit count.
+  const digits = toIntTruncating(rawDigits ?? 0)
+  if (digits === 0) return roundHalfUp(n)
+  const factor = 10 ** digits
   return roundHalfUp(n * factor) / factor
 }
 
@@ -231,6 +232,9 @@ function toNumber(value: SpValue): SpValue {
   // 変換失敗は null。エラーではなく値として扱う (docs/spec/expression.md §4)。
   if (typeof value === 'string') {
     const trimmed = value.trim()
+    // `Number()` accepts JS-only 0x/0o/0b literal syntax that Kotlin's `toDoubleOrNull()`
+    // (`Double.parseDouble`) does not — reject it so `toNumber('0x1A')` agrees on all three runtimes.
+    if (/^[+-]?0[xXoObB]/.test(trimmed)) return null
     if (trimmed === '' || Number.isNaN(Number(trimmed))) return null
     return Number(trimmed)
   }
@@ -353,7 +357,15 @@ function pluralCategory(n: number, locale: string): string {
 }
 
 function compareVersions(a: string, b: string): number {
-  const parse = (v: string) => v.split('.').map((seg) => Number.parseInt(seg, 10) || 0)
+  // Kotlin: `segment.takeWhile(Char::isDigit).toIntOrNull() ?: 0` — only leading digit
+  // characters count, so a segment like "-5" stops at the '-' and parses as 0, not -5.
+  const parseSegment = (seg: string): number => {
+    let end = 0
+    while (end < seg.length && seg[end] >= '0' && seg[end] <= '9') end++
+    const digits = seg.slice(0, end)
+    return digits === '' ? 0 : Number.parseInt(digits, 10)
+  }
+  const parse = (v: string) => v.split('.').map(parseSegment)
   const left = parse(a)
   const right = parse(b)
   for (let i = 0; i < Math.max(left.length, right.length); i++) {

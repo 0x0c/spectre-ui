@@ -98,6 +98,42 @@ export function isWholeNumber(d: number): boolean {
   return !Number.isNaN(d) && Number.isFinite(d) && d === Math.floor(d) && Math.abs(d) < 1e15
 }
 
+/**
+ * Kotlin's `Double.compareTo` (`java.lang.Double.compare`) total order: NaN sorts as the
+ * greatest value (equal only to itself), and `-0.0 < 0.0`. Plain `<`/`>` in JavaScript treats
+ * every NaN comparison as `false` and does not distinguish signed zero, so `<`/`<=`/`>`/`>=`
+ * on numbers must go through this instead of the raw operators to match the other two runtimes.
+ */
+export function compareNumbers(a: number, b: number): number {
+  if (Number.isNaN(a)) return Number.isNaN(b) ? 0 : 1
+  if (Number.isNaN(b)) return -1
+  if (a < b) return -1
+  if (a > b) return 1
+  const aNeg = Object.is(a, -0)
+  const bNeg = Object.is(b, -0)
+  if (aNeg === bNeg) return 0
+  return aNeg ? -1 : 1
+}
+
+const INT32_MAX = 2147483647
+const INT32_MIN = -2147483648
+
+/**
+ * Java/Kotlin's `Double.toInt()` narrowing conversion (JLS 5.1.3): `NaN` becomes `0`, and an
+ * out-of-range or infinite value clamps to `Int.MAX_VALUE`/`Int.MIN_VALUE` instead of JavaScript's
+ * `Math.trunc`, which leaves `NaN`/`Infinity` untouched and would disagree on an index computed
+ * from an overflowing or `NaN`-producing expression.
+ */
+export function toIntTruncating(d: number): number {
+  if (Number.isNaN(d)) return 0
+  if (d === Number.POSITIVE_INFINITY) return INT32_MAX
+  if (d === Number.NEGATIVE_INFINITY) return INT32_MIN
+  const truncated = Math.trunc(d)
+  if (truncated > INT32_MAX) return INT32_MAX
+  if (truncated < INT32_MIN) return INT32_MIN
+  return truncated
+}
+
 /** 型変換をしない厳密比較。配列/オブジェクトは構造的に比較する。 */
 export function deepEquals(a: SpValue, b: SpValue): boolean {
   if (a === null || b === null) return a === b

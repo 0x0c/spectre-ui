@@ -94,6 +94,23 @@ implementations and a third time as an incident.
 - That is a genuine dependency block, not an omission.
 - `packages/core` does not yet cover JSON Patch or dependency-path extraction.
 - It covers the parser and evaluator that the `expr/` corpus exercises, and nothing beyond that.
+- A fresh-context review found seven places where the port could disagree with Kotlin.
+- Today's corpus catches none of them.
+- Building an object literal with `out[k] = value` let a key named `__proto__` reach the
+  `Object.prototype` accessor.
+- It now builds via `Object.create(null)` instead, so that key becomes a normal property.
+- `<`/`<=`/`>`/`>=` used raw JavaScript comparison.
+- That disagrees with Kotlin's `Double.compareTo` on `NaN` and on signed zero.
+- A new `compareNumbers` helper now matches Kotlin's ordering.
+- `first`/`last` recorded a spurious `E_TYPE` on a non-array argument.
+- Kotlin stays silent there, and this port now matches that.
+- `round`'s digit count and `slice`'s bounds left a fractional number untruncated.
+- Kotlin's `Double.toInt()` narrows it first; a shared `toIntTruncating` helper now does the same.
+- `compareVersions` read a version segment such as `-5` as a negative number.
+- Kotlin reads a segment's leading digit run and drops the rest; this port now agrees.
+- `toNumber` accepted JavaScript's `0x`/`0o`/`0b` literal syntax.
+- Kotlin's parser does not accept that syntax, so this port no longer does either.
+- All 199 `expr/` cases still pass after every fix.
 
 ## References
 

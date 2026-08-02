@@ -1,6 +1,6 @@
 import type { Expr, ExprError } from './expr.js'
 import type { SpValue } from './value.js'
-import { deepEquals, EMPTY_OBJ, isTruthy, stringify } from './value.js'
+import { compareNumbers, deepEquals, EMPTY_OBJ, isTruthy, stringify, toIntTruncating } from './value.js'
 import { invokeBuiltin } from './builtins.js'
 
 /**
@@ -81,14 +81,14 @@ function evalExpr(expr: Expr, scope: EvalScope, errors: ExprError[]): SpValue {
       const target = evalExpr(expr.target, scope, errors)
       const index = evalExpr(expr.index, scope, errors)
       if (Array.isArray(target) && typeof index === 'number') {
-        const i = Math.trunc(index)
+        const i = toIntTruncating(index)
         return i >= 0 && i < target.length ? target[i] : null
       }
       if (target !== null && typeof target === 'object' && !Array.isArray(target) && typeof index === 'string') {
         return Object.prototype.hasOwnProperty.call(target, index) ? target[index] : null
       }
       if (typeof target === 'string' && typeof index === 'number') {
-        const i = Math.trunc(index)
+        const i = toIntTruncating(index)
         return i >= 0 && i < target.length ? target[i] : null
       }
       return null
@@ -120,7 +120,9 @@ function evalExpr(expr: Expr, scope: EvalScope, errors: ExprError[]): SpValue {
       return expr.items.map((item) => evalExpr(item, scope, errors))
 
     case 'ObjectLit': {
-      const out: { [key: string]: SpValue } = {}
+      // `Object.create(null)`: a document key literally named `__proto__` must become a normal
+      // own property, not trigger the `Object.prototype.__proto__` accessor via `out[k] = ...`.
+      const out: { [key: string]: SpValue } = Object.create(null)
       for (const [k, v] of expr.entries) out[k] = evalExpr(v, scope, errors)
       return out
     }
@@ -188,7 +190,7 @@ function evalBinary(expr: Extract<Expr, { kind: 'Binary' }>, scope: EvalScope, e
 function compare(l: SpValue, r: SpValue, op: string, errors: ExprError[]): SpValue {
   let cmp: number
   if (typeof l === 'number' && typeof r === 'number') {
-    cmp = l < r ? -1 : l > r ? 1 : 0
+    cmp = compareNumbers(l, r)
   } else if (typeof l === 'string' && typeof r === 'string') {
     cmp = l < r ? -1 : l > r ? 1 : 0
   } else {
