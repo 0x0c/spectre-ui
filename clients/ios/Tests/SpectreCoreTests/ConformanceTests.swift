@@ -53,6 +53,87 @@ enum Conformance {
         if case .null = value { return "null" }
         return value.stringify()
     }
+
+    /// `RenderNode` をコーパスの期待値と同じ形に正規化する。
+    ///
+    /// 空のフィールドは出力しない。既定値の適用は描画時であって解決時ではないため、
+    /// ソースに現れなかったプロパティはここにも現れない。プレースホルダ
+    /// (`RenderNode.placeholderType`) はマニフェストに存在しないため `acceptsChildren` は
+    /// 常に false 扱いになり、`children` を出力しない (葉ノードと同じ扱いでよい)。
+    static func normalizeRenderNode(_ node: RenderNode) -> SpValue {
+        var out: [String: SpValue] = ["type": .string(node.type)]
+        if let nodeID = node.nodeID { out["id"] = .string(nodeID) }
+        if let key = node.key { out["key"] = .string(key) }
+
+        var props = node.props
+        for (key, value) in node.rawProps { props[key] = value }
+        for (path, nodes) in node.nodeProps {
+            props[path] = .array(nodes.map { normalizeRenderNode($0) })
+        }
+        if !props.isEmpty { out["props"] = .object(props) }
+
+        if !node.layout.isEmpty { out["layout"] = .object(node.layout) }
+        if !node.style.isEmpty { out["style"] = .object(node.style) }
+        if !node.a11y.isEmpty { out["a11y"] = .object(node.a11y) }
+
+        // 子を取れるコンポーネントは、0件でも children を出力する。
+        // 「repeat が何も生まなかったコンテナ」と「そもそも子を持たない葉」は別物。
+        if GeneratedCatalog.spec(node.type)?.acceptsChildren == true {
+            out["children"] = .array(node.children.map { normalizeRenderNode($0) })
+        }
+        return .object(out)
+    }
+
+    /// 「document + capabilities -> 正規化された RenderTree + degradations」のケースを1件実行する。
+    ///
+    /// `resolve/resolver.json` (基本の解決規則) と `compat/` (ケイパビリティ由来の劣化) の
+    /// 両方が同じ形のケースを使うため、`ConformanceResolveTests` と `ConformanceCompatTests` で共有する。
+    static func runResolveCase(_ raw: SpValue, name: String) throws {
+        guard let documentValue = raw["document"] else { return }
+        let document = try DocumentParser.parse(value: documentValue)
+
+        // ケイパビリティ指定がなければカタログ全体を対応済みとみなす。
+        let supported: Set<String> = raw["capabilities"]?["components"]?.asArray
+            .map { Set($0.compactMap(\.asString)) } ?? GeneratedCatalog.componentNames
+
+        let scope = EvalScope(
+            data: document.data,
+            state: document.state,
+            env: raw["env"] ?? .emptyObject
+        )
+        let result = Resolver(supportedComponents: supported).resolve(document, scope: scope)
+
+        if let expected = raw["expect"] {
+            let actual = result.root.map(normalizeRenderNode) ?? .null
+            XCTAssertTrue(
+                valuesEqual(actual, expected),
+                """
+                \(name): 解決結果が期待と異なります
+                  期待: \(expected.stringify())
+                  実際: \(actual.stringify())
+                """
+            )
+        }
+
+        if let expectedDegradations = raw["expectDegradations"]?.asArray {
+            let actual = result.degradations.map { degradation in
+                SpValue.object([
+                    "nodeType": .string(degradation.nodeType),
+                    "degradedTo": .string(degradation.degradedTo.rawValue),
+                ])
+            }
+            XCTAssertEqual(
+                actual.count, expectedDegradations.count,
+                "\(name): 劣化の件数が異なります (実際: \(SpValue.array(actual).stringify()))"
+            )
+            for (i, expected) in expectedDegradations.enumerated() where i < actual.count {
+                XCTAssertTrue(
+                    valuesEqual(actual[i], expected),
+                    "\(name): 劣化[\(i)] が期待と異なります"
+                )
+            }
+        }
+    }
 }
 
 // MARK: - 式
@@ -131,82 +212,29 @@ final class ConformanceResolveTests: XCTestCase {
 
     func testResolverCorpus() throws {
         let doc = try Conformance.loadDir("resolve").first { $0.0 == "resolver.json" }!.1
-
         for raw in doc["cases"]?.asArray ?? [] {
-            let name = raw["name"]?.asString ?? "(no name)"
-            guard let documentValue = raw["document"] else { continue }
-            let document = try DocumentParser.parse(value: documentValue)
-
-            // ケイパビリティ指定がなければカタログ全体を対応済みとみなす。
-            let supported: Set<String> = raw["capabilities"]?["components"]?.asArray
-                .map { Set($0.compactMap(\.asString)) } ?? GeneratedCatalog.componentNames
-
-            let scope = EvalScope(
-                data: document.data,
-                state: document.state,
-                env: raw["env"] ?? .emptyObject
-            )
-            let result = Resolver(supportedComponents: supported).resolve(document, scope: scope)
-
-            if let expected = raw["expect"] {
-                let actual = result.root.map(normalize) ?? .null
-                XCTAssertTrue(
-                    Conformance.valuesEqual(actual, expected),
-                    """
-                    \(name): 解決結果が期待と異なります
-                      期待: \(expected.stringify())
-                      実際: \(actual.stringify())
-                    """
-                )
-            }
-
-            if let expectedDegradations = raw["expectDegradations"]?.asArray {
-                let actual = result.degradations.map { degradation in
-                    SpValue.object([
-                        "nodeType": .string(degradation.nodeType),
-                        "degradedTo": .string(degradation.degradedTo.rawValue),
-                    ])
-                }
-                XCTAssertEqual(
-                    actual.count, expectedDegradations.count,
-                    "\(name): 劣化の件数が異なります (実際: \(SpValue.array(actual).stringify()))"
-                )
-                for (i, expected) in expectedDegradations.enumerated() where i < actual.count {
-                    XCTAssertTrue(
-                        Conformance.valuesEqual(actual[i], expected),
-                        "\(name): 劣化[\(i)] が期待と異なります"
-                    )
-                }
-            }
+            try Conformance.runResolveCase(raw, name: raw["name"]?.asString ?? "(no name)")
         }
     }
+}
 
-    /// `RenderNode` をコーパスの期待値と同じ形に正規化する。
-    ///
-    /// 空のフィールドは出力しない。既定値の適用は描画時であって解決時ではないため、
-    /// ソースに現れなかったプロパティはここにも現れない。
-    private func normalize(_ node: RenderNode) -> SpValue {
-        var out: [String: SpValue] = ["type": .string(node.type)]
-        if let nodeID = node.nodeID { out["id"] = .string(nodeID) }
-        if let key = node.key { out["key"] = .string(key) }
+// MARK: - 互換性
 
-        var props = node.props
-        for (key, value) in node.rawProps { props[key] = value }
-        for (path, nodes) in node.nodeProps {
-            props[path] = .array(nodes.map { normalize($0) })
+/// spec/conformance/compat/ の全ケースを実行する (SU-0008)。
+///
+/// `resolve/resolver.json` がノード解決の基本規則を検証するのに対し、こちらは
+/// ケイパビリティ由来の劣化 (fallback → optional による省略 → プレースホルダ、
+/// docs/compatibility.md §3, ADR-0006) だけに焦点を当てる。iOS/Android が同じ木・
+/// 同じ degradations 列を出すことを保証する (SU-0007 の compat/ 区分)。
+final class ConformanceCompatTests: XCTestCase {
+
+    func testCompatCorpus() throws {
+        for (fileName, doc) in try Conformance.loadDir("compat") {
+            for raw in doc["cases"]?.asArray ?? [] {
+                let name = "\(fileName): \(raw["name"]?.asString ?? "(no name)")"
+                try Conformance.runResolveCase(raw, name: name)
+            }
         }
-        if !props.isEmpty { out["props"] = .object(props) }
-
-        if !node.layout.isEmpty { out["layout"] = .object(node.layout) }
-        if !node.style.isEmpty { out["style"] = .object(node.style) }
-        if !node.a11y.isEmpty { out["a11y"] = .object(node.a11y) }
-
-        // 子を取れるコンポーネントは、0件でも children を出力する。
-        // 「repeat が何も生まなかったコンテナ」と「そもそも子を持たない葉」は別物。
-        if GeneratedCatalog.spec(node.type)?.acceptsChildren == true {
-            out["children"] = .array(node.children.map { normalize($0) })
-        }
-        return .object(out)
     }
 }
 

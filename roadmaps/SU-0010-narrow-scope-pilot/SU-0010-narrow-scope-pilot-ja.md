@@ -63,7 +63,7 @@ M0は大幅に短くなり、本番までの道のり全体が数ヶ月縮みま
 
 ## 参考
 
-- [`docs/roadmap.md`](../../docs/roadmap.md) — 未決事項の一覧です。この項目が答えるのはそのうち適用範囲の問いです。
+- [`docs/roadmap.md`](../../docs/roadmap-ja.md) — 未決事項の一覧です。この項目が答えるのはそのうち適用範囲の問いです。
 - [SU-0001 — M0、仕様の凍結](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md) — この絞り込みが小さくするマイルストーンです。
 - [SU-0004 — M3、オーサリングと配信の基盤](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md) — パイロットが公開に使う基盤です。
 - [`examples/screens/product-detail.json`](../../examples/screens/product-detail.json) — 画面をドキュメントとして表現した実例です。

@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0008](SU-0008-capability-negotiation-and-fallback.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Compatibility |
 | Related | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus.md) |
 <!-- /SU-METADATA -->
@@ -60,11 +60,64 @@ version floor a screen implies before it is published.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [x] 1. Client capability declaration
+- [x] 2. Server-side tree shaping
+- [x] 3. The `fallback` and `optional` node fields
+- [x] 4. The fixed degradation order, including the placeholder tier
+- [x] 5. The additive-only evolution rule, enforced in CI
+- [ ] 6. Editor warnings
+- [x] 7. `compat/` corpus cases
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- 2026-08-02: Landed points 3, 4, 5, and 7. The `fallback` and `optional` fields were already
+  honored by both `Resolver` implementations. This change adds the missing third degradation tier —
+  a generic placeholder — for a required node with no `fallback`. ADR-0006's fixed order (fallback,
+  then omission, then placeholder) now holds on both platforms without ever crashing.
+  `Model.kt`/`Model.swift` gained `DegradedTo.PLACEHOLDER` and a synthetic
+  `Spectre.UnsupportedComponent` node type outside the manifest's namespace; `Resolver.kt`/
+  `Resolver.swift`'s `degrade()` now falls through to it, threading the `repeat` element's stable
+  key through fallback and placeholder results alike (a related, previously untested gap: a
+  `fallback` resolved inside a `repeat` lost its element's key). `SpectreNodeView`
+  (Compose/SwiftUI) renders it as a bordered box with a warning icon and an accessibility label,
+  carrying the original unknown `type` in a `componentType` prop for diagnosis. `docs/compatibility.md`
+  §3 is rewritten to match ADR-0006's three-tier order (it previously described only two tiers, with
+  a placeholder mentioned as a debug-build aside — that text had drifted from the already-accepted
+  ADR). Point 5's additive-only rule is enforced by a new script,
+  `packages/codegen/check-additive-evolution.mjs`, wired into the CI `codegen` job: it diffs
+  `spec/component-manifest.json` against the merge base with `origin/main` and fails a minor
+  `schemaVersion` bump that removes a component/prop/action/enum value, changes a `default`, or adds
+  a `required` property to an existing component; it skips (not passes) when the base version can't
+  be resolved, and does nothing when the major version changes. Point 7 adds
+  `spec/conformance/compat/degradation.json` (8 cases covering each tier, recursive fallback,
+  mixed trees, and `repeat` interaction) plus a generic directory-reading harness on both platforms
+  (`ConformanceCompatTest.kt`, `ConformanceCompatTests` in `ConformanceTests.swift`) instead of the
+  single-file pattern the `resolve/` harness used; the existing `resolve/resolver.json` case for the
+  no-`fallback`/non-`optional` path was updated to expect a placeholder, since that is precisely the
+  behavior this change replaces.
+
+  Points 1 and 2 landed in a follow-up change, once
+  [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md)'s `DocumentLoader` and
+  [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md)'s delivery service
+  merged into this branch (the change above predates both, and named this as a real prerequisite
+  gap rather than an omission). `DocumentLoader.load()` now computes a `SpectreCapabilities` value
+  (`GeneratedCatalog.SCHEMA_VERSION` / `GeneratedCatalog.capabilityHash()`, matching the constructor's
+  `supportedComponents`) and passes it to `SpectreDocumentTransport.fetch()` on every request, on
+  both platforms; the transport implementation the host application supplies carries it onward as
+  `Spectre-Schema` and `Spectre-Components` headers, per `docs/compatibility.md` §2.
+  `packages/manifest` gained `degradeDocumentTree()`: a hash match against the current manifest
+  skips tree-walking entirely; otherwise it estimates conservatively from `Spectre-Schema` against
+  each component's `since` field, replacing an unsupported node with its (recursively resolved)
+  `fallback` or dropping it if `optional`. Both branches mirror `Resolver.degrade()`'s first two
+  branches on the client, rather than inventing new behavior. The third branch (a required node with
+  no fallback) stays untouched on purpose: the server does not manufacture its own placeholder, so
+  as not to duplicate the client's one implementation of it, and the client's own `Resolver` still
+  catches it as the documented last line of defense.
+  `packages/server`'s delivery route calls this on every `GET /screens/:screenId`, and folds the
+  declared capability into the `ETag` so a CDN cannot serve a response shaped for one client to
+  another. Point 6 stays blocked: there is still no editor
+  ([SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md)) to surface a version-floor
+  warning in.
 
 ## References
 

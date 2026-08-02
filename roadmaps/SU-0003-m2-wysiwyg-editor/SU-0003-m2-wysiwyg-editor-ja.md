@@ -7,7 +7,7 @@
 |---|---|
 | 提案 | [SU-0003](SU-0003-m2-wysiwyg-editor-ja.md) |
 | 提案者 | [@0x0c](https://github.com/0x0c) |
-| 状態 | **提案** |
+| 状態 | **進行中** |
 | トピック | エディタ |
 | 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) |
 <!-- /SU-METADATA -->
@@ -60,16 +60,69 @@
 > 作業の進行に合わせて更新します。チェックリストは*詳細設計*の分解を写したもので、ログは何がいつ
 > 変わったかを古い順に記録します。
 
-- [ ] 未着手
+- [x] マニフェスト駆動のパレットとインスペクタ
+- [x] キャンバス。ドラッグ&ドロップ、選択、ツリーパネル
+- [ ] 式編集の2つのモード（ピッカーモードは完了、CodeMirrorのテキストモードは未着手）
+- [x] アクションエディタ
+- [x] サンプルデータの管理
+- [ ] リント表示、undo / redo、差分表示（undo / redo は完了、残りは未着手）
+- [ ] WebSocketによる実機ミラー（[SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md)）
+- [x] 近似プレビューにおける端末、ロケール、テーマ、フォントスケールの切り替え
 
 **ログ**
 
-- 作業は未着手です。リポジトリは設計フェーズにあります。
+- 2026-08-02: 今回の変更は `packages/editor`（React 19、TypeScript、Vite。pnpm ワークスペースに
+  組み込み済み）を追加します。エディタの最初の一巡です。
+- 詳細設計の項目1、2、4、5、8を完全に、項目3と6を部分的に満たします。
+- パレットとインスペクタは実行時に `packages/manifest` から生成します（項目1）。
+  `spec/component-manifest.json` に新しいコンポーネントを足しても、エディタのコードは1行も
+  書きません。
+- キャンバスはADR-0005の通り、DOMベースのReactコンポーネントです（項目2）。パレットからの
+  ドラッグ&ドロップ、ノード選択、ドキュメントの `children` 構造を写したツリーパネルを備えます。
+- ドキュメントストアはZustand + Immerです。編集はすべて `produceWithPatches` を通り、undo / redo
+  （項目6の一部）はその結果として得られるパッチの履歴スタックです。
+- 項目3はピッカーモードだけを満たします。`data.x` / `state.y` のパスピッカーとライブプレビューです。
+  CodeMirrorのテキストモードは未着手のままで、自由形式の式には構文ハイライト・補完・エラー表示なしの
+  生テキスト入力で代えています。
+- アクションエディタはマニフェストのアクションカタログ（各アクションの名前と非同期かどうか）を
+  カバーします。各種別のパラメータ形は手書きです。マニフェスト自身がその形を持たないためです
+  （項目4）。
+- サンプルデータパネルは、キャンバスプレビューが評価に使う `data` / `state` スコープを編集します
+  （項目5）。
+- 端末、ロケール、テーマ、フォントスケールの切り替えは、近似プレビューが読む `env` スコープを
+  動かします（項目8）。
+- 項目6のリント表示と、公開済みバージョンとの差分表示は未着手のままです。どちらもこのパスに
+  含めていないオーサリングAPIとの実配線を必要とします。
+- エディタはローカル/サンプルドキュメントに対してオフラインで動きます。JSONのインポート/
+  エクスポートが主な動線です。`packages/server` のオーサリングAPIへの薄いクライアントは
+  `packages/editor/src/api/client.ts` にありますが、まだどの画面にも配線していません。
+- 項目7、WebSocketによる実機ミラーは、今回の変更のスコープ外でSU-0009として引き続き追跡します。
+- `状態` は `実装済み` ではなく `進行中` のままにします。この項目自身の「検討した代替案」節が
+  実機ミラーを後回しにできない必須要件として扱っているためです。近似プレビューは正とはならないため、
+  実機ミラーなしのエディタでは公開を安全にできません。
+- キャンバスプレビューは `${...}` を、SpectreExpr言語全体ではなくローカルの最小限のスタブで
+  解決します。スタブの実体は `packages/editor/src/expression/interpolate.ts` です。まるごと1つの
+  式である `data.x` / `state.y` パスは、型を保存して解決します。この規則は
+  [`docs/spec/expression.md`](../../docs/spec/expression.md) §1の通りです。演算子・三項演算子・
+  組み込み関数は構文解析しません。
+- SpectreExprの本物のTypeScript実装は `packages/core` の並行する変更で進行中で、今回の変更の
+  ワークツリーには存在しませんでした。それが着地したら、このスタブを差し替えてください。
+- 今回の変更の開始時点のワークツリーは、この項目の設計が依拠する `packages/manifest` と
+  `packages/server` が共有の統合ブランチに着地する前に分岐したものでした。エディタのコードを
+  書き始める前に、ワークツリーのブランチを統合ブランチの最新に早送りマージしました。
+- あわせて `packages/manifest` も拡張しました。ブラウザ側で安全なエディタ用スキーマ
+  `editorSchema.ts` を追加しました。`packages/manifest` のNode専用ファイルI/Oを持ち込まずに、
+  エディタから使えます。また `validate.ts` の `Buffer` 呼び出しを `TextEncoder` に直しました。
+  同じ上限チェックが、ブラウザ側でも動くようになりました。
+- Vitestの106件のテストが、ストアのundo / redo、マニフェスト駆動のパレット、ドラッグ&ドロップに
+  よるツリー更新、補間スタブの型保存規則などをカバーします。
+- CIの `server` ジョブは、`packages/manifest` と `packages/server` の既存のチェックに加えて、
+  `packages/editor` の型検査・テスト・ビルドも実行するようになりました。
 
 ## 参考
 
 - [ADR-0005 — WYSIWYGエディタの技術スタック](../../docs/adr/ADR-0005-editor-stack/ADR-0005-editor-stack-ja.md) — スタックと、二段構えのプレビューという決定です。
-- [`docs/editor.md`](../../docs/editor.md) — エディタの設計の全体です。
+- [`docs/editor.md`](../../docs/editor-ja.md) — エディタの設計の全体です。
 - [SU-0002 — M1、iOS / Android のクライアントSDK](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) — 実機ミラーが依存するレンダラです。
 - [SU-0006 — マニフェスト駆動のコード生成](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md) — パレットとインスペクタが依拠する生成です。
 - [SU-0009 — 実機ミラープレビュー](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) — 項目として追跡する実機ミラーです。

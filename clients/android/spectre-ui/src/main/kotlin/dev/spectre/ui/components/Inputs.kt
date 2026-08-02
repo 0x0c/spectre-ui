@@ -55,6 +55,7 @@ import dev.spectre.ui.floatOrNull
 import dev.spectre.ui.int
 import dev.spectre.ui.intOrNull
 import dev.spectre.ui.options
+import dev.spectre.ui.spectreFocusTarget
 import dev.spectre.ui.spectreNode
 import dev.spectre.ui.string
 import dev.spectre.ui.stringOrNull
@@ -153,7 +154,7 @@ fun TextFieldView(node: RenderNode, modifier: Modifier) {
             text = if (maxLength != null && next.length > maxLength) next.take(maxLength) else next
             if (onChange.isEmpty()) controller.setStateValue(bindTo, SpValue.Str(text))
         },
-        modifier = modifier.spectreNode(node).fillMaxWidth(),
+        modifier = modifier.spectreNode(node).spectreFocusTarget(node).fillMaxWidth(),
         label = node.stringOrNull("label")?.let { { Text(it) } },
         placeholder = node.stringOrNull("placeholder")?.let { { Text(it) } },
         supportingText = (errorText ?: node.stringOrNull("helperText"))?.let { { Text(it) } },

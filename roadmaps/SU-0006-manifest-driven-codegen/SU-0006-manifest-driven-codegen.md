@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0006](SU-0006-manifest-driven-codegen.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Tooling |
 | Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus.md) |
 <!-- /SU-METADATA -->
@@ -63,11 +63,28 @@ without a Node toolchain.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [ ] The meta-schema for the manifest
+- [ ] The manifest loader and validator, in `packages/manifest`
+- [x] The generator, `packages/codegen`: Swift and Kotlin types
+- [x] The generator: TypeScript types
+- [ ] The generator: JSON Schema
+- [ ] Documentation generation for the component catalog page
+- [x] The regeneration check in continuous integration
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- This repository entered its client-implementation phase with the generator already in place.
+- The generator was already emitting Swift and Kotlin types.
+- This item's `Status` field never caught up to that work.
+- This change adds the missing TypeScript output.
+- `packages/manifest` now holds `generated.ts`.
+- It covers every component's props, the token types, the node and document shapes.
+- It covers the resource limits too.
+- CI now type-checks that output, alongside the existing regeneration-drift check.
+- `packages/manifest` today holds the generated types alone.
+- The loader-and-validator module the Detailed design calls for still doesn't exist.
+- The JSON Schema output, the meta-schema, and documentation generation stay open too.
+- This item stays `In progress` until those land.
 
 ## References
 

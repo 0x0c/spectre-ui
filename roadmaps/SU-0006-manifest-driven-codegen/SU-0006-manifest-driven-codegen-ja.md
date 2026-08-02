@@ -7,7 +7,7 @@
 |---|---|
 | 提案 | [SU-0006](SU-0006-manifest-driven-codegen-ja.md) |
 | 提案者 | [@0x0c](https://github.com/0x0c) |
-| 状態 | **提案** |
+| 状態 | **進行中** |
 | トピック | ツール |
 | 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md) |
 <!-- /SU-METADATA -->
@@ -58,11 +58,24 @@
 > 作業の進行に合わせて更新します。チェックリストは*詳細設計*の分解を写したもので、ログは何がいつ
 > 変わったかを古い順に記録します。
 
-- [ ] 未着手
+- [ ] マニフェストのメタスキーマ
+- [ ] `packages/manifest` のマニフェストのローダと検証器
+- [x] 生成器 (`packages/codegen`)。Swift と Kotlin の型
+- [x] 生成器。TypeScript の型
+- [ ] 生成器。JSON Schema
+- [ ] コンポーネントカタログページのドキュメント生成
+- [x] 継続的インテグレーションでの再生成チェック
 
 **ログ**
 
-- 作業は未着手です。リポジトリは設計フェーズにあります。
+- このリポジトリはクライアント実装フェーズに入った時点で、生成器はすでに Swift と Kotlin の型を
+  出力していました。この項目の `Status` はそれに合わせて更新されていませんでした。
+- この変更は欠けていた TypeScript の出力を追加します。`packages/manifest` が `generated.ts` を
+  持つようになり、全コンポーネントの props、トークンの型、ノードとドキュメントの形、上限値を
+  カバーします。CI は既存の再生成差分チェックに加えて、この型を型検査するようになりました。
+- `packages/manifest` は今のところ生成された型だけを持ち、詳細設計が求めるローダ・検証器モジュール
+  ではありません。JSON Schema の出力、メタスキーマ、ドキュメント生成もまだ残っています。これらが
+  揃うまで、この項目は `進行中` のままです。
 
 ## 参考
 

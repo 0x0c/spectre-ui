@@ -1,0 +1,242 @@
+{
+  "name": "compat: capability-driven degradation (SU-0008, ADR-0006)",
+  "$comment": "各ケースは document + capabilities (対応コンポーネント集合) を与え、両ランタイムが同一の劣化木・同一の degradations 列を出すことを保証する。順序は fallback → optional による省略 → プレースホルダで固定 (docs/compatibility.md §3)。",
+  "cases": [
+    {
+      "name": "fallback: 未知の type は fallback に (再帰的に) 解決される",
+      "capabilities": { "components": ["VStack", "Image"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "url": "https://cdn.example.com/1.jpg" },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "id": "car",
+              "fallback": { "type": "Image", "id": "car_fb", "props": { "url": "${data.url}" } }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [{ "type": "Image", "id": "car_fb", "props": { "url": "https://cdn.example.com/1.jpg" } }]
+      },
+      "expectDegradations": [{ "nodeType": "Carousel", "degradedTo": "fallback" }]
+    },
+
+    {
+      "name": "fallback: 段階的に未対応な fallback 鎖を最後まで辿る",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "fallback": {
+                "type": "Marquee",
+                "fallback": {
+                  "type": "Ticker",
+                  "fallback": { "type": "Text", "id": "deepest", "props": { "text": "最終手段" } }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [{ "type": "Text", "id": "deepest", "props": { "text": "最終手段" } }]
+      }
+    },
+
+    {
+      "name": "omission: optional な未知ノードは fallback がなくても木から消える",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            { "type": "Text", "id": "a", "props": { "text": "before" } },
+            { "type": "LiveActivityWidget", "id": "widget", "optional": true },
+            { "type": "Text", "id": "b", "props": { "text": "after" } }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "id": "a", "props": { "text": "before" } },
+          { "type": "Text", "id": "b", "props": { "text": "after" } }
+        ]
+      },
+      "expectDegradations": [{ "nodeType": "LiveActivityWidget", "degradedTo": "omitted" }]
+    },
+
+    {
+      "name": "placeholder: 必須 (optional でない) かつ fallback もない未知ノードは汎用プレースホルダになる",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "ArView",
+              "id": "ar",
+              "layout": { "width": "fill", "height": 200 },
+              "a11y": { "label": "拡張現実プレビュー" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          {
+            "type": "Spectre.UnsupportedComponent",
+            "id": "ar",
+            "props": { "componentType": "ArView" },
+            "layout": { "width": "fill", "height": 200 },
+            "a11y": { "label": "拡張現実プレビュー" }
+          }
+        ]
+      },
+      "expectDegradations": [{ "nodeType": "ArView", "degradedTo": "placeholder" }]
+    },
+
+    {
+      "name": "placeholder: fallback 内の式も未対応なノードに落ちればプレースホルダになる",
+      "capabilities": { "components": ["VStack"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "id": "car",
+              "fallback": { "type": "Marquee", "id": "marquee_fb" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Spectre.UnsupportedComponent", "id": "marquee_fb", "props": { "componentType": "Marquee" } }
+        ]
+      },
+      "expectDegradations": [
+        { "nodeType": "Carousel", "degradedTo": "fallback" },
+        { "nodeType": "Marquee", "degradedTo": "placeholder" }
+      ]
+    },
+
+    {
+      "name": "3経路が同じ木に混在しても、ノードごとに独立して正しい経路へ落ちる",
+      "capabilities": { "components": ["VStack", "Text", "Image"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "url": "https://cdn.example.com/1.jpg" },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "id": "car",
+              "fallback": { "type": "Image", "id": "car_fb", "props": { "url": "${data.url}" } }
+            },
+            { "type": "LiveActivityWidget", "id": "widget", "optional": true },
+            { "type": "ArView", "id": "ar" },
+            { "type": "Text", "id": "z", "props": { "text": "tail" } }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Image", "id": "car_fb", "props": { "url": "https://cdn.example.com/1.jpg" } },
+          { "type": "Spectre.UnsupportedComponent", "id": "ar", "props": { "componentType": "ArView" } },
+          { "type": "Text", "id": "z", "props": { "text": "tail" } }
+        ]
+      },
+      "expectDegradations": [
+        { "nodeType": "Carousel", "degradedTo": "fallback" },
+        { "nodeType": "LiveActivityWidget", "degradedTo": "omitted" },
+        { "nodeType": "ArView", "degradedTo": "placeholder" }
+      ]
+    },
+
+    {
+      "name": "repeat: 展開された各要素も同じ劣化順序に従う (プレースホルダは要素ごとに独立する)",
+      "capabilities": { "components": ["VStack"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [{ "id": "a" }, { "id": "b" }] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "ArView",
+              "repeat": { "for": "${data.items}", "as": "item", "key": "${item.id}" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Spectre.UnsupportedComponent", "key": "a", "props": { "componentType": "ArView" } },
+          { "type": "Spectre.UnsupportedComponent", "key": "b", "props": { "componentType": "ArView" } }
+        ]
+      },
+      "expectDegradations": [
+        { "nodeType": "ArView", "degradedTo": "placeholder" },
+        { "nodeType": "ArView", "degradedTo": "placeholder" }
+      ]
+    },
+
+    {
+      "name": "repeat: fallback がちょうど1ノードに解決されれば、その要素の安定キーを引き継ぐ",
+      "capabilities": { "components": ["VStack", "Text"] },
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "items": [{ "id": "a", "label": "Alpha" }, { "id": "b", "label": "Beta" }] },
+        "root": {
+          "type": "VStack",
+          "children": [
+            {
+              "type": "Carousel",
+              "repeat": { "for": "${data.items}", "as": "item", "key": "${item.id}" },
+              "fallback": { "type": "Text", "props": { "text": "${item.label}" } }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "type": "VStack",
+        "children": [
+          { "type": "Text", "key": "a", "props": { "text": "Alpha" } },
+          { "type": "Text", "key": "b", "props": { "text": "Beta" } }
+        ]
+      },
+      "expectDegradations": [
+        { "nodeType": "Carousel", "degradedTo": "fallback" },
+        { "nodeType": "Carousel", "degradedTo": "fallback" }
+      ]
+    }
+  ]
+}

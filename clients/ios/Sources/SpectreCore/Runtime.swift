@@ -13,7 +13,11 @@ public final class Store {
     public private(set) var state: SpValue
     public let env: SpValue
 
-    /// 直近の更新で変化した state のパス。差分再解決の入力になる。
+    /// 直近の `consumeChangedPaths()` 以降に変化した state/data のパスの累積。差分再解決の入力になる。
+    ///
+    /// 1回のアクションディスパッチは複数回 state/data を書き換えうるため、上書きではなく
+    /// 蓄積する。上書きだと列の途中の変更が再解決に反映されず、画面が古いまま止まって見える
+    /// ことになる。
     public private(set) var lastChangedPaths: Set<String> = []
 
     public init(
@@ -30,38 +34,45 @@ public final class Store {
         EvalScope(data: data, state: state, env: env, locals: locals)
     }
 
+    /// 蓄積した変更パスを取り出し、蓄積をリセットする。差分再解決を1回行うたびに呼ぶ。
+    public func consumeChangedPaths() -> Set<String> {
+        let changed = lastChangedPaths
+        lastChangedPaths = []
+        return changed
+    }
+
     public func setState(_ path: String, _ value: SpValue) {
         state = state.settingPath(path, to: value)
-        lastChangedPaths = ["state.\(path)"]
+        lastChangedPaths.insert("state.\(path)")
     }
 
     public func setStates(_ patch: [String: SpValue]) {
         var next = state
         for (path, value) in patch { next = next.settingPath(path, to: value) }
         state = next
-        lastChangedPaths = Set(patch.keys.map { "state.\($0)" })
+        lastChangedPaths.formUnion(patch.keys.map { "state.\($0)" })
     }
 
     /// サーバ応答の `state` を浅くマージする。
     public func mergeState(_ patch: SpValue) {
         state = state.merging(patch)
-        lastChangedPaths = Set((patch.asObject ?? [:]).keys.map { "state.\($0)" })
+        lastChangedPaths.formUnion((patch.asObject ?? [:]).keys.map { "state.\($0)" })
     }
 
     /// サーバ応答の `data` を浅くマージする。
     public func mergeData(_ patch: SpValue) {
         data = data.merging(patch)
-        lastChangedPaths = Set((patch.asObject ?? [:]).keys.map { "data.\($0)" })
+        lastChangedPaths.formUnion((patch.asObject ?? [:]).keys.map { "data.\($0)" })
     }
 
     public func replaceData(_ next: SpValue) {
         data = next
-        lastChangedPaths = ["data"]
+        lastChangedPaths.insert("data")
     }
 
     public func resetState(_ next: SpValue) {
         state = next
-        lastChangedPaths = ["state"]
+        lastChangedPaths.insert("state")
     }
 }
 

@@ -3,6 +3,7 @@ package dev.spectre.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -152,6 +154,37 @@ fun ProgressIndicatorView(node: RenderNode, modifier: Modifier) {
         } else {
             CircularProgressIndicator(modifier = base.size(size), color = color)
         }
+    }
+}
+
+/**
+ * 未対応コンポーネントの劣化の最終手段 (docs/compatibility.md §3, ADR-0006)。
+ *
+ * [dev.spectre.core.PLACEHOLDER_NODE_TYPE] に対して描く汎用プレースホルダ。省略と違って
+ * 画面上に痕跡を残すことで、「何かが表示されないまま失われた」ことを利用者・ホストアプリの
+ * どちらから見ても分かるようにする。`componentType` prop に元の未知の型名を積んでいる
+ * ([dev.spectre.core.Resolver] 参照)。
+ */
+@Composable
+fun UnsupportedComponentView(node: RenderNode, modifier: Modifier = Modifier) {
+    val theme = LocalSpectreTheme.current
+    val outline = theme.color("outline", MaterialTheme.colorScheme.outline)
+    val label = node.a11yLabel() ?: "表示できないコンテンツです (${node.string("componentType", "unknown")})"
+
+    Box(
+        modifier = modifier
+            .spectreNode(node)
+            .defaultMinSize(minWidth = 32.dp, minHeight = 32.dp)
+            .border(1.dp, outline, RoundedCornerShape(theme.corner("sm")))
+            .padding(theme.space("sm"))
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = theme.icon("warning"),
+            contentDescription = null,
+            tint = outline,
+        )
     }
 }
 

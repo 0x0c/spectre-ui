@@ -17,40 +17,68 @@ public struct SpectreNodeView: View {
     }
 
     public var body: some View {
-        switch node.type {
-        // レイアウト
-        case "VStack": AnyView(VStackView(node: node))
-        case "HStack": AnyView(HStackView(node: node))
-        case "ZStack": AnyView(ZStackView(node: node))
-        case "Spacer": AnyView(SpacerView(node: node))
-        case "Divider": AnyView(DividerView(node: node))
-        case "ScrollView": AnyView(ScrollViewView(node: node))
-        case "List": AnyView(ListView(node: node))
-        case "Grid": AnyView(GridView(node: node))
-        case "Card": AnyView(CardView(node: node))
-        case "Section": AnyView(SectionView(node: node))
-        case "Tabs": AnyView(TabsView(node: node))
+        Group {
+            switch node.type {
+            // レイアウト
+            case "VStack": AnyView(VStackView(node: node))
+            case "HStack": AnyView(HStackView(node: node))
+            case "ZStack": AnyView(ZStackView(node: node))
+            case "Spacer": AnyView(SpacerView(node: node))
+            case "Divider": AnyView(DividerView(node: node))
+            case "ScrollView": AnyView(ScrollViewView(node: node))
+            case "List": AnyView(ListView(node: node))
+            case "Grid": AnyView(GridView(node: node))
+            case "Card": AnyView(CardView(node: node))
+            case "Section": AnyView(SectionView(node: node))
+            case "Tabs": AnyView(TabsView(node: node))
 
-        // コンテンツ
-        case "Text": AnyView(TextView(node: node))
-        case "Image": AnyView(ImageView(node: node))
-        case "Icon": AnyView(IconView(node: node))
-        case "Badge": AnyView(BadgeView(node: node))
-        case "ProgressIndicator": AnyView(ProgressIndicatorView(node: node))
+            // コンテンツ
+            case "Text": AnyView(TextView(node: node))
+            case "Image": AnyView(ImageView(node: node))
+            case "Icon": AnyView(IconView(node: node))
+            case "Badge": AnyView(BadgeView(node: node))
+            case "ProgressIndicator": AnyView(ProgressIndicatorView(node: node))
 
-        // 入力
-        case "Button": AnyView(ButtonView(node: node))
-        case "TextField": AnyView(TextFieldView(node: node))
-        case "Toggle": AnyView(ToggleView(node: node))
-        case "Checkbox": AnyView(CheckboxView(node: node))
-        case "RadioGroup": AnyView(RadioGroupView(node: node))
-        case "Select": AnyView(SelectView(node: node))
-        case "Slider": AnyView(SliderView(node: node))
-        case "Stepper": AnyView(StepperView(node: node))
-        case "DatePicker": AnyView(DatePickerView(node: node))
+            // 入力
+            case "Button": AnyView(ButtonView(node: node))
+            case "TextField": AnyView(TextFieldView(node: node))
+            case "Toggle": AnyView(ToggleView(node: node))
+            case "Checkbox": AnyView(CheckboxView(node: node))
+            case "RadioGroup": AnyView(RadioGroupView(node: node))
+            case "Select": AnyView(SelectView(node: node))
+            case "Slider": AnyView(SliderView(node: node))
+            case "Stepper": AnyView(StepperView(node: node))
+            case "DatePicker": AnyView(DatePickerView(node: node))
 
-        // Screen はルート専用。SpectreScreen が直接処理するのでここには来ない。
-        default: AnyView(EmptyView())
+            // 未対応コンポーネントの劣化の最終手段 (docs/compatibility.md §3, ADR-0006)。
+            // Resolver が fallback も optional もない未知ノードをここに置き換えて渡す。
+            case RenderNode.placeholderType: AnyView(UnsupportedComponentView(node: node))
+
+            // Screen はルート専用。SpectreScreen が直接処理するのでここには来ない。
+            default: AnyView(EmptyView())
+            }
+        }
+        // `scrollTo` アクション (docs/spec/actions.md) の着地点。id を持つノードすべてに
+        // 付けておき、ScreenContent の ScrollViewReader が id で見つけられるようにする。
+        //
+        // 既知の制約: `id` は `repeat` で展開した各要素の間で一意という保証がない —
+        // 展開元の `Node` を全要素が共有するため、`id` を書いた `repeat` テンプレートは
+        // 要素数ぶんの RenderNode が同じ id を持つ。SwiftUI は重複した `.id()` の扱いを
+        // 保証しないため、この状態では `scrollTo` の着地先も不定になる。`repeat` の中で
+        // 個々の要素を狙う手段は現状ない — ドキュメント側は `repeat` テンプレートに
+        // `id` を付けないことで避けられる。
+        .modifier(SpectreScrollTargetID(nodeID: node.nodeID))
+    }
+}
+
+private struct SpectreScrollTargetID: ViewModifier {
+    let nodeID: String?
+
+    func body(content: Content) -> some View {
+        if let nodeID {
+            content.id(nodeID)
+        } else {
+            content
         }
     }
 }

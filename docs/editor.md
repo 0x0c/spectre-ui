@@ -1,183 +1,209 @@
-# Web WYSIWYGエディタ 設計
+**English** · [日本語](editor-ja.md)
 
-技術スタックの選定理由は [tech-selection.md](tech-selection.md) ADR-0005。
+# Web WYSIWYG editor design
 
-## 1. 画面構成
+See [tech-selection.md](tech-selection.md), ADR-0005, for why we chose this technology stack.
+
+## 1. Screen layout
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ [商品詳細 v12 (下書き)]   [検証: ⚠2]  [実機プレビュー] [ステージング] [公開] │
+│ [Product detail v12 (draft)]  [Validation: ⚠2]  [Device preview] [Staging] [Publish] │
 ├───────────┬──────────────────────────────────────┬───────────────────────┤
-│ パレット   │            キャンバス                 │  インスペクタ          │
+│ Palette   │              Canvas                   │  Inspector            │
 │           │                                       │                       │
-│ 📐 レイアウト│   ┌───────────────────────┐          │ Button                │
+│ 📐 Layout  │   ┌───────────────────────┐          │ Button                │
 │  VStack   │   │  iPhone 15 ▾  ja-JP ▾  │          │ ─────────────────     │
-│  HStack   │   │  ダーク ▾  文字 100% ▾  │          │ label                 │
-│  Card     │   │                        │          │  [カートに追加     ] │
+│  HStack   │   │  Dark ▾  Text 100% ▾   │          │ label                 │
+│  Card     │   │                        │          │  [Add to cart      ] │
 │  List     │   │  ┌──────────────────┐  │          │ variant               │
-│           │   │  │ 商品名           │  │          │  ( ●primary  ○...) │
-│ 📝 表示    │   │  │ ¥1,280           │  │          │ enabled               │
-│  Text     │   │  │ [在庫わずか]      │  │          │  fx ${data.stock>0} │
-│  Image    │   │  │ ┌──────────────┐ │  │◄─選択中  │ onTap                 │
-│  Badge    │   │  │ │ カートに追加  │ │  │          │  ▸ 3 アクション       │
+│           │   │  │ Product name     │  │          │  ( ●primary  ○...) │
+│ 📝 Content │   │  │ ¥1,280           │  │          │ enabled               │
+│  Text     │   │  │ [Low stock]       │  │          │  fx ${data.stock>0} │
+│  Image    │   │  │ ┌──────────────┐ │  │          │ onTap                 │
+│  Badge    │   │  │ │ Add to cart   │ │  │◄─selected│  ▸ 3 actions          │
 │           │   │  │ └──────────────┘ │  │          │ ─────────────────     │
-│ ⌨ 入力     │   │  └──────────────────┘  │          │ レイアウト            │
-│  Button   │   └───────────────────────┘          │ スタイル              │
-│  TextField│                                       │ アクセシビリティ ⚠     │
-│  Toggle   │  ┌── 木構造 ────────────────┐         │ 互換性  ✓ 100%        │
-│           │  │ ▾ Screen                │         │                       │
-│ ⚠ Carousel│  │   ▾ VStack              │         │                       │
-│   73%     │  │     • Text (商品名)      │         │                       │
-│           │  │     • Text (価格)        │         │                       │
+│ ⌨ Input   │   │  └──────────────────┘  │          │ Layout                │
+│  Button   │   └───────────────────────┘          │ Style                 │
+│  TextField│                                       │ Accessibility ⚠       │
+│  Toggle   │  ┌── Tree ─────────────────┐          │ Compatibility ✓ 100%  │
+│           │  │ ▾ Screen                │          │                       │
+│ ⚠ Carousel│  │   ▾ VStack              │          │                       │
+│   73%     │  │     • Text (product name)│         │                       │
+│           │  │     • Text (price)       │         │                       │
 │           │  │     • Badge             │         │                       │
-│           │  │     ▸ Button ◄─選択中    │         │                       │
+│           │  │     ▸ Button ◄─selected  │         │                       │
 │           │  └─────────────────────────┘         │                       │
 ├───────────┴──────────────────────────────────────┴───────────────────────┤
-│ データ  |  状態  |  検証(2)  |  差分  |  履歴                              │
+│ Data  |  State  |  Validation(2)  |  Diff  |  History                    │
 │ { "product": { "name": "...", "price": 1280, "stock": 3 } }              │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 2. マニフェスト駆動
+## 2. Manifest-driven
 
-パレット・インスペクタ・検証はすべて `spec/component-manifest.json` を実行時に読んで構築する。
-**新しいコンポーネントを追加してもエディタのコードは1行も書かない。**
+The palette, the inspector, and validation all read `spec/component-manifest.json` at runtime and
+build themselves from it. **Adding a new component requires not one line of editor code.**
 
-インスペクタのフィールドはマニフェストの `editor.widget` から生成する:
+The inspector's fields come from the manifest's `editor.widget`:
 
 | `editor.widget` | UI |
 | --- | --- |
-| `text` | 単行テキスト + 式トグル |
-| `textarea` | 複数行 |
-| `number` | 数値入力 + ステッパ |
-| `boolean` | スイッチ |
-| `enum` | セグメント（3値以下）/ ドロップダウン |
-| `colorToken` | トークンのスウォッチ一覧（自由色は選べない） |
-| `spacingToken` / `radiusToken` | トークンのチップ列 |
-| `typographyToken` | プレビュー付きリスト |
-| `icon` | アイコンピッカー |
-| `actions` | アクションエディタ（後述） |
-| `binding` | データパスのピッカー + 式エディタ |
-| `options` | `{value,label}` の表エディタ |
+| `text` | A single-line text field with an expression toggle |
+| `textarea` | Multi-line |
+| `number` | A number field with a stepper |
+| `boolean` | A switch |
+| `enum` | A segmented control (three values or fewer) or a dropdown |
+| `colorToken` | A list of token swatches (a free color is not selectable) |
+| `spacingToken` / `radiusToken` | A row of token chips |
+| `typographyToken` | A list with a preview |
+| `icon` | An icon picker |
+| `actions` | The action editor (below) |
+| `binding` | A data-path picker plus an expression editor |
+| `options` | A table editor for `{value, label}` |
 
-## 3. 式の編集
+## 3. Editing an expression
 
-非エンジニアが `${data.product.stock > 0}` を手書きするのは現実的でない。2つのモードを用意する。
+Hand-writing `${data.product.stock > 0}` is not realistic for a non-engineer. We provide two modes.
 
-**A. ピッカーモード（既定）** — データパスをツリーから選ぶ。比較演算子と値をプルダウンで組む。
+**A. Picker mode (default)** — choose a data path from a tree; compose the comparison operator and
+the value from dropdowns.
 
 ```
-表示条件:  [data.product.stock ▾]  [より大きい ▾]  [0        ]  [+ 条件を追加]
+Visible when:  [data.product.stock ▾]  [greater than ▾]  [0        ]  [+ Add condition]
 ```
 
-**B. 式モード** — 上級者向け。CodeMirror 6 + SpectreExpr の文法定義で、シンタックスハイライト・補完・エラー表示・**評価結果のライブプレビュー**を出す。
+**B. Expression mode** — for advanced authors. CodeMirror 6, driven by SpectreExpr's grammar
+definition, gives syntax highlighting, completion, error display, and a **live preview of the
+evaluated result**.
 
 ```
 fx ${data.product.stock > 0 && !state.adding}
-   ↳ 評価結果: true   （現在のサンプルデータで）
+   ↳ Evaluates to: true   (against the current sample data)
 ```
 
-ピッカーで表現できる式は相互変換する。式モードで書いた複雑な式はピッカーに戻せない場合があり、その場合は式モードに固定される。
+An expression the picker can represent converts back and forth freely. A complex expression written
+in expression mode may not convert back to the picker; in that case, the field stays locked to
+expression mode.
 
-**サンプルデータ**は「データ」タブで編集する。実際のAPIレスポンスを貼り付けるか、エンドポイントから取得して固定できる。これがないとプレビューが空になり、WYSIWYGが成立しない。
+Authors edit **sample data** in the Data tab: paste in an actual API response, or fetch one from an
+endpoint and pin it. Without sample data the preview stays empty, and WYSIWYG has nothing to show.
 
-## 4. アクションエディタ
+## 4. The action editor
 
-アクション配列は縦に並ぶカードとして編集する。
+We edit an action array as a vertical stack of cards.
 
 ```
 onTap
  ┌─────────────────────────────────────────┐
- │ 1. 状態を変更                       ⋮  │
+ │ 1. Change state                     ⋮  │
  │    adding = true                        │
  ├─────────────────────────────────────────┤
- │ 2. APIを呼ぶ                        ⋮  │
+ │ 2. Call an API                      ⋮  │
  │    POST cart.add                        │
- │    ├ 成功時: トースト表示, 計測          │
- │    └ 失敗時: アラート表示                │
+ │    ├ On success: show toast, track       │
+ │    └ On failure: show alert              │
  ├─────────────────────────────────────────┤
- │ 3. 状態を変更                       ⋮  │
+ │ 3. Change state                     ⋮  │
  │    adding = false                       │
  └─────────────────────────────────────────┘
- [+ アクションを追加]
+ [+ Add action]
 ```
 
-`endpoint` は自由入力させず、**サーバに登録済みの論理エンドポイント一覧から選ばせる**。これで `security/inline-url` のリント違反が構造的に起きなくなる。各エンドポイントのリクエスト/レスポンススキーマが登録されていれば、`body` の組み立てとレスポンスの補完も効く。
+We never let `endpoint` be free text; the author **chooses from the list of logical endpoints already
+registered on the server**. This structurally rules out a `security/inline-url` lint violation. When
+an endpoint registers its request and response schema, the editor also assists in composing `body`
+and completing the response.
 
-## 5. キャンバスの忠実度
+## 5. Canvas fidelity
 
-Webキャンバスは**3つ目のレンダラ**であり、SwiftUI/Compose と完全一致しない（フォントメトリクス、行分割、スクロールの慣性）。これを隠さず、2段構えで扱う。
+The web canvas is a **third renderer**, and it does not match SwiftUI or Compose pixel for pixel (font
+metrics, line breaking, scroll inertia differ). We do not hide this; we handle it with a two-tier
+setup.
 
-### 近似プレビュー（Web）
-- 編集中の高速フィードバック用。
-- 「近似表示」であることをUI上に明示する。
-- デバイス枠・ロケール・テーマ・フォントスケールを切り替えられる。**フォントスケール200%での検証**は必須の運用にする（レイアウト崩れの最大要因）。
-- Compose / SwiftUI の実装と同じレイアウト規則（Stack + weight + alignment のみ）に制約されているため、構造的なズレは起きない。ズレるのはテキストの折り返し位置程度。
+### Approximate preview (web)
+- For fast feedback while editing.
+- The UI states explicitly that this is an "approximate view."
+- The device frame, locale, theme, and font scale are all switchable. **Verifying at 200% font
+  scale** is mandatory practice, the single largest cause of layout breakage.
+- Constrained to the same layout rules as the Compose and SwiftUI implementations (Stack, weight, and
+  alignment only), so no structural drift occurs. What can drift stays limited to where text wraps.
 
-### 実機ミラー（Device Preview）— **M2 必須**
+### Device mirror (device preview) — **mandatory for M2**
 ```
-エディタ ──WS──► server /api/preview/:sessionId ──WS──► 実機アプリ
-                                                        (開発者モード or
-                                                         専用プレビューアプリ)
+Editor ──WS──► server /api/preview/:sessionId ──WS──► the device app
+                                                        (developer mode or a
+                                                         dedicated preview app)
 ```
-- エディタでQRコードを表示 → 実機で読み取ってセッションに接続。
-- 編集内容が数百ms以内に実機へ反映される。
-- 複数端末を同時接続できる（iPhone と Android を並べて確認する）。
-- **公開前の確認はこちらを正とする**。
+- The editor displays a QR code; scanning it on the device connects it to the session.
+- An edit reaches the device within several hundred milliseconds.
+- More than one device can connect at once (checking an iPhone and an Android device side by side).
+- **This is the source of truth for confirming a document before publishing.**
 
-実機ミラーを「あとで付ける機能」にすると、編集者はWeb上の見た目を信じて公開し、実機で崩れる事故が必ず起きる。これはSDUI導入で最も起きやすい失敗の一つなので、初期スコープに入れる。
+Treating the device mirror as a feature to add later guarantees an accident: an author trusts the web
+view's look, publishes, and the layout breaks on a real device. This is one of the most common
+failures in adopting SDUI, which is why it belongs in the initial scope.
 
-## 6. 状態管理と undo/redo
+## 6. State management and undo/redo
 
-Zustand + Immer。ドキュメント木の更新は Immer の producer 経由で行い、**生成される patch / inversePatch をそのまま履歴スタックに積む**。
+Zustand plus Immer. Every update to the document tree goes through an Immer producer, and **the
+generated patch and inversePatch go straight onto the history stack**.
 
 ```ts
 const { document, apply, undo, redo } = useEditorStore()
 
 apply(draft => {
-  draft.root.children[2].props.label = '購入する'
+  draft.root.children[2].props.label = 'Buy now'
 })
-// → patches: [{op:'replace', path:['root','children',2,'props','label'], value:'購入する'}]
-//   inversePatches: [{op:'replace', ..., value:'カートに追加'}]
+// → patches: [{op:'replace', path:['root','children',2,'props','label'], value:'Buy now'}]
+//   inversePatches: [{op:'replace', ..., value:'Add to cart'}]
 ```
 
-- 履歴は patch 列なのでメモリ効率がよく、**協調編集や差分表示にそのまま使える**。
-- 「差分」タブでは、公開中バージョンとの差を木構造上でハイライトする。
+- Because history is a list of patches, it stays memory-efficient, and **the same list feeds
+  collaborative editing and the diff view directly**.
+- The Diff tab highlights the difference against the published version, on the tree.
 
-## 7. 検証とリント
+## 7. Validation and lint
 
-`packages/core` の検証実装を**エディタとサーバで共有する**（同じコードが動く）。エディタ側は編集のたびにデバウンスして実行する。
+We **share** the validation implementation in `packages/core` between the editor and the server (the
+same code runs in both). The editor side debounces and runs it on every edit.
 
-- **error** があると公開ボタンが無効化される。
-- **warn** は公開できるが確認ダイアログが出る。
-- リントルール一覧は [spec/schema.md](spec/schema.md) §5。
+- An **error** disables the publish button.
+- A **warn** still allows publishing, but a confirmation dialog appears.
+- The lint rule list lives in [spec/schema.md](spec/schema.md) §5.
 
-`compat/unsupported-component` は配信テレメトリの実測値を使う（[compatibility.md](compatibility.md) §6）。
+`compat/unsupported-component` uses the measured value from delivery telemetry
+([compatibility.md](compatibility.md) §6).
 
-## 8. 権限とワークフロー
+## 8. Permissions and workflow
 
-| ロール | 権限 |
+| Role | Permissions |
 | --- | --- |
-| Viewer | 閲覧、プレビュー |
-| Editor | 下書き編集、ステージングへの公開 |
-| Publisher | 本番への公開、ロールバック |
-| Admin | 権限管理、エンドポイント登録、テーマ設定 |
+| Viewer | View, preview |
+| Editor | Edit a draft, publish to staging |
+| Publisher | Publish to production, roll back |
+| Admin | Manage permissions, register endpoints, configure the theme |
 
-- 本番公開は**2名承認**を必須にできる（設定）。
-- すべての公開・ロールバックは監査ログに残る（誰が・いつ・何を・差分）。
-- 下書きの同時編集は**楽観ロック**（`version` の不一致で保存を拒否）＋プレゼンス表示。CRDTは v1 では入れない（ADR-0005）。
+- Publishing to production can require **two-person approval** (configurable).
+- The audit log records every publish and rollback (who, when, what, and the diff).
+- Concurrent editing of a draft uses **optimistic locking** (a `version` mismatch rejects the save)
+  plus presence display. We do not add CRDTs in v1 (ADR-0005).
 
-## 9. テンプレートとコンポーネント合成
+## 9. Templates and component composition
 
-同じ構造の繰り返しを避けるための仕組み。**v0.2 のスコープ**だが、データモデルは最初から用意しておく。
+A mechanism to avoid repeating the same structure. This is **v0.2 scope**, but we lay out the data
+model from the start.
 
-- **テンプレート**: 画面全体の雛形。新規作成時に選ぶ。
-- **パーシャル**: 名前付きの部分木。パラメータを取り、複数画面から参照される。参照先を更新すると使用箇所すべてに反映される。
+- **Template**: a whole-screen skeleton that authors choose when creating a new document.
+- **Partial**: a named subtree that takes parameters, referenced by several screens. Updating the
+  referenced partial propagates to every place that uses it.
 
-パーシャルは配信時にインライン展開する（クライアントは知らない）。これにより、クライアントSDKに参照解決の複雑さを持ち込まずに済む。
+We inline a partial at delivery time (the client never knows about it). This keeps reference
+resolution out of the client SDK entirely.
 
-## 10. パフォーマンス上の注意
+## 10. Performance notes
 
-- キャンバスは選択中ノードとその祖先のみ再描画する。ノード単位で `memo` 化し、比較キーに解決済み props のハッシュを使う。
-- 2,000ノードのドキュメント（上限値）を60fpsで編集できることをベンチマークの受け入れ基準にする。
-- 木構造パネルは仮想スクロール（`@tanstack/react-virtual`）。
+- The canvas re-renders the selected node and its ancestors alone. We memoize each node, keyed by a
+  hash of its resolved props.
+- Editing a 2,000-node document (the limit) at 60 fps is the benchmark's acceptance criterion.
+- The tree panel uses virtual scrolling (`@tanstack/react-virtual`).

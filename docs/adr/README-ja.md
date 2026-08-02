@@ -87,7 +87,7 @@ ADRはすでに下した決定を記録します。これから行う作業を�
 
 ## 関連
 
-- [`docs/tech-selection.md`](../tech-selection.md) — ここにある各記録が前提とする制約を示す索引です。
+- [`docs/tech-selection.md`](../tech-selection-ja.md) — ここにある各記録が前提とする制約を示す索引です。
 - [`roadmaps/README-ja.md`](../../roadmaps/README-ja.md) — これらの決定が含意する作業を担う
   ロードマップ項目です。
 - [`.agent-workflows/adr/workflow.md`](../../.agent-workflows/adr/workflow.md) — 記録を書くための

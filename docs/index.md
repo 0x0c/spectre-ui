@@ -1,99 +1,106 @@
+**English** · [日本語](index-ja.md)
+
 # Spectre UI
 
-サーバードリブンUI (Server-Driven UI, SDUI) のためのクロスプラットフォームライブラリ。
+A cross-platform library for server-driven user interfaces (SDUI, Server-Driven UI).
 
-サーバから配信された **UI定義ドキュメント (JSON)** を iOS / Android のネイティブSDKが解釈してレンダリングし、
-ボタンタップなどの操作を宣言的な **アクション** として処理する。UI定義は Web の **WYSIWYGエディタ** から、
-あらかじめ定義された **コンポーネントカタログ** の組み合わせで編集・公開できる。
+Native SDKs on iOS and Android interpret and render the **UI definition document (JSON)** a server
+delivers. They treat a tap on a button, and every other interaction, as a declarative **action**.
+Authors edit and publish the same UI definition from a web **WYSIWYG editor**. A screen is a
+composition of a predefined **component catalog**.
 
-!!! info "現在のフェーズ: 設計（実装コードなし）"
-    このリポジトリには技術選定と仕様のドキュメント、ADR、ロードマップのみが含まれる。
-    実装はまだ始まっていない。着手前に確認すべきことは
-    [ロードマップと未決事項](roadmap.md) にまとめてある。
-    個々の作業提案は [ロードマップ項目一覧](../) にある。
+!!! info "Current phase: design (no implementation code)"
+    This repository holds the technology-selection and specification documents, the architecture
+    decision records (ADRs), and the roadmap. Implementation has not started yet.
+    [The roadmap and its open questions](roadmap.md) collects what to confirm before starting.
+    [The roadmap index](../) lists each individual work proposal.
 
-## 設計の要点
+## The design in three points
 
-1. **コンポーネントマニフェストを単一の情報源**とし、JSON Schema / TypeScript型 / Swift型 / Kotlin型 /
-   エディタのパレットとインスペクタをすべてそこから生成する。
-2. **レンダラは各プラットフォームネイティブ**（SwiftUI / Jetpack Compose / React）。
-   共有するのは「コード」ではなく「仕様 + 適合性テストコーパス」。
-3. **前方互換性を最優先**。古いアプリバージョンが未知のコンポーネントを受け取っても壊れないよう、
-   ケイパビリティネゴシエーションとノード単位のフォールバックを言語仕様に組み込む。
+1. **The component manifest is the single source of truth.** From it, we generate the JSON Schema;
+   the TypeScript, Swift, and Kotlin types; and the editor's palette and inspector.
+2. **Each renderer is native to its platform** (SwiftUI, Jetpack Compose, and React). What the
+   platforms share is not code but a specification plus a conformance test corpus.
+3. **Forward compatibility comes first.** The language specification itself carries capability
+   negotiation and per-node fallback. An older application version survives a component it does not
+   recognize.
 
-## どこから読むか
+## Where to start
 
 <div class="grid cards" markdown>
 
-- **決定の経緯を知る**
+- **Learn how a decision came to be**
 
-    [技術選定](tech-selection.md) が索引、個々の決定は [ADR 一覧](adr/README-ja.md)。
-    文脈・選択肢・決定・根拠・代償・再検討のトリガーの順で書かれている。
+    [Tech selection](tech-selection.md) is the index; each individual decision lives in the
+    [ADR list](adr/README.md). Each record reads context, options considered, decision, rationale,
+    consequences, and revisit triggers, in that order.
 
-- **仕様を確認する**
+- **Check the specification**
 
-    [スキーマ](spec/schema.md) / [コンポーネント](spec/components.md) /
-    [式言語](spec/expression.md) / [アクション](spec/actions.md)。
+    [Schema](spec/schema.md) / [Components](spec/components.md) /
+    [Expression language](spec/expression.md) / [Actions](spec/actions.md).
 
-- **何をいつ作るか**
+- **See what to build and when**
 
-    [ロードマップと未決事項](roadmap.md) で全体像を、
-    [ロードマップ項目一覧](../) で個々の提案を見る。
+    [The roadmap and its open questions](roadmap.md) gives the overview; the
+    [roadmap index](../) gives each individual proposal.
 
-- **一番の勘所**
+- **The single point that matters most**
 
-    [互換性・配信戦略](compatibility.md)。SDUI が失敗するとき、原因はほぼここに集中する。
+    [Compatibility and delivery strategy](compatibility.md). When SDUI fails, the cause almost
+    always traces back here.
 
 </div>
 
-## ドキュメント
+## Documents
 
-| ドキュメント | 内容 |
+| Document | Contents |
 | --- | --- |
-| [技術選定](tech-selection.md) | 前提として置いた制約と、決定の一覧（ADRへの索引） |
-| [ADR 一覧](adr/README-ja.md) | 技術上の決定を1件1記録で残したもの（日英） |
-| [アーキテクチャ](architecture.md) | 全体構成、コンポーネント構成、データフロー |
-| [スキーマ仕様 v0.1](spec/schema.md) | UI定義ドキュメントのスキーマ |
-| [コンポーネントカタログ v0.1](spec/components.md) | カタログとデザイントークン |
-| [式言語 SpectreExpr](spec/expression.md) | 式とデータバインディング |
-| [アクション仕様](spec/actions.md) | アクションとサーバ応答プロトコル |
-| [エディタ設計](editor.md) | Web WYSIWYGエディタ |
-| [互換性・配信戦略](compatibility.md) | バージョニング・前方互換・配信/ロールバック |
-| [ロードマップと未決事項](roadmap.md) | マイルストーン、見積もり、未決事項、リスク |
-| [ロードマップ項目一覧](../) | 個々の作業提案の一覧。本文はリポジトリにある |
+| [Tech selection](tech-selection.md) | The constraints assumed as a premise, and the index of decisions |
+| [ADR list](adr/README.md) | Technical decisions, one record per decision (English and Japanese) |
+| [Architecture](architecture.md) | Overall structure, the components it divides into, and the data flow |
+| [Schema specification v0.1](spec/schema.md) | The schema of the UI definition document |
+| [Component catalog v0.1](spec/components.md) | The catalog and the design tokens |
+| [Expression language SpectreExpr](spec/expression.md) | Expressions and data binding |
+| [Action specification](spec/actions.md) | Actions and the server response protocol |
+| [Editor design](editor.md) | The web WYSIWYG editor |
+| [Compatibility and delivery strategy](compatibility.md) | Versioning, forward compatibility, delivery, and rollback |
+| [The roadmap and its open questions](roadmap.md) | Milestones, estimates, open questions, and risks |
+| [Roadmap index](../) | The list of individual work proposals; each body lives in the repository |
 
-ADR の英語版は各ページ冒頭の言語切り替えリンクから辿れる。
+The four specification documents above remain Japanese until milestone M0 freezes the specification
+([SU-0011](../roadmaps/SU-0011-english-first-documentation/SU-0011-english-first-documentation.md)).
 
-## 成果物（設計サンプル）
+## Deliverables (design samples)
 
-リポジトリ上のファイル。
+Files in the repository.
 
-| ファイル | 内容 |
+| File | Contents |
 | --- | --- |
-| [spec/component-manifest.json](../spec/component-manifest.json) | コンポーネントマニフェスト。全生成物の単一の情報源 |
-| [spec/schema/document.schema.json](../spec/schema/document.schema.json) | ドキュメント用 JSON Schema（生成される想定の手書きサンプル） |
-| [examples/screens/product-detail.json](../examples/screens/product-detail.json) | 商品詳細画面のUI定義サンプル |
+| [spec/component-manifest.json](../spec/component-manifest.json) | The component manifest, the single source of truth behind every generated artifact |
+| [spec/schema/document.schema.json](../spec/schema/document.schema.json) | JSON Schema for the document (a hand-written sample of what the manifest will generate) |
+| [examples/screens/product-detail.json](../examples/screens/product-detail.json) | A sample UI definition for a product detail screen |
 
-## リポジトリ構成（実装フェーズの想定）
+## Repository layout (planned for the implementation phase)
 
 ```
 spectre-ui/
-├── docs/                       # 設計ドキュメント
-│   └── adr/                    #   アーキテクチャ決定記録 (1決定1ディレクトリ、日英)
-├── roadmaps/                   # ロードマップ項目 (1項目1ディレクトリ、日英)
-├── spec/                       # 仕様の単一の情報源
-│   ├── component-manifest.json #   コンポーネント定義
-│   ├── tokens.json             #   デザイントークン
-│   ├── schema/                 #   生成された JSON Schema
-│   └── conformance/            #   適合性テストコーパス (全ランタイム共通)
-├── packages/                   # TypeScript モノレポ (pnpm workspace)
-│   ├── manifest/               #   マニフェストのローダと検証
-│   ├── codegen/                #   TS / Swift / Kotlin コード生成
-│   ├── core/                   #   式評価・パッチ適用の TS 実装 (エディタ/サーバ共用)
-│   ├── editor/                 #   React WYSIWYG エディタ
-│   └── server/                 #   オーサリングAPI + 配信サービス (Fastify)
+├── docs/                       # Design documents
+│   └── adr/                    #   Architecture decision records (one per directory, English and Japanese)
+├── roadmaps/                   # Roadmap items (one per directory, English and Japanese)
+├── spec/                       # Single source of truth for the specification
+│   ├── component-manifest.json #   Component definitions
+│   ├── tokens.json             #   Design tokens
+│   ├── schema/                 #   Generated JSON Schema
+│   └── conformance/            #   Conformance test corpus (shared by every runtime)
+├── packages/                   # TypeScript monorepo (pnpm workspace)
+│   ├── manifest/               #   Manifest loader and validation
+│   ├── codegen/                #   TypeScript, Swift, and Kotlin code generation
+│   ├── core/                   #   TypeScript expression evaluation and patch application (shared by the editor and the server)
+│   ├── editor/                 #   React WYSIWYG editor
+│   └── server/                 #   Authoring API and delivery service (Fastify)
 ├── clients/
-│   ├── ios/                    # Swift Package: SpectreUI
+│   ├── ios/                    # Swift package: SpectreUI
 │   └── android/                # Gradle module: spectre-ui
 └── examples/
 ```

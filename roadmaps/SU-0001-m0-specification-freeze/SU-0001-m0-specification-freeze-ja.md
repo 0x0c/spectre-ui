@@ -61,7 +61,7 @@ Android のネイティブSDKが解釈して描画します。M0は、コンポ�
 
 ## 参考
 
-- [`docs/roadmap.md`](../../docs/roadmap.md) — この項目の元になったマイルストーンの概観と見積もりです。
+- [`docs/roadmap.md`](../../docs/roadmap-ja.md) — この項目の元になったマイルストーンの概観と見積もりです。
 - [`docs/spec/components.md`](../../docs/spec/components.md) — コンポーネントカタログ v0.1 とデザイントークンです。
 - [SU-0006 — マニフェスト駆動のコード生成](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md) — このマイルストーンが必要とする生成器です。
 - [SU-0007 — 適合性コーパス](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md) — 初版がここで生まれるコーパスです。

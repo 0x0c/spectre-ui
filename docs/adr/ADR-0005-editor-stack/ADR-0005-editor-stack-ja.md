@@ -94,4 +94,4 @@ Immerのパッチは三役をこなします。undo / redo、実機ミラーへ�
 - [ADR-0007 — バックエンドと配信の形](../ADR-0007-backend-stack/ADR-0007-backend-stack-ja.md) — 検証ロジックを両側で走らせるための共通言語です。
 - [SU-0003 — M2、WYSIWYGエディタ](../../../roadmaps/SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md) — このスタックで作るマイルストーンです。
 - [SU-0009 — 実機ミラープレビュー](../../../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) — 項目として追跡する実機ミラーです。
-- [`docs/editor.md`](../../editor.md) — エディタの設計の全体です。
+- [`docs/editor.md`](../../editor-ja.md) — エディタの設計の全体です。
