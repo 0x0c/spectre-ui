@@ -38,8 +38,11 @@ cd clients/ios && swift test
 # iOS サンプルアプリ（XcodeGen が必要）
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 
-# オーサリング・配信API: 型検査と統合テスト（pnpm と PostgreSQL が必要）
+# TypeScript版 SpectreExpr。Kotlin/Swift と同じ適合性コーパスで検証する（pnpm が必要）
 pnpm install
+pnpm --filter @spectre-ui/core run typecheck && pnpm --filter @spectre-ui/core run test
+
+# オーサリング・配信API: 型検査と統合テスト（pnpm と PostgreSQL が必要）
 pnpm --filter @spectre-ui/manifest run typecheck && pnpm --filter @spectre-ui/manifest run test
 cd packages/server && pnpm run typecheck && TEST_DATABASE_URL=<url> pnpm run test
 ```
@@ -99,7 +102,7 @@ ADRとロードマップ項目は永続的な番号を持ち、1件につき1デ
    言語仕様そのものに組み込みます。古いアプリバージョンが未知のコンポーネントを受け取っても、
    壊れません。
 
-## リポジトリ構成（目指す形。`packages/core` と `packages/editor` はまだ存在しません）
+## リポジトリ構成（目指す形。`packages/editor` はまだ存在しません）
 
 ```
 spectre-ui/
@@ -114,7 +117,7 @@ spectre-ui/
 ├── packages/                   # TypeScript モノレポ（pnpm workspace）
 │   ├── manifest/               #   マニフェストのローダと検証
 │   ├── codegen/                #   TypeScript、Swift、Kotlin のコード生成
-│   ├── core/                   #   式評価とパッチ適用の TypeScript 実装（エディタとサーバで共用）
+│   ├── core/                   #   TypeScript版 SpectreExpr。3実装目のパーサ
 │   ├── editor/                 #   React WYSIWYG エディタ
 │   └── server/                 #   オーサリングAPI と配信サービス（Fastify）
 ├── clients/

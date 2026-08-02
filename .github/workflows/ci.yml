@@ -59,10 +59,30 @@ jobs:
             | xargs -0 -I{} node -e 'JSON.parse(require("fs").readFileSync("{}","utf8"))'
           echo "すべての JSON が解析できました"
 
-  # packages/manifest と packages/server のテスト。実際の PostgreSQL に対して
-  # 統合テストを走らせる (SU-0004)。
+      # 仕様を変えるならコーパスへのケース追加を伴わなければならない (ADR-0008, SU-0007)。
+      # 忘れた変更を機械的に検出する。
+      - name: 仕様変更には適合性コーパスの拡張を伴う
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$BASE_SHA"
+          changed=$(git diff --name-only "$BASE_SHA" HEAD)
+          spec_changed=$(echo "$changed" | grep -E '^docs/spec/|^spec/component-manifest\.json' || true)
+          corpus_changed=$(echo "$changed" | grep -E '^spec/conformance/' || true)
+          if [ -n "$spec_changed" ] && [ -z "$corpus_changed" ]; then
+            echo "::error::仕様ファイルが変更されていますが spec/conformance/ の拡張がありません (ADR-0008)。"
+            echo "変更された仕様ファイル:"
+            echo "$spec_changed"
+            exit 1
+          fi
+          echo "OK: 仕様変更なし、またはコーパスも同じ変更で拡張されています。"
+
+  # packages/core / packages/manifest / packages/server のテスト。実際の PostgreSQL に
+  # 対して統合テストを走らせる (SU-0004)。
   server:
-    name: Server (TypeScript)
+    name: TypeScript (core / manifest / server)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -92,6 +112,11 @@ jobs:
 
       - name: 依存関係のインストール
         run: pnpm install --frozen-lockfile
+
+      - name: packages/core の型検査とテスト (適合性コーパス expr/ を含む)
+        run: |
+          pnpm --filter @spectre-ui/core run typecheck
+          pnpm --filter @spectre-ui/core run test
 
       - name: packages/manifest の型検査とテスト
         run: |

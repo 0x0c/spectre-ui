@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0007](SU-0007-conformance-corpus.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Tooling |
 | Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md) |
 <!-- /SU-METADATA -->
@@ -57,11 +57,43 @@ implementations and a third time as an incident.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [x] `expr/` — an expression string and a scope, against the evaluated value or an error code
+- [x] `binding/` — a document and a state, against the resolved property values
+- [x] `actions/` — a state and a sequence of actions, against the resulting state and side effects
+- [x] `layout/` — a document, against the normalized render node tree before layout computation
+- [ ] `compat/` — a document and a capability declaration, against the degraded node tree
+- [x] A harness per runtime, reading the corpus directly
+- [x] The continuous integration rule tying a specification change to a corpus change
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- This repository entered its client-implementation phase with `expr/` and `resolve/` already built.
+- `resolve/` holds `resolver.json` and `actions.json`, 234 cases total.
+- Kotlin and Swift already run them, through `ConformanceExprTest`/`ConformanceResolveTest` and
+  `ConformanceTests`.
+- `resolve/resolver.json` asserts full `RenderNode` subtrees, beyond single prop values in isolation.
+- That makes it the de facto home for both `binding/` and `layout/`.
+- The design names them as separate directories, but the split does not hold in practice.
+- A resolved property value and the tree shape around it turn out to need the same check.
+- This change adds the missing third harness: `packages/core`.
+- `packages/core` is a hand-written TypeScript `SpectreExpr` parser and evaluator.
+- The port follows the Kotlin implementation line-for-line.
+- `docs/spec/expression.md` §6 and §7 require this third parser explicitly.
+- It did not exist before this change.
+- `packages/core/test/conformance.test.ts` reads `spec/conformance/expr/*.json` directly.
+- It runs the same 199 cases Kotlin and Swift already run.
+- It passed on the first real run against the ported code.
+- This change also adds a continuous-integration step enforcing item 7.
+- A pull request can touch `docs/spec/` or the manifest without touching `spec/conformance/`.
+- That pull request now fails the `codegen` job.
+- `compat/` stays open.
+- It needs real capability degradation to assert against.
+- That is
+  [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md),
+  itself still a `Proposal` at the time of this change.
+- That is a genuine dependency block, not an omission.
+- `packages/core` does not yet cover JSON Patch or dependency-path extraction.
+- It covers the parser and evaluator that the `expr/` corpus exercises, and nothing beyond that.
 
 ## References
 

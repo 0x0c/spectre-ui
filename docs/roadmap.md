@@ -11,7 +11,7 @@ M0 と M1 はファジング/スナップショットテストを除いて入っ
 | 領域 | 状態 | 検証 |
 | --- | --- | --- |
 | コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) + CI のドリフト検査 |
-| 適合性コーパス | 実装済み (234ケース) | — |
+| 適合性コーパス | 実装済み (234ケース、Swift/Kotlin/TypeScript の3実装で検証) | `pnpm --filter @spectre-ui/core run test` (TypeScript版 SpectreExpr) |
 | Kotlin ランタイム (spectre-core) | 実装済み | **277 テスト green** |
 | Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
 | Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |

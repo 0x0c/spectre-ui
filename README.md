@@ -38,8 +38,12 @@ cd clients/ios && swift test
 # iOS sample application (needs XcodeGen)
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 
-# Authoring and delivery API: type check and integration tests (needs pnpm and PostgreSQL)
+# The TypeScript SpectreExpr implementation, checked against the same conformance
+# corpus as the Kotlin and Swift runtimes (needs pnpm)
 pnpm install
+pnpm --filter @spectre-ui/core run typecheck && pnpm --filter @spectre-ui/core run test
+
+# Authoring and delivery API: type check and integration tests (needs pnpm and PostgreSQL)
 pnpm --filter @spectre-ui/manifest run typecheck && pnpm --filter @spectre-ui/manifest run test
 cd packages/server && pnpm run typecheck && TEST_DATABASE_URL=<url> pnpm run test
 ```
@@ -101,7 +105,7 @@ exception, with no English version today.
    negotiation and per-node fallback. An older application version survives a component it does not
    recognize.
 
-## Repository layout (target shape; `packages/core` and `packages/editor` do not exist yet)
+## Repository layout (target shape; `packages/editor` does not exist yet)
 
 ```
 spectre-ui/
@@ -116,7 +120,7 @@ spectre-ui/
 ├── packages/                   # TypeScript monorepo (pnpm workspace)
 │   ├── manifest/               #   Manifest loader and validation
 │   ├── codegen/                #   TypeScript, Swift, and Kotlin code generation
-│   ├── core/                   #   TypeScript expression evaluation and patch application (editor and server)
+│   ├── core/                   #   The TypeScript SpectreExpr implementation, third of the three parsers
 │   ├── editor/                 #   React WYSIWYG editor
 │   └── server/                 #   Authoring API and delivery service (Fastify)
 ├── clients/
