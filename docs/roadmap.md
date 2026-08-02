@@ -11,8 +11,8 @@ M0 と M1 の大半が入っている。**まだ実装していないのはエ�
 | 領域 | 状態 | 検証 |
 | --- | --- | --- |
 | コンポーネントマニフェスト + codegen | 実装済み | カタログ同期テスト (Kotlin/Swift 両方) + CI のドリフト検査 |
-| 適合性コーパス | 実装済み (234ケース) | — |
-| Kotlin ランタイム (spectre-core) | 実装済み | **265 テスト green** |
+| 適合性コーパス | 実装済み (242ケース、`compat/` 区分を追加) | — |
+| Kotlin ランタイム (spectre-core) | 実装済み | **273 テスト green** |
 | Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
 | Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
 | SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
