@@ -197,6 +197,13 @@ public struct OverlayButton: Sendable {
 /// レンダラはこの型しか見ない。分岐も式評価も持たないため、iOS/Android の
 /// レンダラ実装を薄く保てる (docs/architecture.md §2)。
 public struct RenderNode: Identifiable, Sendable {
+    /// 必須かつ `fallback` のない未対応ノードが劣化した先の合成コンポーネント型。
+    ///
+    /// `GeneratedCatalog` には現れない — マニフェスト由来のコンポーネントと衝突しない
+    /// 名前空間を使うことで、レンダラはこの型だけを特別扱いして汎用プレースホルダを描ける
+    /// (docs/compatibility.md §3, ADR-0006 の劣化順序の最終防衛線)。
+    public static let placeholderType = "Spectre.UnsupportedComponent"
+
     public let type: String
     public let nodeID: String?
     /// repeat の要素を区別する安定キー。差分描画に使う。
@@ -280,6 +287,11 @@ public struct Degradation: Sendable, Equatable {
 }
 
 public enum DegradedTo: String, Sendable {
+    /// fallback ノードに置換された
     case fallback
+    /// 木から取り除かれた (`optional: true`)
     case omitted
+    /// 必須 (`optional` でない) かつ `fallback` もない未対応ノードが、
+    /// 汎用プレースホルダに置き換えられた (docs/compatibility.md §3, ADR-0006 の最終防衛線)。
+    case placeholder
 }

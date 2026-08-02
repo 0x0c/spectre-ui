@@ -123,31 +123,71 @@ public final class Resolver {
         )
     }
 
-    /// 未対応コンポーネントの劣化 (docs/compatibility.md §3)。
+    /// 未対応コンポーネントの劣化 (docs/compatibility.md §3, ADR-0006)。
     ///
-    /// fallback -> optional による省略 -> 記録つき省略 の順に落ちる。
+    /// fallback -> optional による省略 -> プレースホルダ の順に落ちる。
     /// どの経路でもクラッシュしないことが不変条件。
+    ///
+    /// `key` は `repeat` 展開中の要素だけが持つ安定キー (`expandRepeat` 経由)。
+    /// fallback やプレースホルダに落ちても要素の同一性が保てるよう引き継ぐ。
     private func degrade(
         _ node: Node,
         _ scope: EvalScope,
-        _ ctx: inout Context
+        _ ctx: inout Context,
+        key: String? = nil
     ) -> [RenderNode] {
         if let fallback = node.fallback {
             ctx.degradations.append(
                 Degradation(nodeType: node.type, nodeID: node.id, degradedTo: .fallback, intentional: false)
             )
             // fallback 自体が未対応なら、その fallback へと再帰的に落ちていく。
-            return resolveNode(fallback, scope, &ctx)
+            let resolved = resolveNode(fallback, scope, &ctx)
+            // fallback がちょうど1ノードに解決された場合だけキーを引き継ぐ — fallback 自身が
+            // repeat や visibleWhen を持ち0件/複数件になるケースは単一の安定キーを持てない。
+            guard let key, resolved.count == 1 else { return resolved }
+            return [withRepeatKey(resolved[0], key)]
         }
-        ctx.degradations.append(
-            Degradation(
-                nodeType: node.type,
-                nodeID: node.id,
-                degradedTo: .omitted,
-                intentional: node.optional
+        if node.optional {
+            ctx.degradations.append(
+                Degradation(nodeType: node.type, nodeID: node.id, degradedTo: .omitted, intentional: true)
             )
+            return []
+        }
+        // 必須 (optional でない) かつ fallback もない — 黙って省略すると
+        // 「何かが表示されないまま失われた」ことが誰にも見えなくなる。最終手段として
+        // 汎用プレースホルダに置き換える。layout/style/a11y は型に依存しない共通の
+        // フィールドなので、未知の型でも解決して引き継げる (レイアウトの穴を防ぐ)。
+        ctx.degradations.append(
+            Degradation(nodeType: node.type, nodeID: node.id, degradedTo: .placeholder, intentional: false)
         )
-        return []
+        return [
+            RenderNode(
+                type: RenderNode.placeholderType,
+                nodeID: node.id,
+                key: key,
+                props: ["componentType": .string(node.type)],
+                layout: resolveValues(node.layout, scope, &ctx),
+                style: resolveValues(node.style, scope, &ctx),
+                a11y: resolveValues(node.a11y, scope, &ctx)
+            )
+        ]
+    }
+
+    /// [degrade] が repeat 要素の fallback 結果へ安定キーを付け直すための複製。
+    private func withRepeatKey(_ node: RenderNode, _ key: String) -> RenderNode {
+        RenderNode(
+            type: node.type,
+            nodeID: node.nodeID,
+            key: key,
+            props: node.props,
+            rawProps: node.rawProps,
+            nodeProps: node.nodeProps,
+            children: node.children,
+            layout: node.layout,
+            style: node.style,
+            a11y: node.a11y,
+            id: key
+        )
     }
 
     private func expandRepeat(
@@ -183,11 +223,11 @@ public final class Resolver {
             // visibleWhen は要素ごとに評価する (item を参照できる必要があるため)。
             if let condition, !evaluate(condition, itemScope, &ctx).isTruthy { continue }
 
+            let key = repeatSpec.key.map { evaluate($0, itemScope, &ctx).stringify() }
             guard supportedComponents.contains(template.type) else {
-                out.append(contentsOf: degrade(template, itemScope, &ctx))
+                out.append(contentsOf: degrade(template, itemScope, &ctx, key: key))
                 continue
             }
-            let key = repeatSpec.key.map { evaluate($0, itemScope, &ctx).stringify() }
             out.append(resolveSupported(template, itemScope, &ctx, key: key, index: index))
         }
         return out
