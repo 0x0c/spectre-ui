@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **提案** |
 | トピック | 仕様 |
-| 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md), [SU-0011](../SU-0011-english-first-documentation/SU-0011-english-first-documentation-ja.md) |
+| 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md), [SU-0011](../SU-0011-english-first-documentation/SU-0011-english-first-documentation-ja.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに

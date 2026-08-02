@@ -408,6 +408,113 @@
           "onTap": [{ "type": "setState", "path": "qty", "value": "${state.qty + 1}" }]
         }
       }
+    },
+    {
+      "name": "オーバレイの presentation は解決を経ても書かれたまま残る",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "size": "M" },
+        "root": { "type": "Text", "id": "t", "props": { "text": "本文" } },
+        "overlays": [
+          {
+            "id": "size_picker",
+            "kind": "sheet",
+            "title": "サイズ: ${data.size}",
+            "dismissible": true,
+            "presentation": {
+              "style": "dialog",
+              "dimBackground": true,
+              "dismissOnBackdrop": false,
+              "dragToDismiss": false
+            },
+            "root": { "type": "Text", "id": "picker_label", "props": { "text": "サイズを選択" } }
+          }
+        ]
+      },
+      "expect": { "type": "Text", "id": "t", "props": { "text": "本文" } },
+      "expectOverlays": [
+        {
+          "id": "size_picker",
+          "kind": "sheet",
+          "props": {
+            "title": "サイズ: M",
+            "dismissible": true,
+            "presentation": {
+              "style": "dialog",
+              "dimBackground": true,
+              "dismissOnBackdrop": false,
+              "dragToDismiss": false
+            }
+          },
+          "root": { "type": "Text", "id": "picker_label", "props": { "text": "サイズを選択" } }
+        }
+      ]
+    },
+    {
+      "name": "presentation を書かなければ既定値では補われない",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "root": { "type": "Text", "id": "t", "props": { "text": "本文" } },
+        "overlays": [
+          {
+            "id": "size_picker",
+            "kind": "sheet",
+            "root": { "type": "Text", "id": "picker_label", "props": { "text": "サイズを選択" } }
+          }
+        ]
+      },
+      "expect": { "type": "Text", "id": "t", "props": { "text": "本文" } },
+      "expectOverlays": [
+        {
+          "id": "size_picker",
+          "kind": "sheet",
+          "root": { "type": "Text", "id": "picker_label", "props": { "text": "サイズを選択" } }
+        }
+      ]
+    },
+    {
+      "name": "アラートの表示オプションは props としてそのまま渡り、ボタンのラベルの式は解決される",
+      "document": {
+        "schemaVersion": "1.0",
+        "id": "t",
+        "data": { "count": 3 },
+        "root": { "type": "Text", "id": "t", "props": { "text": "本文" } },
+        "overlays": [
+          {
+            "id": "confirm_delete",
+            "kind": "alert",
+            "title": "削除しますか",
+            "tone": "error",
+            "icon": "trash",
+            "buttonLayout": "vertical",
+            "presentation": { "dimBackground": true, "dismissOnBackdrop": false },
+            "buttons": [
+              { "label": "キャンセル", "role": "cancel" },
+              { "label": "${data.count}件を削除", "role": "destructive" }
+            ]
+          }
+        ]
+      },
+      "expect": { "type": "Text", "id": "t", "props": { "text": "本文" } },
+      "expectOverlays": [
+        {
+          "id": "confirm_delete",
+          "kind": "alert",
+          "props": {
+            "title": "削除しますか",
+            "tone": "error",
+            "icon": "trash",
+            "buttonLayout": "vertical",
+            "presentation": { "dimBackground": true, "dismissOnBackdrop": false }
+          },
+          "buttons": [
+            { "label": "キャンセル", "role": "cancel" },
+            { "label": "3件を削除", "role": "destructive" }
+          ]
+        }
+      ]
     }
   ]
 }

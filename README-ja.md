@@ -65,6 +65,11 @@ CI（Continuous Integration、継続的インテグレーション）は、上�
 状態とトピックで絞り込める1枚のリストです。項目の本文は `roadmaps/` にあります。設計ドキュメントは
 MkDocs で https://0x0c.github.io/spectre-ui/docs/ に置いています。
 
+**エディタ: https://0x0c.github.io/spectre-ui/editor/**
+
+`packages/editor` を静的ビルドしたものです。背後にサーバはなく、ブラウザだけで動きます。画面を組み、
+アクションを編集し、ドキュメントをJSONとして書き出せます。
+
 ---
 
 ## ドキュメント

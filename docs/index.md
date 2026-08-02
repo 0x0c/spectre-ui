@@ -9,11 +9,12 @@ delivers. They treat a tap on a button, and every other interaction, as a declar
 Authors edit and publish the same UI definition from a web **WYSIWYG editor**. A screen is a
 composition of a predefined **component catalog**.
 
-!!! info "Current phase: design (no implementation code)"
-    This repository holds the technology-selection and specification documents, the architecture
-    decision records (ADRs), and the roadmap. Implementation has not started yet.
-    [The roadmap and its open questions](roadmap.md) collects what to confirm before starting.
+!!! info "Current phase: client implementation"
+    Product code lives under `clients/`, `packages/`, and `spec/`. It sits beside the design
+    documents, the architecture decision records (ADRs), and the roadmap.
+    [The roadmap and its open questions](roadmap.md) records what each area has today.
     [The roadmap index](../) lists each individual work proposal.
+    [The editor](https://0x0c.github.io/spectre-ui/editor/) runs in a browser, with no server to set up.
 
 ## The design in three points
 
@@ -50,6 +51,11 @@ composition of a predefined **component catalog**.
     [Compatibility and delivery strategy](compatibility.md). When SDUI fails, the cause almost
     always traces back here.
 
+- **Compose a screen right now**
+
+    [Open the editor](https://0x0c.github.io/spectre-ui/editor/). The published build runs in the
+    browser alone. Drag components onto the canvas, edit actions, and export the document as JSON.
+
 </div>
 
 ## Documents
@@ -64,6 +70,7 @@ composition of a predefined **component catalog**.
 | [Expression language SpectreExpr](spec/expression.md) | Expressions and data binding |
 | [Action specification](spec/actions.md) | Actions and the server response protocol |
 | [Editor design](editor.md) | The web WYSIWYG editor |
+| [The editor itself](https://0x0c.github.io/spectre-ui/editor/) | The published build, running in the browser |
 | [Compatibility and delivery strategy](compatibility.md) | Versioning, forward compatibility, delivery, and rollback |
 | [The roadmap and its open questions](roadmap.md) | Milestones, estimates, open questions, and risks |
 | [Roadmap index](../) | The list of individual work proposals; each body lives in the repository |

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { applyPatches, enablePatches, produceWithPatches, type Patch } from 'immer'
-import type { SpectreDocument, SpectreNode } from '@spectre-ui/manifest/generated'
+import type { SpectreDocument, SpectreNode, SpectreOverlay } from '@spectre-ui/manifest/generated'
 import { SpectreLimits } from '@spectre-ui/manifest/generated'
 import type { ComponentDef } from '@spectre-ui/manifest/editor-schema'
 import {
@@ -35,9 +35,19 @@ export const EMPTY_DOCUMENT: SpectreDocument = {
   root: { id: 'screen', type: 'Screen', props: { scrollable: true }, children: [] } as SpectreNode,
 }
 
+/**
+ * `spec/schema/document.schema.json` の `overlays.maxItems`。上限は仕様側にあり、
+ * `SpectreLimits` (docs/architecture.md §7 のリソース上限) には含まれない。
+ */
+export const MAX_OVERLAYS = 16
+
+export type OverlayKind = 'sheet' | 'alert' | 'toast'
+
 export interface DocumentStoreState {
   document: SpectreDocument
   selectedNodeId: string | null
+  /** オーバレイパネルで編集中のオーバレイ。キャンバスのプレビュー対象でもある。 */
+  selectedOverlayId: string | null
   undoStack: HistoryEntry[]
   redoStack: HistoryEntry[]
   lastError: string | null
@@ -47,7 +57,18 @@ export interface DocumentStoreState {
   undo: () => void
   redo: () => void
   select: (id: string | null) => void
+  selectOverlay: (id: string | null) => void
   clearError: () => void
+
+  /** オーバレイを1件足す (SU-0014)。戻り値は採番したID。上限に達していれば undefined。 */
+  addOverlay: (kind: OverlayKind) => string | undefined
+  removeOverlay: (id: string) => void
+  /**
+   * オーバレイの下のパスを書き換える。`value` が `undefined` ならキーごと消す —
+   * 「書かなかったキーは既定値で補われない」という仕様 (docs/spec/schema.md §3.1) を、
+   * エディタからも表現できるようにするため。
+   */
+  updateOverlayField: (id: string, path: (string | number)[], value: unknown) => void
 
   addComponent: (component: ComponentDef, parentId: string, beforeId?: string | null) => string | undefined
   removeNode: (id: string) => void
@@ -65,16 +86,50 @@ function setAtPath(root: Record<string, unknown>, path: (string | number)[], val
     const key = path[i]
     const next = cursor[key as string]
     if (next === undefined || next === null || typeof next !== 'object') {
+      // 消す操作で、途中の入れ物を作ってしまわない。消したいだけなら親がなくても終わり。
+      if (value === undefined) return
       cursor[key as string] = typeof path[i + 1] === 'number' ? [] : {}
     }
     cursor = cursor[key as string] as Record<string, unknown>
   }
-  cursor[path[path.length - 1] as string] = value
+  const last = path[path.length - 1] as string
+  if (value === undefined) {
+    delete cursor[last]
+  } else {
+    cursor[last] = value
+  }
+}
+
+/** 追加するオーバレイの初期形。種別ごとに、スキーマの必須キーだけを埋める。 */
+function createOverlay(kind: OverlayKind, id: string): SpectreOverlay {
+  switch (kind) {
+    case 'sheet':
+      return {
+        id,
+        kind,
+        title: '新しいシート',
+        root: { id: `${id}_root`, type: 'VStack', props: { spacing: 'md' }, children: [] } as SpectreNode,
+      }
+    case 'alert':
+      return {
+        id,
+        kind,
+        title: '確認',
+        message: '',
+        buttons: [
+          { label: 'キャンセル', role: 'cancel' },
+          { label: 'OK', role: 'default' },
+        ],
+      }
+    case 'toast':
+      return { id, kind, message: '保存しました' }
+  }
 }
 
 export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
   document: cloneWithIds(EMPTY_DOCUMENT),
   selectedNodeId: null,
+  selectedOverlayId: null,
   undoStack: [],
   redoStack: [],
   lastError: null,
@@ -83,6 +138,7 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
     set(() => ({
       document: cloneWithIds(doc),
       selectedNodeId: null,
+      selectedOverlayId: null,
       undoStack: [],
       redoStack: [],
       lastError: null,
@@ -113,7 +169,44 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
     }),
 
   select: (id) => set({ selectedNodeId: id }),
+  selectOverlay: (id) => set({ selectedOverlayId: id }),
   clearError: () => set({ lastError: null }),
+
+  addOverlay: (kind) => {
+    const existing = get().document.overlays ?? []
+    if (existing.length + 1 > MAX_OVERLAYS) {
+      set({ lastError: `オーバレイ数の上限 (${MAX_OVERLAYS}) に達しているため追加できません` })
+      return undefined
+    }
+    // IDは式やアクションから参照されるので、既存と衝突しない番号を選ぶ。
+    let n = existing.length + 1
+    let id = `${kind}_${n}`
+    while (existing.some((overlay) => overlay.id === id)) {
+      n += 1
+      id = `${kind}_${n}`
+    }
+    get().apply((draft) => {
+      draft.overlays = [...(draft.overlays ?? []), createOverlay(kind, id)]
+    })
+    set({ selectedOverlayId: id, lastError: null })
+    return id
+  },
+
+  removeOverlay: (id) => {
+    get().apply((draft) => {
+      if (!draft.overlays) return
+      draft.overlays = draft.overlays.filter((overlay) => overlay.id !== id)
+    })
+    set((state) => (state.selectedOverlayId === id ? { selectedOverlayId: null } : state))
+  },
+
+  updateOverlayField: (id, path, value) => {
+    get().apply((draft) => {
+      const target = draft.overlays?.find((overlay) => overlay.id === id)
+      if (!target) return
+      setAtPath(target as unknown as Record<string, unknown>, path, value)
+    })
+  },
 
   addComponent: (component, parentId, beforeId) => {
     const state = get()

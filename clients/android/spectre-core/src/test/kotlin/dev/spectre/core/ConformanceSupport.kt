@@ -117,6 +117,22 @@ object Conformance {
             )
         }
 
+        (case.entries["expectOverlays"] as? SpValue.Arr)?.items?.let { expected ->
+            val actual = result.overlays.map { normalizeRenderOverlay(it) }
+            assertEquals(
+                expected.size,
+                actual.size,
+                "オーバレイの件数が異なります\n  期待: ${SpValue.Arr(expected).stringify()}\n" +
+                    "  実際: ${SpValue.Arr(actual).stringify()}",
+            )
+            expected.forEachIndexed { i, exp ->
+                assertTrue(
+                    valuesEqual(actual[i], exp),
+                    "オーバレイ[$i] が期待と異なります\n  期待: ${exp.stringify()}\n  実際: ${actual[i].stringify()}",
+                )
+            }
+        }
+
         (case.entries["expectDegradations"] as? SpValue.Arr)?.items?.let { expected ->
             val actual = result.degradations.map {
                 SpValue.Obj(
@@ -139,6 +155,29 @@ object Conformance {
                 )
             }
         }
+    }
+
+    /**
+     * [RenderOverlay] をコーパスの期待値と同じ形に正規化する。
+     *
+     * `presentation` のような見え方のオプション (SU-0014) は `props` にそのまま入る。
+     * 解決を経ても形が変わらないこと、書かれていないキーが既定値で補われないことを、
+     * ここを通してコーパスから確かめられる。
+     */
+    fun normalizeRenderOverlay(overlay: RenderOverlay): SpValue.Obj {
+        val out = LinkedHashMap<String, SpValue>()
+        out["id"] = SpValue.Str(overlay.id)
+        out["kind"] = SpValue.Str(overlay.kind.name.lowercase())
+        if (overlay.props.isNotEmpty()) out["props"] = SpValue.Obj(LinkedHashMap(overlay.props))
+        overlay.root?.let { out["root"] = normalizeRenderNode(it) }
+        if (overlay.buttons.isNotEmpty()) {
+            out["buttons"] = SpValue.Arr(
+                overlay.buttons.map {
+                    SpValue.Obj(linkedMapOf("label" to SpValue.Str(it.label), "role" to SpValue.Str(it.role)))
+                }
+            )
+        }
+        return SpValue.Obj(out)
     }
 
     /**
