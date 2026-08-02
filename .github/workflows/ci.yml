@@ -298,6 +298,9 @@ jobs:
           TEST_RUNNER_SPECTRE_VRT_RECORD: ${{ steps.mode.outputs.record }}
         run: |
           set -uo pipefail
+          # 既定のシェルは `bash -e` なので、xcodebuild の失敗をここで判定するには
+          # -e を明示的に外す必要がある (`set -uo pipefail` では外れない)。
+          set +e
           # ライブラリ製品と同名のスキームにはテストアクションがない。パッケージを
           # 開いたときに生成される集約スキーム (通常 `<名前>-Package`) だけが
           # テストターゲットを含むので、名前を決め打ちせず列挙して選ぶ。
@@ -330,15 +333,22 @@ jobs:
           fi
           exit $status
 
-      # 記録した画像と、テスト結果バンドルの両方を出す。検証に失敗したときの
-      # 実画像と差分は、swift-snapshot-testing が後者に添付として残す。
+      # 画像だけを軽い成果物として出す。記録したゴールデンをコミットする人は
+      # これだけを取れば済む。
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ios-vrt-images
-          path: |
-            clients/ios/Tests/SpectreUISnapshotTests/__Snapshots__
-            clients/ios/vrt-result.xcresult
+          path: clients/ios/Tests/SpectreUISnapshotTests/__Snapshots__
+          retention-days: 7
+
+      # 結果バンドルは数十MBあるので失敗時だけ。検証に失敗したときの実画像と差分は、
+      # swift-snapshot-testing がここに添付として残す。
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-vrt-result-bundle
+          path: clients/ios/vrt-result.xcresult
           retention-days: 7
 
   # Unit tests for the Python scripts that assemble the docs site.
