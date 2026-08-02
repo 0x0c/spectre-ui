@@ -25,6 +25,7 @@ publish.
 | Compose renderer + Android sample | Implemented | CI (the `android` job) |
 | Swift runtime (SpectreCore) | Implemented | CI (the `ios` job) |
 | SwiftUI renderer + iOS sample | Implemented | CI (the `ios` / `ios-sample` jobs) |
+| The APNs-delivered iOS sample ([SU-0012](../roadmaps/SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md)) | Implemented | CI (the `ios-apns-sample` job) |
 | Diff-based re-resolution | Implemented | `Resolver.reresolveTraced` connects the dependency-path extraction that already existed |
 | `applyPatch` / `focus` / `scrollTo` | Implemented | RFC 6902 JSON Patch, plus the focus and scroll wiring |
 | Delivery and caching (DocumentLoader) | Implemented | A three-tier cache plus stale-while-revalidate; the samples already use it |
@@ -52,6 +53,7 @@ Continuous integration (CI) owns compile verification. The job definitions live 
 | `android` | Ubuntu | Building `:spectre-ui` / `:sample` |
 | `ios` | macOS | `swift build` / `swift test`, plus `xcodebuild` for iOS |
 | `ios-sample` | macOS | Generating the project with XcodeGen and building the sample app |
+| `ios-apns-sample` | macOS | Validating the example payloads' syntax, then generating the project with XcodeGen and building the APNs sample app |
 
 To verify everything locally, run the following in an environment with the Android SDK and Xcode:
 

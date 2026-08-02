@@ -38,6 +38,9 @@ cd clients/ios && swift test
 # iOS sample application (needs XcodeGen)
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 
+# iOS APNs sample application (needs XcodeGen)
+cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
+
 # The TypeScript SpectreExpr implementation, checked against the same conformance
 # corpus as the Kotlin and Swift runtimes (needs pnpm)
 pnpm install

@@ -239,3 +239,34 @@ jobs:
             -scheme SpectreSample \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
+
+  # APNs サンプルアプリ (SU-0012)。ペイロード JSON の構文検証と、
+  # ios-sample と同じ XcodeGen 経由のビルド検証を行う。
+  ios-apns-sample:
+    name: iOS APNs sample app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 例示ペイロードの構文チェック
+        run: |
+          set -euo pipefail
+          find clients/ios/APNsSample/Payloads -name '*.apns' -print0 \
+            | xargs -0 -I{} python3 -c "import json,sys; json.load(open(sys.argv[1]))" {}
+          echo "すべてのペイロードが解析できました"
+
+      - name: XcodeGen の導入
+        run: brew install xcodegen
+
+      - name: プロジェクト生成
+        working-directory: clients/ios/APNsSample
+        run: xcodegen generate
+
+      - name: サンプルアプリのビルド
+        working-directory: clients/ios/APNsSample
+        run: |
+          xcodebuild build \
+            -project SpectreAPNsSample.xcodeproj \
+            -scheme SpectreAPNsSample \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

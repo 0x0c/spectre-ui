@@ -38,6 +38,9 @@ cd clients/ios && swift test
 # iOS サンプルアプリ（XcodeGen が必要）
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 
+# iOS APNsサンプルアプリ（XcodeGen が必要）
+cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
+
 # TypeScript版 SpectreExpr。Kotlin/Swift と同じ適合性コーパスで検証する（pnpm が必要）
 pnpm install
 pnpm --filter @spectre-ui/core run typecheck && pnpm --filter @spectre-ui/core run test

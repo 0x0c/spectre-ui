@@ -23,6 +23,7 @@ WebSocket 経由のデバイスプレビュー）はまだない。近似プレ�
 | Compose レンダラ + Android サンプル | 実装済み | CI (`android` ジョブ) |
 | Swift ランタイム (SpectreCore) | 実装済み | CI (`ios` ジョブ) |
 | SwiftUI レンダラ + iOS サンプル | 実装済み | CI (`ios` / `ios-sample` ジョブ) |
+| APNs配信のiOSサンプル ([SU-0012](../roadmaps/SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md)) | 実装済み | CI (`ios-apns-sample` ジョブ) |
 | 差分再解決 | 実装済み | `Resolver.reresolveTraced` が既存の依存パス抽出を接続 |
 | `applyPatch` / `focus` / `scrollTo` | 実装済み | RFC 6902 JSON Patch + フォーカス/スクロールの配線 |
 | 配信・キャッシュ (DocumentLoader) | 実装済み | 3層キャッシュ + stale-while-revalidate。サンプルも接続済み |
@@ -49,6 +50,7 @@ WebSocket 経由のデバイスプレビュー）はまだない。近似プレ�
 | `android` | Ubuntu | `:spectre-ui` / `:sample` のビルド |
 | `ios` | macos | `swift build` / `swift test` + iOS 向け `xcodebuild` |
 | `ios-sample` | macos | XcodeGen でプロジェクトを生成してサンプルアプリをビルド |
+| `ios-apns-sample` | macos | 例示ペイロードの構文チェック + XcodeGen でAPNsサンプルをビルド |
 
 手元で全部を確かめたいときは、Android SDK と Xcode のある環境で以下を実行する。
 

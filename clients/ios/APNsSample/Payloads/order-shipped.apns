@@ -1,0 +1,49 @@
+{
+  "Simulator Target Bundle": "dev.spectre.apnssample",
+  "aps": {
+    "alert": {
+      "title": "発送完了",
+      "body": "ご注文の商品を発送しました"
+    },
+    "sound": "default",
+    "badge": 1
+  },
+  "spectreDocument": {
+    "schemaVersion": "1.0",
+    "id": "push_order_shipped",
+    "meta": { "title": "配送状況" },
+    "root": {
+      "type": "Screen",
+      "props": { "scrollable": true, "background": "background" },
+      "children": [
+        {
+          "type": "VStack",
+          "props": { "spacing": "md", "alignment": "leading" },
+          "layout": { "padding": "md" },
+          "children": [
+            { "type": "Badge", "props": { "text": "発送完了", "tone": "success" } },
+            { "type": "Text", "props": { "text": "ご注文の商品を発送しました", "typography": "titleLg" } },
+            {
+              "type": "Text",
+              "props": { "text": "お届け予定日: 8月5日", "typography": "bodyMd" }
+            },
+            {
+              "type": "Button",
+              "props": {
+                "label": "配送状況を見る",
+                "variant": "primary",
+                "onTap": [
+                  {
+                    "type": "track",
+                    "event": "push_card_tap",
+                    "properties": { "campaign": "order_shipped" }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
