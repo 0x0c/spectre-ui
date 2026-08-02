@@ -16,6 +16,13 @@ iOS と Android のランタイムと、プラットフォームごとのレン�
 サンプルアプリもあります。エディタ（マイルストーンM2）は未着手です。各部分が何を含み、どう検証している
 かは [docs/roadmap.md](docs/roadmap-ja.md) に記録しています。
 
+## デモ
+
+`./scripts/demo.sh <target>` は、動くデモを1つ起動します。`editor`（WYSIWYGエディタ。Node.js と pnpm
+だけで動きます）、`server`（オーサリング・配信API。`curl` で一連の流れをたどれます）、`ios`、
+`android` のいずれかを指定してください。それぞれが何を見せるか、何が必要か、うまくいかないときの対処
+法は [docs/demo.md](docs/demo-ja.md) にまとめています。
+
 ## 動かす
 
 適合性コーパスとランタイムのテストは Android SDK を必要としないので、チェックアウトしただけの状態で
@@ -75,6 +82,7 @@ MkDocs で https://0x0c.github.io/spectre-ui/docs/ に置いています。
 | [docs/editor.md](docs/editor-ja.md) | Web WYSIWYGエディタの設計 |
 | [docs/compatibility.md](docs/compatibility-ja.md) | バージョニング、前方互換、配信とロールバックの戦略 |
 | [docs/roadmap.md](docs/roadmap-ja.md) | マイルストーンの概観、見積もり、未決事項、リスク |
+| [docs/demo.md](docs/demo-ja.md) | `scripts/demo.sh` の4つの対象。それぞれが何を見せるか、何が必要か、対処法 |
 
 ADRとロードマップ項目は永続的な番号を持ち、1件につき1ディレクトリを占めます。各ディレクトリには、
 英語版 `X.md` と日本語版 `X-ja.md` を組で置きます。採番と書式の規則は

@@ -17,6 +17,13 @@ renderer for each platform. It holds an authoring and delivery API too (mileston
 server. Work on the editor (milestone M2) has not started. [docs/roadmap.md](docs/roadmap.md)
 records what each part covers and which job verifies it.
 
+## Demo
+
+`./scripts/demo.sh <target>` starts a running demo: `editor` (the WYSIWYG editor, needs only Node.js
+and pnpm), `server` (the authoring and delivery API, walked through with `curl`), `ios`, or
+`android`. See [docs/demo.md](docs/demo.md) for what each one shows, what it needs installed, and
+how to troubleshoot it.
+
 ## Running it
 
 The conformance corpus and the runtime tests need no Android SDK. A plain checkout can verify the
@@ -76,6 +83,7 @@ design documents at https://0x0c.github.io/spectre-ui/docs/.
 | [docs/editor.md](docs/editor.md) | Design of the web WYSIWYG editor |
 | [docs/compatibility.md](docs/compatibility.md) | Versioning, forward compatibility, and the delivery and rollback strategy |
 | [docs/roadmap.md](docs/roadmap.md) | Milestone overview, estimates, open questions, and risks |
+| [docs/demo.md](docs/demo.md) | The four `scripts/demo.sh` targets: what each shows, what it needs, and how to troubleshoot it |
 
 Architecture decision records and roadmap items carry a permanent number. Each one occupies a
 directory holding the English `X.md` beside its Japanese mirror `X-ja.md`. The numbering and

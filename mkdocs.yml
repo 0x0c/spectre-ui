@@ -103,6 +103,7 @@ nav:
       - 式言語 SpectreExpr: spec/expression.md
       - アクション: spec/actions.md
   - ロードマップ: roadmap-ja.md
+  - デモ: demo-ja.md
 
 # 英語版のページはナビには載せず、各ページの言語切り替えリンクから辿る
 not_in_nav: |
@@ -113,6 +114,7 @@ not_in_nav: |
   editor.md
   compatibility.md
   roadmap.md
+  demo.md
 
 extra:
   social:
