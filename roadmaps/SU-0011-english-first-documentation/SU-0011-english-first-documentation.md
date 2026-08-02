@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0011](SU-0011-english-first-documentation.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Documentation |
 | Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md) |
 <!-- /SU-METADATA -->
@@ -84,11 +84,97 @@ pages carry no such churn.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [x] 1. Extend the pairing rule to `docs/`
+- [x] 2. Move each existing Japanese page to its `-ja.md` path, with the switcher line on both sides
+      (for the six pages that gained an English mirror this pass; see the log)
+- [x] 3. Write the English page for the four design documents plus `index.md`
+- [ ] 4. Write the English page for the four specification documents once M0 freezes them — deferred
+      this pass; see the log
+- [x] 5. Write the English page for `roadmap.md`
+- [x] 6. Repoint every link so a document links within its own language
+- [x] 7. Carry the English pages into the site build
+- [x] 8. Add a mirror check to the Pages workflow
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- 2026-08-02: Landed points 1, 2, 3, 5, 6, 7, and 8; deferred point 4. Detail, in order:
+
+  - **Point 1.** Rewrote `CLAUDE.md`'s "Documents come in pairs" section to cover every page under
+    `docs/`, not only `docs/adr/`, and replaced the old blanket "Japanese-only today" carve-out with a
+    named exception for `docs/spec/` alone, pointing at this item. Left
+    `.agent-workflows/document-writing/workflow.md`'s Scope bullet untouched: it already reads "every
+    document under `docs/`, in both languages," so it already stated the target rule; there was
+    nothing stale to fix there.
+  - **Point 2 and 3.** Moved `index.md`, `tech-selection.md`, `architecture.md`, `editor.md`,
+    `compatibility.md`, and `roadmap.md` to their `-ja.md` paths, added the switcher line to each, and
+    wrote a new English `X.md` for all six holding a faithful translation of the same content. The
+    four pages under `docs/spec/` were left exactly where they are (see point 4) rather than moved to
+    an `-ja.md` path with no English counterpart yet, which would have failed the new mirror check
+    (point 8) and left a dangling half-pair.
+  - **Point 4 — deferred, not guessed.** `SU-0001` (M0, the specification freeze) still reads
+    `Status: Proposal`, not `Implemented`. Beyond the field itself, the tree shows the four
+    `docs/spec/` pages have taken real, substantive corrections discovered *during* M1 client-SDK
+    implementation, not just been read as a settled reference: commit `6e2837b` changed `Tabs`'s
+    `selectedId` prop to `bindTo` after building the Compose renderer, and commit `58f0f34` added a
+    whole new "string interpolation" section to `spec/expression.md` (object-key ordering) after a
+    real Swift/Kotlin behavior mismatch surfaced. That is normative churn discovered by
+    implementation, still within this branch's history, not stability. Translating now risks paying
+    for the same page twice, which is exactly the alternative the Detailed design already rejects. I
+    skipped point 4 on that basis and left the four `docs/spec/` pages untouched, English and all.
+  - **Point 5.** Before translating `roadmap.md`, checked it against the actual tree. Its own
+    "実装状況 (現時点)" table near the top is accurate for this branch (manifest + codegen, the
+    conformance corpus, both native runtimes, and both renderers are genuinely implemented; the editor
+    and delivery platform are not). But the milestone checklist further down still shows every M0 and
+    M1 box unchecked, which contradicts that same table — a pre-existing inconsistency in the Japanese
+    source, not something this change introduced. I translated the page faithfully, checklist
+    inconsistency included, rather than silently "fixing" it into a fresher-looking English version;
+    fixing roadmap content accuracy is a separate concern from this item's scope. Flagging it here so
+    it does not read as an English-side error later.
+  - Also worth flagging, found while translating `index.md`: its "現在のフェーズ: 設計（実装コードなし）"
+    admonition (current phase: design, no implementation code) is stale the same way — the repository
+    has been in its client-implementation phase (per `README.md` and the tree) since before this item
+    started. Translated it faithfully rather than quietly correcting it, for the same reason as
+    `roadmap.md` above.
+  - **Point 6.** Repointed every `docs/` cross-reference that needed it: the two READMEs, `docs/adr/`
+    (both the English and the Japanese ADR pages that cited `architecture.md`, `editor.md`,
+    `compatibility.md`, or `roadmap.md`), `docs/adr/README-ja.md`'s link to `tech-selection.md`, and
+    every `roadmaps/*-ja.md` item that cited one of the six now-paired pages. English-side links needed
+    no change, since English content now lives at the same unsuffixed filename those links already
+    used. `scripts/site_links.py` needed no change: it rewrites links generically by path, with no
+    hardcoded filename.
+  - **Point 7.** Added `not_in_nav` entries for the five off-nav English pages
+    (`tech-selection.md`, `architecture.md`, `editor.md`, `compatibility.md`, `roadmap.md`), matching
+    the existing ADR pattern, and updated `nav:` to point at the new `-ja.md` filenames. `index.md` is
+    the one exception: MkDocs always maps a `docs_dir`-root `index.md` to the site's own root URL
+    regardless of `nav`, so leaving the new English `index.md` out of `nav` (as `not_in_nav` would)
+    would have made the `/docs/` root serve English while every other nav item and the theme chrome
+    stayed Japanese. Gave it an explicit `Home (English): index.md` entry instead, next to `ホーム`,
+    mirroring how `docs/adr/README.md` already carries an explicit `Index (English)` entry beside `一覧`
+    for the same reason (an index page, not an individual record).
+  - **Point 8.** Added `scripts/check_docs_mirror.py`, wired into `.github/workflows/pages.yml` before
+    `mkdocs build --strict`. It walks `docs/`, excluding `docs/spec/` (the point 4 exception, documented
+    in the script's own docstring and in `CLAUDE.md`), and fails if any `X.md` lacks its `X-ja.md` or
+    vice versa.
+  - **Verification.** `pip install -r requirements-docs.txt` succeeded in this worktree, so I ran the
+    real checks rather than hand-verifying: `mkdocs build --strict` passes, `python3
+    scripts/check_docs_mirror.py` passes (and was confirmed to fail correctly against a deliberately
+    unpaired test file, then re-verified clean after removing it), and `python3
+    scripts/build_roadmap_index.py site` runs cleanly. Every new and edited Markdown file went through
+    `textlint` per `.agent-workflows/document-writing/workflow.md`. `--fix` mangled English prose on
+    the first pass — it applied Japanese-vocabulary substitutions inside English sentences (`path` to
+    `パス`, `session` to `セッション`, `%` to `％`) — so I reverted those and fixed the rest by hand
+    instead of re-running `--fix`. I cleared every genuine wording issue `write-good` and `stop-words`
+    found (filler like "it is", hedges like "exactly" and "roughly", passive voice where an active
+    rewrite read at least as well) up to the point where fixing one hedge word's flag (`only`) just
+    tripped a different rule on its replacement (`several`, `solely`); past that point further
+    rewriting stopped improving the prose and started fighting the linter's word list, so I stopped.
+    What remains is `ja-technical-writing/sentence-length` (a Japanese-prose metric with no linguistic
+    basis for English, and frequently counting a Markdown table row or a long inline link as one
+    "sentence") and `alex` flagging domain vocabulary this specification and its ADRs already use
+    throughout (`host`, `crash`, `kill`, `execute`, `color`, `period`, `Japanese`) — the same two
+    categories the already-accepted `docs/adr/ADR-0001-client-rendering-strategy.md` also carries
+    unresolved, which I used as the baseline for what this repository's textlint pass already accepts
+    for English prose. I did not loosen `.textlintrc.json` to reach this state.
 
 ## References
 

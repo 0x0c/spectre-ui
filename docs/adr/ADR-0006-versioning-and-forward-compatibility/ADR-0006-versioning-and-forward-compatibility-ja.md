@@ -30,7 +30,7 @@
 
 ## 決定
 
-**案C**を3層で採用します。仕組みの全体は [`docs/compatibility.md`](../../compatibility.md) にあります。
+**案C**を3層で採用します。仕組みの全体は [`docs/compatibility.md`](../../compatibility-ja.md) にあります。
 
 1. **ケイパビリティネゴシエーション。** クライアントは、対応するスキーマバージョンと描画できる
    コンポーネント集合のハッシュを、リクエストヘッダで申告します。サーバはその申告に適合する木を返します。
@@ -72,4 +72,4 @@
 - [ADR-0003 — UI定義のワイヤ形式](../ADR-0003-ui-document-format/ADR-0003-ui-document-format-ja.md) — この記録が進化の規則を定める対象の形式です。
 - [ADR-0007 — バックエンドと配信の形](../ADR-0007-backend-stack/ADR-0007-backend-stack-ja.md) — ネゴシエーションに応答する場所です。
 - [SU-0008 — ケイパビリティネゴシエーションとノード単位のフォールバック](../../../roadmaps/SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md) — 3層すべてを実装する作業です。
-- [`docs/compatibility.md`](../../compatibility.md) — バージョニング、配信、ロールバックの全体です。
+- [`docs/compatibility.md`](../../compatibility-ja.md) — バージョニング、配信、ロールバックの全体です。

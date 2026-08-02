@@ -95,5 +95,5 @@ M3までは、ドキュメントが端末に届く手段が手作業しかあり
 
 - [ADR-0007 — バックエンドと配信の形](../../docs/adr/ADR-0007-backend-stack/ADR-0007-backend-stack-ja.md) — スタック、イミュータブルなドキュメントのモデル、ポインタの差し替えです。
 - [ADR-0006 — バージョニングと前方互換性](../../docs/adr/ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility-ja.md) — このAPIが応答するネゴシエーションです。
-- [`docs/compatibility.md`](../../docs/compatibility.md) — 配信、バージョニング、ロールバックの全体です。
+- [`docs/compatibility.md`](../../docs/compatibility-ja.md) — 配信、バージョニング、ロールバックの全体です。
 - [SU-0010 — 範囲を絞った最初のパイロット](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md) — 最初に公開すべき対象です。

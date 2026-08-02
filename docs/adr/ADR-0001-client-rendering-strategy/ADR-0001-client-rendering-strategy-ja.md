@@ -82,4 +82,4 @@ Multiplatform へ移行します。
 - [ADR-0004 — 式言語とデータバインディング](../ADR-0004-expression-language/ADR-0004-expression-language-ja.md) — 式評価器を3回実装できる小ささに保つ理由です。
 - [ADR-0008 — 適合性テスト戦略](../ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy-ja.md) — この決定が依拠するコーパスです。
 - [SU-0002 — M1、iOS / Android のクライアントSDK](../../../roadmaps/SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) — この決定を形にする作業です。
-- [`docs/architecture.md`](../../architecture.md) — この決定が前提とするランタイムの層構成です。
+- [`docs/architecture.md`](../../architecture-ja.md) — この決定が前提とするランタイムの層構成です。

@@ -69,7 +69,7 @@
 ## 参考
 
 - [ADR-0005 — WYSIWYGエディタの技術スタック](../../docs/adr/ADR-0005-editor-stack/ADR-0005-editor-stack-ja.md) — スタックと、二段構えのプレビューという決定です。
-- [`docs/editor.md`](../../docs/editor.md) — エディタの設計の全体です。
+- [`docs/editor.md`](../../docs/editor-ja.md) — エディタの設計の全体です。
 - [SU-0002 — M1、iOS / Android のクライアントSDK](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) — 実機ミラーが依存するレンダラです。
 - [SU-0006 — マニフェスト駆動のコード生成](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md) — パレットとインスペクタが依拠する生成です。
 - [SU-0009 — 実機ミラープレビュー](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) — 項目として追跡する実機ミラーです。

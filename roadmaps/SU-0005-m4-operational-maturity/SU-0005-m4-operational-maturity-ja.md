@@ -62,6 +62,6 @@ M4の価値は新しい描画能力ではなく、確信です。実際の画面
 
 ## 参考
 
-- [`docs/roadmap.md`](../../docs/roadmap.md) — マイルストーンの概観と、これらの機能が答えるリスク表です。
+- [`docs/roadmap.md`](../../docs/roadmap-ja.md) — マイルストーンの概観と、これらの機能が答えるリスク表です。
 - [ADR-0006 — バージョニングと前方互換性](../../docs/adr/ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility-ja.md) — 対応率フィードバックが報告する対象の仕組みです。
 - [SU-0004 — M3、オーサリングと配信の基盤](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md) — このマイルストーンが土台にするテレメトリ収集です。
