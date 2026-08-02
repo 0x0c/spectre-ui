@@ -20,6 +20,7 @@ import roadmap_items as R  # noqa: E402
 
 REPO_URL = "https://github.com/0x0c/spectre-ui"
 DOCS_PATH = "docs/"  # サイト内のドキュメント（MkDocs）の位置
+EDITOR_PATH = "editor/"  # サイト内のエディタ（packages/editor の静的ビルド）の位置
 
 STYLE = """
 :root {
@@ -733,6 +734,7 @@ def render(items: list[R.Item]) -> str:
       <span><span id="count">{len(items)}</span>
         {bilingual("件", "shown")}</span>
       <a href="{DOCS_PATH}">{bilingual("ドキュメント", "Documentation")}</a>
+      <a href="{EDITOR_PATH}">{bilingual("エディタを開く", "Open the editor")}</a>
       <a href="{REPO_URL}">GitHub</a>
     </p>
 

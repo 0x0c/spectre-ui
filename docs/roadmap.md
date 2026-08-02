@@ -12,7 +12,8 @@ SU-0005.
 M0 and M1 are in, short of fuzz testing and snapshot testing. M3 (the authoring and delivery
 platform) already has real code. That includes capability-based tree shaping.
 **The editor (M2) has its first pass in.** The palette, canvas, and inspector work. So do the
-action editor, sample data, and undo/redo. The device mirror does not exist yet. That is
+action editor, sample data, and undo/redo. The workspace rearranges, and an overlay panel edits
+the display options a document carries. The device mirror does not exist yet. That is
 [SU-0009](../roadmaps/SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), a
 WebSocket-based device preview. An approximate preview alone cannot confirm a screen is ready to
 publish.
@@ -31,7 +32,8 @@ publish.
 | Delivery and caching (DocumentLoader) | Implemented | A three-tier cache plus stale-while-revalidate; the samples already use it |
 | Capability negotiation and per-node fallback degradation | Implemented | `Spectre-Schema`/`Spectre-Components` headers, server-side `degradeDocumentTree`, and the client's fixed fallback → optional-omission → placeholder order (ADR-0006) |
 | Authoring and delivery API (M3) | In progress | `packages/server`; permissions and workflow (item 3) is still a stand-in |
-| Editor (M2) | In progress | `packages/editor`; the palette, canvas, inspector, action editor, sample data, and undo/redo work, but the device mirror (SU-0009) is missing, so M2's own acceptance bar isn't met yet |
+| Editor (M2) | In progress | `packages/editor`; the palette, canvas, inspector, action editor, sample data, undo/redo, the rearrangeable workspace ([SU-0013](../roadmaps/SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout.md)), and overlay authoring ([SU-0014](../roadmaps/SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md)) work, but the device mirror (SU-0009) is missing, so M2's own acceptance bar isn't met yet |
+| Overlay presentation options ([SU-0014](../roadmaps/SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md)) | Implemented | The `presentation` block plus the alert options, in the schema, both renderers, and three new resolve-corpus cases |
 
 ### How verification splits
 

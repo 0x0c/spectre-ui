@@ -474,6 +474,17 @@ export interface SpectreDocument {
   onDisappear?: SpectreAction[]
 }
 
+/**
+ * オーバレイの見え方 (SU-0014)。kind が中身の形を決め、presentation が見え方を決める。
+ * dismissOnBackdrop / dragToDismiss を省略したときは、そのオーバレイの dismissible に従う。
+ */
+export interface SpectrePresentation {
+  style?: 'sheet' | 'fullScreen' | 'dialog'
+  dimBackground?: boolean
+  dismissOnBackdrop?: boolean
+  dragToDismiss?: boolean
+}
+
 export type SpectreOverlay =
   | {
       id: string
@@ -482,6 +493,7 @@ export type SpectreOverlay =
       detents?: ('small' | 'medium' | 'large')[]
       title?: Expression
       dismissible?: boolean
+      presentation?: SpectrePresentation
     }
   | {
       id: string
@@ -490,6 +502,10 @@ export type SpectreOverlay =
       message?: Expression
       buttons: { label: Expression; role?: 'default' | 'cancel' | 'destructive'; actions?: SpectreAction[] }[]
       dismissible?: boolean
+      tone?: 'neutral' | 'success' | 'warning' | 'error'
+      icon?: string
+      buttonLayout?: 'auto' | 'horizontal' | 'vertical'
+      presentation?: Pick<SpectrePresentation, 'dimBackground' | 'dismissOnBackdrop'>
     }
   | {
       id: string

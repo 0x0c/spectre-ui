@@ -9,11 +9,15 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -22,12 +26,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import dev.spectre.core.Document
 import dev.spectre.core.OverlayKind
 import dev.spectre.core.RenderNode
@@ -35,6 +46,7 @@ import dev.spectre.core.RenderOverlay
 import dev.spectre.core.SpValue
 import dev.spectre.core.SpectreHostDelegate
 import dev.spectre.core.asStringOrNull
+import dev.spectre.core.isTruthy
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -139,21 +151,86 @@ private fun SpectreOverlayHost(
     }
 }
 
+/**
+ * オーバレイの見え方 (docs/spec/schema.md §3.1)。
+ *
+ * `kind` が中身の形を、`presentation` が見え方を決める。省略時の既定は、この仕様が
+ * 入る前のクライアントが描いていたものと一致させる — 古いドキュメントの見え方を
+ * 変えないための約束 (ADR-0006)。
+ */
+internal data class OverlayPresentation(
+    val style: String,
+    val dimBackground: Boolean,
+    val dismissOnBackdrop: Boolean,
+    val dragToDismiss: Boolean,
+) {
+    companion object {
+        fun of(overlay: RenderOverlay): OverlayPresentation {
+            val dismissible = overlay.props["dismissible"]?.isTruthy ?: true
+            val block = (overlay.props["presentation"] as? SpValue.Obj)?.entries.orEmpty()
+            return OverlayPresentation(
+                style = block["style"]?.asStringOrNull ?: "sheet",
+                dimBackground = block["dimBackground"]?.isTruthy ?: true,
+                dismissOnBackdrop = block["dismissOnBackdrop"]?.isTruthy ?: dismissible,
+                dragToDismiss = block["dragToDismiss"]?.isTruthy ?: dismissible,
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OverlayView(controller: SpectreScreenController, overlay: RenderOverlay) {
+    val presentation = OverlayPresentation.of(overlay)
     when (overlay.kind) {
-        OverlayKind.SHEET -> {
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-            ModalBottomSheet(
+        OverlayKind.SHEET -> when (presentation.style) {
+            "fullScreen", "dialog" -> Dialog(
                 onDismissRequest = { controller.dismissOverlay(overlay.id) },
-                sheetState = sheetState,
+                properties = DialogProperties(
+                    dismissOnBackPress = presentation.dismissOnBackdrop,
+                    dismissOnClickOutside = presentation.dismissOnBackdrop,
+                    // 全画面ではプラットフォーム既定の幅指定を外し、サーフェスに画面を埋めさせる。
+                    usePlatformDefaultWidth = presentation.style != "fullScreen",
+                ),
             ) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    overlay.props["title"]?.asStringOrNull?.let {
-                        Text(it, style = MaterialTheme.typography.titleMedium)
+                // Compose の Dialog はスクリムの濃さを DialogProperties で指定できない。
+                // dimBackground を反映するには、ダイアログのウィンドウ側を触るしかない。
+                val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+                SideEffect { dialogWindow?.setDimAmount(if (presentation.dimBackground) 0.6f else 0f) }
+
+                Surface(
+                    modifier = if (presentation.style == "fullScreen") Modifier.fillMaxSize() else Modifier.fillMaxWidth(),
+                    shape = if (presentation.style == "fullScreen") RectangleShape else MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
+                        overlay.props["title"]?.asStringOrNull?.let {
+                            Text(it, style = MaterialTheme.typography.titleMedium)
+                        }
+                        overlay.root?.let { SpectreNodeView(it) }
                     }
-                    overlay.root?.let { SpectreNodeView(it) }
+                }
+            }
+
+            else -> {
+                // ドラッグで閉じるかは値の遷移そのものを拒否して制御する。スクリムのタップと
+                // 戻る操作は onDismissRequest に来るので、そちらは dismissOnBackdrop で見る。
+                val sheetState = rememberModalBottomSheetState(
+                    skipPartiallyExpanded = false,
+                    confirmValueChange = { target -> target != SheetValue.Hidden || presentation.dragToDismiss },
+                )
+                ModalBottomSheet(
+                    onDismissRequest = { if (presentation.dismissOnBackdrop) controller.dismissOverlay(overlay.id) },
+                    sheetState = sheetState,
+                    scrimColor = if (presentation.dimBackground) BottomSheetDefaults.ScrimColor else Color.Transparent,
+                    dragHandle = if (presentation.dragToDismiss) { { BottomSheetDefaults.DragHandle() } } else null,
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        overlay.props["title"]?.asStringOrNull?.let {
+                            Text(it, style = MaterialTheme.typography.titleMedium)
+                        }
+                        overlay.root?.let { SpectreNodeView(it) }
+                    }
                 }
             }
         }
@@ -162,26 +239,50 @@ private fun OverlayView(controller: SpectreScreenController, overlay: RenderOver
             // ボタンは role で振り分ける。cancel が dismissButton、それ以外が confirmButton。
             val confirm = overlay.buttons.firstOrNull { it.role != "cancel" }
             val cancel = overlay.buttons.firstOrNull { it.role == "cancel" }
+            val theme = LocalSpectreTheme.current
+            val iconName = overlay.props["icon"]?.asStringOrNull
+            val toneColor = when (overlay.props["tone"]?.asStringOrNull) {
+                "success" -> theme.color("success", MaterialTheme.colorScheme.primary)
+                "warning" -> theme.color("warning", MaterialTheme.colorScheme.secondary)
+                "error" -> theme.color("error", MaterialTheme.colorScheme.error)
+                else -> theme.color("onSurfaceVariant", MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            val confirmButton: @Composable () -> Unit = {
+                confirm?.let { button ->
+                    TextButton(onClick = {
+                        controller.dismissOverlay(overlay.id)
+                        controller.dispatch(button.actions)
+                    }) { Text(button.label) }
+                }
+            }
+            val dismissButton: @Composable () -> Unit = {
+                cancel?.let { button ->
+                    TextButton(onClick = {
+                        controller.dismissOverlay(overlay.id)
+                        controller.dispatch(button.actions)
+                    }) { Text(button.label) }
+                }
+            }
             AlertDialog(
-                onDismissRequest = { controller.dismissOverlay(overlay.id) },
+                onDismissRequest = { if (presentation.dismissOnBackdrop) controller.dismissOverlay(overlay.id) },
+                properties = DialogProperties(
+                    dismissOnBackPress = presentation.dismissOnBackdrop,
+                    dismissOnClickOutside = presentation.dismissOnBackdrop,
+                ),
+                icon = iconName?.let { { Icon(theme.icon(it), contentDescription = null, tint = toneColor) } },
+                iconContentColor = toneColor,
                 title = overlay.props["title"]?.asStringOrNull?.let { { Text(it) } },
                 text = overlay.props["message"]?.asStringOrNull?.let { { Text(it) } },
-                confirmButton = {
-                    confirm?.let { button ->
-                        TextButton(onClick = {
-                            controller.dismissOverlay(overlay.id)
-                            controller.dispatch(button.actions)
-                        }) { Text(button.label) }
+                // buttonLayout: "vertical" は、2つのボタンを同じスロットへ縦に積むことで表す。
+                // AlertDialog はボタン列を横に並べるため、スロットを分けたままでは縦にならない。
+                confirmButton = if (overlay.props["buttonLayout"]?.asStringOrNull == "vertical") {
+                    {
+                        Column { confirmButton(); dismissButton() }
                     }
+                } else {
+                    confirmButton
                 },
-                dismissButton = {
-                    cancel?.let { button ->
-                        TextButton(onClick = {
-                            controller.dismissOverlay(overlay.id)
-                            controller.dispatch(button.actions)
-                        }) { Text(button.label) }
-                    }
-                },
+                dismissButton = if (overlay.props["buttonLayout"]?.asStringOrNull == "vertical") null else dismissButton,
             )
         }
 

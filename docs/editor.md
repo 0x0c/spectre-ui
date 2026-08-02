@@ -40,6 +40,24 @@ See [tech-selection.md](tech-selection.md), ADR-0005, for why we chose this tech
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+### The workspace rearranges (SU-0013)
+
+The wireframe above is the shipped default, not a fixed frame. The workspace holds four slots:
+left, center, right, and bottom. Any panel can occupy any slot.
+
+- **Boundaries resize.** A splitter sits on each boundary between two panels. Dragging one moves
+  the boundary. The arrow keys move it once the splitter takes focus. Each splitter clamps both of
+  its panels to a floor size. No drag can squeeze a panel out of existence.
+- **Panels move.** Each panel header carries a drag handle. Dropping one panel's handle on another
+  panel's header exchanges the two slots. The arrow keys on a focused handle send the panel to the
+  next slot.
+- **The arrangement persists.** Sizes and slot assignments live apart from the document. Both go
+  to local storage under a versioned key. A panel size is not a
+  document edit, so it stays out of the undo history. A toolbar command restores the default.
+
+The editor opens on an **empty canvas**, not on the bundled sample. The canvas names the next
+action, and the toolbar keeps a command that loads the sample screen.
+
 ## 2. Manifest-driven
 
 The palette, the inspector, and validation all read `spec/component-manifest.json` at runtime and
@@ -115,7 +133,18 @@ registered on the server**. This structurally rules out a `security/inline-url` 
 an endpoint registers its request and response schema, the editor also assists in composing `body`
 and completing the response.
 
-## 5. Canvas fidelity
+## 5. Authoring overlays
+
+A document declares its sheets, alerts, and toasts in `overlays`, outside the node tree. An action
+opens one by identifier ([spec/schema.md](spec/schema.md) §3). The overlay panel lists them. It
+creates and deletes one, and edits the display options `presentation` carries (SU-0014).
+
+Every display option offers an explicit "unspecified" choice. The specification fills in no
+defaults for a key the document leaves out. The editor thus separates two cases: leaving a value
+to the client, and writing down the same value. Selecting an overlay draws it on the canvas, in
+the style the document asks for. That style is a sheet, a full-screen modal, a dialog, or a banner.
+
+## 6. Canvas fidelity
 
 The web canvas is a **third renderer**, and it does not match SwiftUI or Compose pixel for pixel (font
 metrics, line breaking, scroll inertia differ). We do not hide this; we handle it with a two-tier
@@ -144,7 +173,7 @@ Treating the device mirror as a feature to add later guarantees an accident: an 
 view's look, publishes, and the layout breaks on a real device. This is one of the most common
 failures in adopting SDUI, which is why it belongs in the initial scope.
 
-## 6. State management and undo/redo
+## 7. State management and undo/redo
 
 Zustand plus Immer. Every update to the document tree goes through an Immer producer, and **the
 generated patch and inversePatch go straight onto the history stack**.
@@ -163,7 +192,7 @@ apply(draft => {
   collaborative editing and the diff view directly**.
 - The Diff tab highlights the difference against the published version, on the tree.
 
-## 7. Validation and lint
+## 8. Validation and lint
 
 We **share** the validation implementation in `packages/core` between the editor and the server (the
 same code runs in both). The editor side debounces and runs it on every edit.
@@ -175,7 +204,7 @@ same code runs in both). The editor side debounces and runs it on every edit.
 `compat/unsupported-component` uses the measured value from delivery telemetry
 ([compatibility.md](compatibility.md) §6).
 
-## 8. Permissions and workflow
+## 9. Permissions and workflow
 
 | Role | Permissions |
 | --- | --- |
@@ -189,7 +218,7 @@ same code runs in both). The editor side debounces and runs it on every edit.
 - Concurrent editing of a draft uses **optimistic locking** (a `version` mismatch rejects the save)
   plus presence display. We do not add CRDTs in v1 (ADR-0005).
 
-## 9. Templates and component composition
+## 10. Templates and component composition
 
 A mechanism to avoid repeating the same structure. This is **v0.2 scope**, but we lay out the data
 model from the start.
@@ -201,7 +230,7 @@ model from the start.
 We inline a partial at delivery time (the client never knows about it). This keeps reference
 resolution out of the client SDK entirely.
 
-## 10. Performance notes
+## 11. Performance notes
 
 - The canvas re-renders the selected node and its ancestors alone. We memoize each node, keyed by a
   hash of its resolved props.

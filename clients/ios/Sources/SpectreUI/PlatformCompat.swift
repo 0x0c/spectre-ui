@@ -71,3 +71,31 @@ var spectreToolbarTrailingPlacement: ToolbarItemPlacement {
     .primaryAction
     #endif
 }
+
+extension View {
+    /// 全画面モーダル。macOS に `fullScreenCover` はないので、シートで代用する
+    /// (docs/spec/schema.md §3.1 の `style: "fullScreen"`)。
+    @ViewBuilder
+    func spectreFullScreenCover<Content: View>(
+        isPresented: Binding<Bool>,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        #if os(iOS)
+        self.fullScreenCover(isPresented: isPresented, content: content)
+        #else
+        self.sheet(isPresented: isPresented, content: content)
+        #endif
+    }
+}
+
+extension View {
+    /// シートの高さ。`nil` を渡した場合は指定しない (全画面・ダイアログ形式)。
+    @ViewBuilder
+    func spectreDetents(_ detents: Set<PresentationDetent>?) -> some View {
+        if let detents {
+            self.presentationDetents(detents)
+        } else {
+            self
+        }
+    }
+}

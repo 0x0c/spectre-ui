@@ -138,6 +138,7 @@
     "detents": ["medium", "large"],   // sheet のみ
     "dismissible": true,
     "title": "サイズを選択",
+    "presentation": { "style": "sheet" },   // 見え方。§3.1
     "root": { ...Node... }       // sheet のみ。alert/toast は宣言的なプロパティで表現
   },
   {
@@ -145,6 +146,7 @@
     "kind": "alert",
     "title": "削除しますか?",
     "message": "この操作は取り消せません",
+    "tone": "error",
     "buttons": [
       { "label": "キャンセル", "role": "cancel", "actions": [] },
       { "label": "削除", "role": "destructive", "actions": [ ... ] }
@@ -154,6 +156,44 @@
 ```
 
 木の中にモーダルを埋めない理由: iOS/Android でモーダル表示の仕組みが大きく異なり、木の位置に依存させると挙動が揃わない。画面レベルの状態として扱うほうが両プラットフォームで一致させやすい。
+
+### 3.1 `presentation` — 見え方の指定
+
+`kind` は**中身の形**（ノード木、ボタンの集合、消えるメッセージ）を決める。**見え方**は `presentation` が決める。同じ `kind: "sheet"` でも、ボトムシート、全画面モーダル、中央のダイアログのいずれにもできる。
+
+| キー | 型 | デフォルト | 意味 |
+| --- | --- | --- | --- |
+| `style` | `sheet` \| `fullScreen` \| `dialog` | `sheet` | 画面をどう占めるか |
+| `dimBackground` | boolean | `true` | 背後を暗転させるか |
+| `dismissOnBackdrop` | boolean | そのオーバレイの `dismissible` | 外側のタップで閉じるか |
+| `dragToDismiss` | boolean | そのオーバレイの `dismissible` | ドラッグで閉じるか |
+
+種別ごとの適用範囲は次のとおり。スキーマは範囲外のキーを**拒否する**（黙って無視しない）。
+
+| `kind` | `presentation` | 使えるキー |
+| --- | --- | --- |
+| `sheet` | 可 | 上記4つすべて |
+| `alert` | 可 | `dimBackground`、`dismissOnBackdrop`（アラートは常にダイアログで、ドラッグでは閉じない） |
+| `toast` | 不可 | — （トーストは `durationMs` で自動的に消えるバナー） |
+
+省略時のデフォルト値は、いずれも**現在のクライアントが描いているもの**と一致する。したがって `presentation` のない時代のクライアントは、未知のキーを無視して従来どおり描く（[compatibility.md](../compatibility.md) の劣化規則、ADR-0006）。
+
+プラットフォームの制約で実現できない指定が2つある。仕様として次を認める。
+
+- **iOS のシート形式では `dismissOnBackdrop` が効かない。** SwiftUI の `.sheet` は外側のタップを提供しない。ドラッグによる閉じ操作（`dragToDismiss`）は `interactiveDismissDisabled` で制御できる。
+- **iOS では、装飾を指定したアラートがシステムのアラートでなくなる。** SwiftUI の `.alert` は装飾を受け付けず、`tone` と `icon` のどちらも描けない。そこで、`tone`、`icon`、`buttonLayout` のいずれかを指定したアラートに限り、レンダラ自身が描くダイアログに切り替える。どれも指定しなければ従来どおりシステムのアラートを使う。Android の `AlertDialog` はアイコンのスロットを持つため、この切り替えは要らない。
+
+### 3.2 アラートの表示オプション
+
+`kind: "alert"` には、`presentation` とは別に、アラート自身の見せ方を決めるキーがある。
+
+| キー | 型 | デフォルト | 意味 |
+| --- | --- | --- | --- |
+| `tone` | `neutral` \| `success` \| `warning` \| `error` | `neutral` | アラート全体の調子。アイコンと強調色に反映される |
+| `icon` | iconToken | なし | 見出しに添えるアイコン |
+| `buttonLayout` | `auto` \| `horizontal` \| `vertical` | `auto` | ボタンの並べ方。`auto` はプラットフォームに委ねる |
+
+ボタンの `role: "destructive"` はそのボタン1つを赤くする指定であって、アラート全体の調子ではない。破壊的な確認では、`role` と `tone: "error"` を併せて指定する。
 
 ## 4. ノード木の例
 

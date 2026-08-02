@@ -165,6 +165,7 @@
     "overlay": {
       "type": "object",
       "required": ["id", "kind"],
+      "$comment": "kind は中身の形を、presentation は見え方を決める。SU-0014、docs/spec/schema.md §3",
       "properties": {
         "id":          { "type": "string" },
         "kind":        { "enum": ["sheet", "alert", "toast"] },
@@ -178,8 +179,9 @@
           "then": {
             "required": ["root"],
             "properties": {
-              "root":    { "$ref": "#/$defs/node" },
-              "detents": { "type": "array", "items": { "enum": ["small", "medium", "large"] } }
+              "root":         { "$ref": "#/$defs/node" },
+              "detents":      { "type": "array", "items": { "enum": ["small", "medium", "large"] } },
+              "presentation": { "$ref": "#/$defs/presentationSheet" }
             }
           }
         },
@@ -200,7 +202,11 @@
                     "actions": { "$ref": "#/$defs/actions" }
                   }
                 }
-              }
+              },
+              "tone":         { "enum": ["neutral", "success", "warning", "error"], "default": "neutral" },
+              "icon":         { "type": "string", "description": "マニフェストのアイコン名。iconToken" },
+              "buttonLayout": { "enum": ["auto", "horizontal", "vertical"], "default": "auto" },
+              "presentation": { "$ref": "#/$defs/presentationAlert" }
             }
           }
         },
@@ -208,12 +214,35 @@
           "if":   { "properties": { "kind": { "const": "toast" } } },
           "then": {
             "properties": {
-              "tone":       { "enum": ["neutral", "success", "warning", "error"], "default": "neutral" },
-              "durationMs": { "type": "integer", "minimum": 1000, "maximum": 10000, "default": 3000 }
+              "tone":         { "enum": ["neutral", "success", "warning", "error"], "default": "neutral" },
+              "durationMs":   { "type": "integer", "minimum": 1000, "maximum": 10000, "default": 3000 },
+              "presentation": false
             }
           }
         }
       ]
+    },
+
+    "presentationSheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "dismissOnBackdrop / dragToDismiss を省略したときは dismissible に従う",
+      "properties": {
+        "style":             { "enum": ["sheet", "fullScreen", "dialog"], "default": "sheet" },
+        "dimBackground":     { "type": "boolean", "default": true },
+        "dismissOnBackdrop": { "type": "boolean" },
+        "dragToDismiss":     { "type": "boolean" }
+      }
+    },
+
+    "presentationAlert": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "アラートは常にダイアログなので style を取らず、ドラッグでも閉じない",
+      "properties": {
+        "dimBackground":     { "type": "boolean", "default": true },
+        "dismissOnBackdrop": { "type": "boolean" }
+      }
     },
 
     "actions": {
