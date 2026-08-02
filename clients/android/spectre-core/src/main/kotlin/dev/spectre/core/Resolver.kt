@@ -111,22 +111,44 @@ class Resolver(
     )
 
     /**
-     * 未対応コンポーネントの劣化 (docs/compatibility.md §3)。
+     * 未対応コンポーネントの劣化 (docs/compatibility.md §3, ADR-0006)。
      *
-     * fallback -> optional による省略 -> 記録つき省略 の順に落ちる。
+     * fallback -> optional による省略 -> プレースホルダ の順に落ちる。
      * どの経路でもクラッシュしないことが不変条件。
+     *
+     * [key] は `repeat` 展開中の要素だけが持つ安定キー ([expandRepeat] 経由)。
+     * fallback やプレースホルダに落ちても要素の同一性が保てるよう引き継ぐ。
      */
-    private fun degrade(node: Node, scope: EvalScope, ctx: Context): List<RenderNode> {
+    private fun degrade(node: Node, scope: EvalScope, ctx: Context, key: String? = null): List<RenderNode> {
         val fallback = node.fallback
         if (fallback != null) {
             ctx.degradations.add(Degradation(node.type, node.id, DegradedTo.FALLBACK))
             // fallback 自体が未対応なら、その fallback へと再帰的に落ちていく。
-            return resolveNode(fallback, scope, ctx)
+            val resolved = resolveNode(fallback, scope, ctx)
+            // fallback がちょうど1ノードに解決された場合だけキーを引き継ぐ — fallback 自身が
+            // repeat や visibleWhen を持ち0件/複数件になるケースは単一の安定キーを持てない。
+            return if (key != null && resolved.size == 1) listOf(resolved[0].copy(key = key)) else resolved
         }
-        ctx.degradations.add(
-            Degradation(node.type, node.id, DegradedTo.OMITTED, intentional = node.optional)
+        if (node.optional) {
+            ctx.degradations.add(Degradation(node.type, node.id, DegradedTo.OMITTED, intentional = true))
+            return emptyList()
+        }
+        // 必須 (optional でない) かつ fallback もない — 黙って省略すると
+        // 「何かが表示されないまま失われた」ことが誰にも見えなくなる。最終手段として
+        // 汎用プレースホルダに置き換える。layout/style/a11y は型に依存しない共通の
+        // フィールドなので、未知の型でも解決して引き継げる (レイアウトの穴を防ぐ)。
+        ctx.degradations.add(Degradation(node.type, node.id, DegradedTo.PLACEHOLDER))
+        return listOf(
+            RenderNode(
+                type = PLACEHOLDER_NODE_TYPE,
+                id = node.id,
+                key = key,
+                props = mapOf("componentType" to SpValue.Str(node.type)),
+                layout = resolveValues(node.layout, scope, ctx),
+                style = resolveValues(node.style, scope, ctx),
+                a11y = resolveValues(node.a11y, scope, ctx),
+            )
         )
-        return emptyList()
     }
 
     private fun expandRepeat(
@@ -166,11 +188,11 @@ class Resolver(
             // visibleWhen は要素ごとに評価する (item を参照できる必要があるため)。
             if (condition != null && !evaluateToBoolean(condition, itemScope, ctx)) continue
 
+            val key = repeat.key?.let { evaluateToString(it, itemScope, ctx) }
             if (!supportedComponents.contains(template.type)) {
-                out.addAll(degrade(template, itemScope, ctx))
+                out.addAll(degrade(template, itemScope, ctx, key))
                 continue
             }
-            val key = repeat.key?.let { evaluateToString(it, itemScope, ctx) }
             out.add(resolveSupportedNode(template, itemScope, ctx, key))
         }
         return out

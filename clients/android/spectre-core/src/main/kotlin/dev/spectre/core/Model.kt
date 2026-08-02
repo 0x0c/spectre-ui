@@ -152,8 +152,31 @@ enum class DegradedTo {
     /** fallback ノードに置換された */
     FALLBACK,
 
-    /** 木から取り除かれた */
-    OMITTED;
+    /** 木から取り除かれた (`optional: true`) */
+    OMITTED,
 
-    val wireName: String get() = if (this == FALLBACK) "fallback" else "omitted"
+    /**
+     * 必須 (`optional` でない) かつ `fallback` もない未対応ノードが、
+     * 汎用プレースホルダに置き換えられた。
+     *
+     * 劣化の3段階 (fallback → 省略 → プレースホルダ) の最終手段
+     * (docs/compatibility.md §3, ADR-0006)。省略と違って画面上に痕跡を残すため、
+     * 「何かが表示されないまま失われた」ことが利用者にもテレメトリにも見える。
+     */
+    PLACEHOLDER;
+
+    val wireName: String get() = when (this) {
+        FALLBACK -> "fallback"
+        OMITTED -> "omitted"
+        PLACEHOLDER -> "placeholder"
+    }
 }
+
+/**
+ * 必須かつ `fallback` のない未対応ノードが劣化した先の合成コンポーネント型。
+ *
+ * [GeneratedCatalog] には現れない — マニフェスト由来のコンポーネントと衝突しない名前空間を
+ * 使うことで、レンダラはこの型だけを特別扱いして汎用プレースホルダを描ける
+ * (`docs/compatibility.md` §3 の劣化順序の最終防衛線)。
+ */
+const val PLACEHOLDER_NODE_TYPE = "Spectre.UnsupportedComponent"
