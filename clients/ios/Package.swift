@@ -8,16 +8,18 @@ let package = Package(
         .iOS(.v16),
         .macOS(.v13),
     ],
-    // VRT (SU-0015) だけが使う。SwiftPM はテストターゲットからしか参照されない依存を
-    // 利用側パッケージへ持ち込まないので、ホストアプリの依存は増えない。
-    dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
-    ],
     products: [
         // ロジックだけが必要なホスト (サーバサイド検証・CLI・テスト) 向け。
         // Foundation にしか依存しないため、SwiftUI が使えない環境でも取り込める。
         .library(name: "SpectreCore", targets: ["SpectreCore"]),
         .library(name: "SpectreUI", targets: ["SpectreUI"]),
+    ],
+    // VRT (SU-0015) だけが使う。SwiftPM はテストターゲットからしか参照されない依存を
+    // 利用側パッケージへ持ち込まないので、ホストアプリの依存は増えない。
+    // 引数の順序は `Package` の初期化子に合わせる — products より前に dependencies を
+    // 置くとマニフェスト自体がコンパイルできない。
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
     ],
     targets: [
         .target(name: "SpectreCore"),
