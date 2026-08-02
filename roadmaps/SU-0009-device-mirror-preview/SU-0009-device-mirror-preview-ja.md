@@ -62,6 +62,6 @@
 ## 参考
 
 - [ADR-0005 — WYSIWYGエディタの技術スタック](../../docs/adr/ADR-0005-editor-stack/ADR-0005-editor-stack-ja.md) — この項目が実装する二段構えのプレビューという決定です。
-- [`docs/editor.md`](../../docs/editor.md) — エディタの設計の全体です。
+- [`docs/editor.md`](../../docs/editor-ja.md) — エディタの設計の全体です。
 - [SU-0003 — M2、WYSIWYGエディタ](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md) — この項目が必須要件となっているマイルストーンです。
 - [SU-0002 — M1、iOS / Android のクライアントSDK](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md) — ミラーが表示に用いるレンダラです。

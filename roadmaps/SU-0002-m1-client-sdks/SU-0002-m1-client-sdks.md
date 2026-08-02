@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0002](SU-0002-m1-client-sdks.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Client SDK |
 | Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md) |
 <!-- /SU-METADATA -->
@@ -63,11 +63,32 @@ the SDK does not understand must degrade predictably instead of crashing.
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [x] The runtime: `DocumentLoader`, `Store`, `Resolver`, `ActionDispatcher`
+- [x] The `SpectreExpr` parser and evaluator, passing the conformance corpus in both languages
+- [x] The renderer, covering every component in catalog version 0.1
+- [x] `ThemeProvider` and the host delegate
+- [x] A three-tier cache with stale-while-revalidate
+- [x] Compatibility degradation: fallback, optional omission, and enforcement of the declared limits
+- [ ] Fuzzing and snapshot tests
+- [x] A sample application on each platform
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- This repository entered its client-implementation phase with most of the above already built.
+- `Store`, `Resolver`, `ActionDispatcher`, and the `SpectreExpr` pipeline existed already.
+- So did the Compose and SwiftUI renderers, `SpectreTheme`, and both sample apps.
+- This item's `Status` field never caught up to that work.
+- `docs/roadmap.md`'s implementation-status table tracked the gap instead.
+- This change adds `DocumentLoader` (item 1): a three-tier cache with stale-while-revalidate
+  (item 5).
+- It also connects differential re-resolve inside `Resolver`.
+- The `Expr.dependencies()` machinery existed already, but nothing wired it in until now.
+- An unaffected subtree now reuses its prior `RenderNode`s instead of a fresh walk.
+- This change wires up `focus`, `scrollTo`, and `applyPatch`.
+- All three used to dispatch but stop at an `onUnimplementedEffect` stub on both platforms.
+- Both sample apps load through `DocumentLoader` now, not a bundled JSON file directly.
+- Fuzzing and snapshot testing (item 7) stay open.
+- Every other Detailed design item now has a working, tested implementation on both platforms.
 
 ## References
 

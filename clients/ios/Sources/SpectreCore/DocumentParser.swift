@@ -15,11 +15,7 @@ public enum DocumentParser {
         guard let data = text.data(using: .utf8) else {
             throw SpectreError.parse("UTF-8 として解釈できません")
         }
-        guard data.count <= SpectreLimits.maxDocumentBytes else {
-            throw SpectreError.limitExceeded(
-                "ドキュメントが上限 \(SpectreLimits.maxDocumentBytes) バイトを超えています"
-            )
-        }
+        try checkSize(data.count)
         let value = try SpValue.from(jsonData: data)
         guard case .object = value else {
             throw SpectreError.parse("ドキュメントのトップレベルはオブジェクトです")
@@ -27,7 +23,12 @@ public enum DocumentParser {
         return try parse(value: value)
     }
 
+    /// `text` を経由しない呼び出し元 (`applyPatch` が再パースする JSON Patch の適用結果など)
+    /// のために、ここでも改めてバイト数を強制する。上限値は入り口を選ばない
+    /// (docs/architecture.md §5)。
     public static func parse(value: SpValue) throws -> Document {
+        let size = (try? JSONSerialization.data(withJSONObject: value.toJSONObject()))?.count ?? Int.max
+        try checkSize(size)
         guard let schemaVersion = value["schemaVersion"]?.asString else {
             throw SpectreError.parse("schemaVersion がありません")
         }
@@ -53,8 +54,17 @@ public enum DocumentParser {
                 try parseOverlay($0, counter)
             },
             onAppear: value["onAppear"]?.asArray ?? [],
-            onDisappear: value["onDisappear"]?.asArray ?? []
+            onDisappear: value["onDisappear"]?.asArray ?? [],
+            raw: value
         )
+    }
+
+    private static func checkSize(_ byteCount: Int) throws {
+        guard byteCount <= SpectreLimits.maxDocumentBytes else {
+            throw SpectreError.limitExceeded(
+                "ドキュメントが上限 \(SpectreLimits.maxDocumentBytes) バイトを超えています"
+            )
+        }
     }
 
     private static func parseMeta(_ value: SpValue?) -> DocumentMeta {

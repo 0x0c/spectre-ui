@@ -11,7 +11,7 @@
 ここにある項目は現時点ですべて `Proposal` ですが、この値はコードより遅れることがあります。
 このリポジトリはクライアント実装フェーズにあり、`clients/`、`packages/`、`spec/` 以下には、
 `Status` がまだ追いついていない項目の一部について、すでにコードが存在します。各領域で実際に
-何が実装済みかは [`docs/roadmap.md`](../docs/roadmap.md) を参照してください。
+何が実装済みかは [`docs/roadmap.md`](../docs/roadmap-ja.md) を参照してください。
 
 ## 項目一覧
 
@@ -125,7 +125,7 @@
 - [`docs/adr/README-ja.md`](../docs/adr/README-ja.md) — これらの項目が前提とする技術的決定を記録した
   ADR（Architecture Decision Record、アーキテクチャ決定記録）です。ADRはすでに下した決定を記録し、
   ロードマップ項目はこれから行う作業を提案します。
-- [`docs/roadmap.md`](../docs/roadmap.md) — マイルストーンの概観、見積もり、未決事項、リスク表です。
+- [`docs/roadmap.md`](../docs/roadmap-ja.md) — マイルストーンの概観、見積もり、未決事項、リスク表です。
   マイルストーン項目（SU-0001〜SU-0005）はここから起こしています。
 - [`.agent-workflows/roadmap-item/workflow.md`](../.agent-workflows/roadmap-item/workflow.md) —
   項目を書くための手順です。人とコーディングエージェントのどちらにも同じものが適用されます。

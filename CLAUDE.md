@@ -11,13 +11,16 @@ there before acting, rather than working from the summary.
 
 ## Documents come in pairs
 
-Everything under `docs/adr/` and `roadmaps/`, along with the repository's own `README.md`, exists in
+Every document under `docs/` and `roadmaps/`, along with the repository's own `README.md`, exists in
 two languages: `X.md` in English and `X-ja.md` in Japanese. English leads and Japanese mirrors it. A
 change to one side updates the other in the same change. The Japanese side is written as natural
 Japanese in 敬体 (the polite *desu/masu* style), not as a transliteration of the English — including
 the title.
 
-The other documents under `docs/` are Japanese-only today; leave that as it is unless asked.
+The four pages under `docs/spec/` are the standing exception. They remain Japanese until
+[SU-0001](roadmaps/SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), milestone
+M0, freezes the specification, so a page does not get translated twice. Once frozen, add its English
+`X.md` the same way the other pages under `docs/` already got theirs.
 
 ## Numbering is permanent
 

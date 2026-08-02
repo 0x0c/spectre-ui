@@ -11,10 +11,10 @@ Android のネイティブSDK（Software Development Kit、ソフトウェア開
 できます。画面は、あらかじめ定義された**コンポーネントカタログ**の組み合わせで作ります。
 
 本リポジトリは**クライアント実装フェーズ**にあります。技術選定と仕様を記録したドキュメントに加えて、
-iOS と Android のランタイムと、プラットフォームごとのレンダラを置いています。サーバを立てずに
-UI定義ドキュメントを描画するサンプルアプリもあります。エディタ（マイルストーンM2）と配信基盤
-（マイルストーンM3）は未着手です。各部分が何を含み、どう検証しているかは
-[docs/roadmap.md](docs/roadmap.md) に記録しています。
+iOS と Android のランタイムと、プラットフォームごとのレンダラを置いています。オーサリング・配信API
+（マイルストーンM3、`packages/server`）もここにあります。サーバを立てずに UI定義ドキュメントを描画する
+サンプルアプリもあります。エディタ（マイルストーンM2）は未着手です。各部分が何を含み、どう検証している
+かは [docs/roadmap.md](docs/roadmap-ja.md) に記録しています。
 
 ## 動かす
 
@@ -40,6 +40,14 @@ cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 
 # iOS APNsサンプルアプリ（XcodeGen が必要）
 cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
+
+# TypeScript版 SpectreExpr。Kotlin/Swift と同じ適合性コーパスで検証する（pnpm が必要）
+pnpm install
+pnpm --filter @spectre-ui/core run typecheck && pnpm --filter @spectre-ui/core run test
+
+# オーサリング・配信API: 型検査と統合テスト（pnpm と PostgreSQL が必要）
+pnpm --filter @spectre-ui/manifest run typecheck && pnpm --filter @spectre-ui/manifest run test
+cd packages/server && pnpm run typecheck && TEST_DATABASE_URL=<url> pnpm run test
 ```
 
 CI（Continuous Integration、継続的インテグレーション）は、上記のすべてのコマンドをプルリクエストごと
@@ -58,15 +66,15 @@ MkDocs で https://0x0c.github.io/spectre-ui/docs/ に置いています。
 | --- | --- |
 | [docs/adr/](docs/adr/README-ja.md) | ADR（アーキテクチャ決定記録）。1決定1ディレクトリ、英語と日本語の両方 |
 | [roadmaps/](roadmaps/README-ja.md) | ロードマップ項目。1項目1ディレクトリ、英語と日本語の両方 |
-| [docs/tech-selection.md](docs/tech-selection.md) | 技術選定の索引。前提とする制約と、ADRの一覧 |
-| [docs/architecture.md](docs/architecture.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
+| [docs/tech-selection.md](docs/tech-selection-ja.md) | 技術選定の索引。前提とする制約と、ADRの一覧 |
+| [docs/architecture.md](docs/architecture-ja.md) | 全体アーキテクチャ、コンポーネント構成、データフロー |
 | [docs/spec/schema.md](docs/spec/schema.md) | UI定義ドキュメントのスキーマ仕様 v0.1 |
 | [docs/spec/components.md](docs/spec/components.md) | コンポーネントカタログ v0.1 とデザイントークン |
 | [docs/spec/expression.md](docs/spec/expression.md) | 式言語 SpectreExpr とデータバインディング |
 | [docs/spec/actions.md](docs/spec/actions.md) | アクション仕様とサーバ応答プロトコル |
-| [docs/editor.md](docs/editor.md) | Web WYSIWYGエディタの設計 |
-| [docs/compatibility.md](docs/compatibility.md) | バージョニング、前方互換、配信とロールバックの戦略 |
-| [docs/roadmap.md](docs/roadmap.md) | マイルストーンの概観、見積もり、未決事項、リスク |
+| [docs/editor.md](docs/editor-ja.md) | Web WYSIWYGエディタの設計 |
+| [docs/compatibility.md](docs/compatibility-ja.md) | バージョニング、前方互換、配信とロールバックの戦略 |
+| [docs/roadmap.md](docs/roadmap-ja.md) | マイルストーンの概観、見積もり、未決事項、リスク |
 
 ADRとロードマップ項目は永続的な番号を持ち、1件につき1ディレクトリを占めます。各ディレクトリには、
 英語版 `X.md` と日本語版 `X-ja.md` を組で置きます。採番と書式の規則は
@@ -74,8 +82,8 @@ ADRとロードマップ項目は永続的な番号を持ち、1件につき1デ
 あります。執筆時の文章規範と手順は [.agent-workflows/](.agent-workflows/README.md) にあり、
 `.claude/skills/` のアダプタがそれを Claude Code へ読み込みます。
 
-英語が主、日本語が従です。例外は `docs/adr/` を除く `docs/` 以下のドキュメントで、現時点では日本語
-だけがあります。
+英語が主、日本語が従です。例外は `docs/spec/` 以下の仕様4文書で、マイルストーンM0が仕様を凍結する
+まで日本語だけが残ります（[SU-0011](roadmaps/SU-0011-english-first-documentation/SU-0011-english-first-documentation-ja.md)）。
 
 ## 成果物（設計サンプル）
 
@@ -97,7 +105,7 @@ ADRとロードマップ項目は永続的な番号を持ち、1件につき1デ
    言語仕様そのものに組み込みます。古いアプリバージョンが未知のコンポーネントを受け取っても、
    壊れません。
 
-## リポジトリ構成（実装フェーズの想定）
+## リポジトリ構成（目指す形。`packages/editor` はまだ存在しません）
 
 ```
 spectre-ui/
@@ -112,7 +120,7 @@ spectre-ui/
 ├── packages/                   # TypeScript モノレポ（pnpm workspace）
 │   ├── manifest/               #   マニフェストのローダと検証
 │   ├── codegen/                #   TypeScript、Swift、Kotlin のコード生成
-│   ├── core/                   #   式評価とパッチ適用の TypeScript 実装（エディタとサーバで共用）
+│   ├── core/                   #   TypeScript版 SpectreExpr。3実装目のパーサ
 │   ├── editor/                 #   React WYSIWYG エディタ
 │   └── server/                 #   オーサリングAPI と配信サービス（Fastify）
 ├── clients/

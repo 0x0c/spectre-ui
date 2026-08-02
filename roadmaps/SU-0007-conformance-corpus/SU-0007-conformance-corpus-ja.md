@@ -7,7 +7,7 @@
 |---|---|
 | 提案 | [SU-0007](SU-0007-conformance-corpus-ja.md) |
 | 提案者 | [@0x0c](https://github.com/0x0c) |
-| 状態 | **提案** |
+| 状態 | **進行中** |
 | トピック | ツール |
 | 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md) |
 <!-- /SU-METADATA -->
@@ -55,11 +55,61 @@ Spectre UI が共有実装を1つ持つのではなくネイティブなレン�
 > 作業の進行に合わせて更新します。チェックリストは*詳細設計*の分解を写したもので、ログは何がいつ
 > 変わったかを古い順に記録します。
 
-- [ ] 未着手
+- [x] `expr/` — 式の文字列とスコープに対して、評価結果の値またはエラーコードを与えます
+- [x] `binding/` — ドキュメントと状態に対して、解決済みのプロパティ値を与えます
+- [x] `actions/` — 状態とアクションの列に対して、遷移後の状態と発火した副作用の列を与えます
+- [x] `layout/` — ドキュメントに対して、レイアウト計算前の正規化された描画ノード木を与えます
+- [ ] `compat/` — ドキュメントとケイパビリティの申告に対して、劣化後のノード木を与えます
+- [x] ランタイムごとのハーネス。コーパスを直接読みます
+- [x] 仕様変更とコーパス変更を結びつける継続的インテグレーションの規則
 
 **ログ**
 
-- 作業は未着手です。リポジトリは設計フェーズにあります。
+- 本リポジトリは、クライアント実装フェーズに入った時点ですでに `expr/` と `resolve/` を備えていました。
+- `resolve/` には `resolver.json` と `actions.json` があり、合計234ケースです。
+- Kotlin と Swift は `ConformanceExprTest`/`ConformanceResolveTest` と `ConformanceTests` で、
+  すでにこれらを実行しています。
+- `resolve/resolver.json` は `RenderNode` の部分木全体を検証しており、単一のプロパティ値だけに
+  とどまりません。
+- そのため `binding/` と `layout/` の両方の実質的な置き場所になっています。
+- 設計は両者を別ディレクトリとして分けていますが、実際にはその区分が成立しません。
+- 解決済みプロパティ値の検証と、その周辺の木構造の検証は、同じ1つの確認になるからです。
+- 今回の変更は、欠けていた3つ目のハーネス `packages/core` を追加します。
+- `packages/core` は、手書きのTypeScript版 `SpectreExpr` パーサと評価器です。
+- 移植は、Kotlin実装を1行ずつなぞる形で進めました。
+- `docs/spec/expression.md` §6・§7 は、この3つ目のパーサを明示的に要求しています。
+- この変更より前には、それが存在しませんでした。
+- `packages/core/test/conformance.test.ts` は `spec/conformance/expr/*.json` を直接読みます。
+- Kotlin と Swift がすでに実行している同じ199ケースを実行します。
+- 移植したコードに対して、初回の実行でそのまま通りました。
+- 今回の変更は、項目7を強制するCIのステップも追加します。
+- あるプルリクエストが `docs/spec/` やマニフェストを変更しながら `spec/conformance/` を
+  変更しない場合、`codegen` ジョブが失敗するようになりました。
+- `compat/` は未着手のまま残します。
+- 検証対象となる実際のケイパビリティ劣化が、まだ存在しないからです。
+- それは [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md)
+  であり、この変更の時点ではまだ「提案」のままです。
+- これは見落としではなく、実在の依存関係によるブロックです。
+- `packages/core` は、JSON Patch や依存パス抽出をまだカバーしていません。
+- `expr/` コーパスが検証するパーサと評価器の範囲にとどまります。
+- 新しい文脈でのレビューにより、この移植がKotlinと食い違いうる箇所が7か所見つかりました。
+- 現行のコーパスは、そのどれも検出できません。
+- オブジェクトリテラルを `out[k] = value` で組み立てると、`__proto__` という名前のキーが
+  `Object.prototype` のアクセサに届いてしまっていました。
+- 今は `Object.create(null)` で組み立てるため、そのキーは通常のプロパティになります。
+- `<`・`<=`・`>`・`>=` は、素のJavaScriptの比較を使っていました。
+- これは `NaN` と符号付きゼロについて、Kotlinの `Double.compareTo` と食い違います。
+- 新しい `compareNumbers` ヘルパーが、Kotlinの順序に合わせます。
+- `first`・`last` は、配列でない引数に対して余計な `E_TYPE` を記録していました。
+- Kotlinはここで何も記録しません。この移植も、今はそれに合わせています。
+- `round` の桁数と `slice` の範囲は、小数のままの数値を切り捨てずに使っていました。
+- Kotlinの `Double.toInt()` は先にこれを丸めます。共有ヘルパー `toIntTruncating` が今は同じ
+  丸め方をします。
+- `compareVersions` は、`-5` のようなバージョン区間を負の数として読んでいました。
+- Kotlinは区間の先頭の数字の並びだけを読み、残りは捨てます。この移植も今は一致します。
+- `toNumber` は、JavaScript独自の `0x`・`0o`・`0b` というリテラル構文を受け付けていました。
+- Kotlinのパーサはこの構文を受け付けないため、この移植も受け付けないようにしました。
+- 修正後も、`expr/` の199ケースはすべて通ります。
 
 ## 参考
 

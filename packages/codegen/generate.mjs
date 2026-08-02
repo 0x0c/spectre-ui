@@ -260,6 +260,262 @@ public enum SpectreLimits {
 }
 
 // ---------------------------------------------------------------------------
+// TypeScript
+// ---------------------------------------------------------------------------
+//
+// エディタ (SU-0003) とサーバ (SU-0004) が消費する型 (ADR-0007)。式言語
+// (SpectreExpr) そのものは検証しない — `expression: true` の項目は解決前の
+// テンプレート文字列でありうるため `string` を和で足す。`layout` / `style` /
+// `a11y` / アクションごとの固有フィールドはマニフェストの情報源ではなく
+// spec/schema/document.schema.json / docs/spec/actions.md 側にあるため、
+// ここでは緩い型に留める (誤って権威を持たせない)。
+
+function pascalCase(name) {
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+function tsEnumLiteral(v) {
+  return typeof v === 'string' ? JSON.stringify(v) : String(v)
+}
+
+function typeScriptSource() {
+  const interfaces = []
+
+  function emitObjectType(shape, name) {
+    const fields = Object.entries(shape).map(([propName, spec]) => {
+      const optional = spec.required ? '' : '?'
+      const nullable = spec.nullable ? ' | null' : ''
+      let propType = resolveType(spec, `${name}${pascalCase(propName)}`)
+      if (spec.expression && propType !== 'string') propType = `${propType} | string`
+      const doc = spec.description ? `  /** ${spec.description} */\n` : ''
+      return `${doc}  ${propName}${optional}: ${propType}${nullable}`
+    })
+    interfaces.push(`export interface ${name} {\n${fields.join('\n')}\n}`)
+    return name
+  }
+
+  function resolveType(spec, namePrefix) {
+    switch (spec.type) {
+      case 'string':
+        return 'string'
+      case 'boolean':
+        return 'boolean'
+      case 'number':
+        return 'number'
+      case 'expression':
+        return 'string'
+      case 'statePath':
+        return 'string'
+      case 'colorToken':
+        return 'ColorToken'
+      case 'spacingToken':
+        return 'SpacingToken'
+      case 'radiusToken':
+        return 'RadiusToken'
+      case 'typographyToken':
+        return 'TypographyToken'
+      case 'iconToken':
+        return 'IconToken'
+      case 'actions':
+        return 'SpectreAction[]'
+      case 'node':
+        return 'SpectreNode'
+      case 'layout':
+        return 'SpectreLayout'
+      case 'style':
+        return 'SpectreStyle'
+      case 'a11y':
+        return 'SpectreA11y'
+      case 'repeat':
+        return 'SpectreRepeat'
+      case 'enum':
+        return spec.values.map(tsEnumLiteral).join(' | ')
+      case 'union':
+        return spec.of.map((o, i) => resolveType(o, `${namePrefix}Option${i}`)).join(' | ')
+      case 'array':
+        return `${resolveType(spec.items ?? { type: 'string' }, `${namePrefix}Item`)}[]`
+      case 'object':
+        return spec.shape ? emitObjectType(spec.shape, namePrefix) : 'Record<string, unknown>'
+      default:
+        return 'unknown'
+    }
+  }
+
+  function componentPropsType(component) {
+    const shape = component.props ?? {}
+    if (Object.keys(shape).length === 0) return 'Record<string, never>'
+    return emitObjectType(shape, `${component.name}Props`)
+  }
+
+  const propsTypeByComponent = manifest.components.map((c) => ({
+    name: c.name,
+    propsType: componentPropsType(c),
+  }))
+
+  const tokenAliases = [
+    `export type ColorToken = ${manifest.tokens.color.map(kq).join(' | ')}`,
+    `export type SpacingToken = ${Object.keys(manifest.tokens.spacing).map(kq).join(' | ')}`,
+    `export type RadiusToken = ${Object.keys(manifest.tokens.radius).map(kq).join(' | ')}`,
+    `export type TypographyToken = ${manifest.tokens.typography.map(kq).join(' | ')}`,
+    `export type ElevationToken = ${manifest.tokens.elevation.join(' | ')}`,
+  ].join('\n')
+
+  const nodeUnion = propsTypeByComponent
+    .map(({ name, propsType }) => `  | { type: ${kq(name)}; props: ${propsType} }`)
+    .join('\n')
+
+  return `${header('typescript')}// spec/component-manifest.json (manifestVersion ${manifest.manifestVersion}) から生成。
+
+export const SCHEMA_VERSION = ${kq(manifest.schemaVersion)}
+export const MANIFEST_VERSION = ${kq(manifest.manifestVersion)}
+
+// -- トークン -----------------------------------------------------------------
+
+${tokenAliases}
+export type IconToken = string
+
+// -- 共通の枠組み (spec/schema/document.schema.json が情報源) ------------------
+
+export type Expression = string
+export type StatePath = string
+
+export interface SpectreLayout {
+  padding?: SpacingToken | Partial<Record<'top' | 'leading' | 'bottom' | 'trailing', SpacingToken>>
+  margin?: SpacingToken | Partial<Record<'top' | 'leading' | 'bottom' | 'trailing', SpacingToken>>
+  width?: 'fill' | 'wrap' | number
+  height?: 'fill' | 'wrap' | number
+  weight?: number
+  alignSelf?: 'start' | 'center' | 'end' | 'stretch'
+  aspectRatio?: number
+}
+
+export interface SpectreStyle {
+  background?: ColorToken
+  foreground?: ColorToken
+  radius?: RadiusToken
+  border?: { color: ColorToken; width?: number }
+  elevation?: ElevationToken
+  opacity?: number
+}
+
+export interface SpectreA11y {
+  label?: Expression
+  hint?: Expression
+  role?: 'button' | 'image' | 'header' | 'link' | 'none'
+  hidden?: boolean
+  liveRegion?: 'off' | 'polite' | 'assertive'
+}
+
+export interface SpectreRepeat {
+  for: Expression
+  as?: string
+  indexAs?: string
+  key?: Expression
+  limit?: number
+  emptyView?: SpectreNode
+}
+
+export type SpectreActionType = ${actionNames.map(kq).join(' | ')}
+
+/**
+ * アクションの共通形。type ごとの固有フィールドはマニフェストの対象外
+ * (docs/spec/actions.md が情報源) — ここでは緩い型に留める。
+ */
+export interface SpectreAction {
+  type: SpectreActionType
+  continueOnError?: boolean
+  required?: boolean
+  fallbackActions?: SpectreAction[]
+  [key: string]: unknown
+}
+
+// -- コンポーネントの props ----------------------------------------------------
+
+${interfaces.join('\n\n')}
+
+// -- ノード木 -------------------------------------------------------------------
+
+export type SpectreNodeType = ${propsTypeByComponent.map(({ name }) => kq(name)).join(' | ')}
+
+interface SpectreNodeCommon {
+  id?: string
+  visibleWhen?: Expression
+  repeat?: SpectreRepeat
+  layout?: SpectreLayout
+  style?: SpectreStyle
+  a11y?: SpectreA11y
+  fallback?: SpectreNode
+  optional?: boolean
+  children?: SpectreNode[]
+}
+
+export type SpectreNode = SpectreNodeCommon &
+  (
+${nodeUnion}
+  )
+
+// -- ドキュメント ---------------------------------------------------------------
+
+export interface SpectreDocument {
+  schemaVersion: string
+  id: string
+  version?: string
+  meta?: {
+    title?: string
+    statePolicy?: 'reset' | 'preserve'
+    pullToRefresh?: boolean
+    refreshIntervalSec?: number | null
+  }
+  data?: Record<string, unknown>
+  state?: Record<string, unknown>
+  root: SpectreNode
+  overlays?: SpectreOverlay[]
+  onAppear?: SpectreAction[]
+  onDisappear?: SpectreAction[]
+}
+
+export type SpectreOverlay =
+  | {
+      id: string
+      kind: 'sheet'
+      root: SpectreNode
+      detents?: ('small' | 'medium' | 'large')[]
+      title?: Expression
+      dismissible?: boolean
+    }
+  | {
+      id: string
+      kind: 'alert'
+      title?: Expression
+      message?: Expression
+      buttons: { label: Expression; role?: 'default' | 'cancel' | 'destructive'; actions?: SpectreAction[] }[]
+      dismissible?: boolean
+    }
+  | {
+      id: string
+      kind: 'toast'
+      message?: Expression
+      tone?: 'neutral' | 'success' | 'warning' | 'error'
+      durationMs?: number
+      dismissible?: boolean
+    }
+
+// -- limits (docs/architecture.md §5) ------------------------------------------
+
+export const SpectreLimits = {
+  maxNodes: ${limits.maxNodes},
+  maxDepth: ${limits.maxDepth},
+  maxDocumentBytes: ${limits.maxDocumentBytes},
+  maxExprAstNodes: ${limits.maxExprAstNodes},
+  maxExprDepth: ${limits.maxExprDepth},
+  maxRepeatItems: ${limits.maxRepeatItems},
+  maxActionsPerDispatch: ${limits.maxActionsPerDispatch},
+  maxActionNesting: ${limits.maxActionNesting},
+} as const
+`
+}
+
+// ---------------------------------------------------------------------------
 // 出力
 // ---------------------------------------------------------------------------
 
@@ -271,6 +527,10 @@ const outputs = [
   {
     path: 'clients/ios/Sources/SpectreCore/GeneratedCatalog.swift',
     content: swiftSource(),
+  },
+  {
+    path: 'packages/manifest/src/generated.ts',
+    content: typeScriptSource(),
   },
 ]
 

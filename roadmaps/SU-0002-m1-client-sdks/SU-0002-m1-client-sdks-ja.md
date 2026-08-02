@@ -7,7 +7,7 @@
 |---|---|
 | 提案 | [SU-0002](SU-0002-m1-client-sdks-ja.md) |
 | 提案者 | [@0x0c](https://github.com/0x0c) |
-| 状態 | **提案** |
+| 状態 | **進行中** |
 | トピック | クライアントSDK |
 | 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md) |
 <!-- /SU-METADATA -->
@@ -60,11 +60,32 @@ SDUI（Server-Driven UI、サーバードリブンUI）が信頼を得るか失�
 > 作業の進行に合わせて更新します。チェックリストは*詳細設計*の分解を写したもので、ログは何がいつ
 > 変わったかを古い順に記録します。
 
-- [ ] 未着手
+- [x] ランタイム。`DocumentLoader`、`Store`、`Resolver`、`ActionDispatcher`
+- [x] `SpectreExpr` のパーサと評価器。両言語で適合性コーパスを通す
+- [x] レンダラ。カタログ v0.1 の全コンポーネントをカバー
+- [x] `ThemeProvider` とホストデリゲート
+- [x] stale-while-revalidate を伴う3層キャッシュ
+- [x] 互換性のための劣化処理。フォールバック、`optional` による省略、申告された上限値の強制
+- [ ] ファジングテストとスナップショットテスト
+- [x] 各プラットフォームのサンプルアプリ
 
 **ログ**
 
-- 作業は未着手です。リポジトリは設計フェーズにあります。
+- このリポジトリはクライアント実装フェーズに入った時点で、上記の大半がすでに作られていました。
+- `Store`、`Resolver`、`ActionDispatcher`、`SpectreExpr` の一式はすでに存在していました。
+- Compose と SwiftUI 両レンダラ、`SpectreTheme`、両プラットフォームのサンプルアプリも同様です。
+- この項目の `Status` は、その実装に追いついていませんでした。
+- `docs/roadmap.md` の実装状況表が、代わりにその差分を追ってきました。
+- この変更は `DocumentLoader`（項目1）を追加します。
+- stale-while-revalidate を伴う3層キャッシュ（項目5）です。
+- `Resolver` 内の差分再解決も、この変更で接続しました。
+- `Expr.dependencies()` の仕組みはすでにありましたが、これまで接続されていませんでした。
+- 変更の影響を受けない部分木は、前回の `RenderNode` をそのまま使い回すようになりました。
+- `focus` / `scrollTo` / `applyPatch` の配線も、この変更に含まれます。
+- これまで3つとも、両プラットフォームで `onUnimplementedEffect` のスタブに留まっていました。
+- 両サンプルアプリも、バンドル済み JSON を直接読まず `DocumentLoader` 経由で読み込むようになりました。
+- 残るのはファジングテストとスナップショットテスト（項目7）だけです。
+- 詳細設計のそれ以外は、両プラットフォームで動作しテスト済みの実装が揃いました。
 
 ## 参考
 
@@ -72,4 +93,4 @@ SDUI（Server-Driven UI、サーバードリブンUI）が信頼を得るか失�
 - [SU-0001 — M0、仕様の凍結](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md) — このマイルストーンが使う仕様と生成された型です。
 - [SU-0007 — 適合性コーパス](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md) — ランタイム間の一致に対する受け入れ基準です。
 - [SU-0008 — ケイパビリティネゴシエーションとノード単位のフォールバック](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md) — ここで実装する劣化の挙動です。
-- [`docs/architecture.md`](../../docs/architecture.md) — ランタイムの層構成です。
+- [`docs/architecture.md`](../../docs/architecture-ja.md) — ランタイムの層構成です。

@@ -21,7 +21,7 @@
 キャッシュのモデルが必要です。
 
 この記録は、組織にこれと異なる方針がすでにあるわけではない、という前提を置いています。この前提は未確認の
-ものとして [`docs/roadmap.md`](../../roadmap.md) の未決事項に記載しています。
+ものとして [`docs/roadmap.md`](../../roadmap-ja.md) の未決事項に記載しています。
 
 ## 検討した選択肢
 
@@ -74,4 +74,4 @@ CDNの背後で計測した画面解決のレイテンシが、ネットワー�
 - [ADR-0005 — WYSIWYGエディタの技術スタック](../ADR-0005-editor-stack/ADR-0005-editor-stack-ja.md) — このバックエンドがコードを共有する相手です。
 - [ADR-0006 — バージョニングと前方互換性](../ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility-ja.md) — 配信APIが応答するネゴシエーションです。
 - [SU-0004 — M3、オーサリングと配信の基盤](../../../roadmaps/SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md) — 両サービスを作る作業です。
-- [`docs/architecture.md`](../../architecture.md) — 構成要素とデータフローの全体像です。
+- [`docs/architecture.md`](../../architecture-ja.md) — 構成要素とデータフローの全体像です。

@@ -1,49 +1,54 @@
-# 技術選定
+**English** · [日本語](tech-selection-ja.md)
 
-技術上の決定は、1件につき1つの **ADR**（Architecture Decision Record、アーキテクチャ決定記録）として
-[`docs/adr/`](adr/README-ja.md) 以下に日英両方で置いています。各記録は「文脈 → 検討した選択肢 → 決定 →
-根拠 → 代償 → 再検討のトリガー」の順で書かれます。このページは、それらが共通して前提とする制約と、
-選定結果の一覧を示す索引です。
+# Tech selection
 
-## 前提として置いた制約
+We record each technical decision as one **ADR** (Architecture Decision Record), in both English and
+Japanese, under [`docs/adr/`](adr/README.md). Each record reads context, options considered,
+decision, rationale, consequences, and revisit triggers, in that order. This page is the index: the
+constraints every record assumes as a premise, and the list of what we chose.
 
-未確認のものは [roadmap.md](roadmap.md) の未決事項に再掲しています。
+## Constraints assumed as a premise
 
-- ライブラリは**既存のホストアプリに組み込まれる**。バイナリサイズと依存の少なさは機能より優先度が高い。
-- UIを編集するのは**エンジニアではない担当者**（企画・マーケ・CS）を想定する。したがってコンポーネントは
-  閉じた集合で、自由なスタイリングは許さない。
-- 対象は iOS / Android のネイティブアプリ。Web は**編集用インタフェース**であってレンダリング先ではない。
-- 想定規模は数十〜数百画面、日次で数回の公開。ミリ秒単位の低レイテンシ配信ではなく、CDNキャッシュ前提でよい。
+We restate the ones still unconfirmed among the open questions in [roadmap.md](roadmap.md).
 
-## 決定の一覧
+- The library **embeds into an existing host application**. Binary size and a small dependency
+  footprint outrank new features.
+- We assume the people who edit the UI are **not engineers** (planning, marketing, customer
+  support). The component set is closed as a result, and free-form styling is not allowed.
+- The targets are native iOS and Android applications. The web is an **editing interface**, not a
+  render target.
+- We size the system for tens to several hundred screens, published several times a day. We do not
+  need millisecond-level low-latency delivery; a CDN-cached model is enough.
 
-| ID | 決定 | 要旨 |
+## The list of decisions
+
+| ID | Decision | Summary |
 | --- | --- | --- |
-| [ADR-0001](adr/ADR-0001-client-rendering-strategy/ADR-0001-client-rendering-strategy-ja.md) | クライアントのレンダリング方式 | ネイティブ2実装。共有するのはコードではなく、仕様・生成された型・適合性コーパス |
-| [ADR-0002](adr/ADR-0002-component-manifest-single-source/ADR-0002-component-manifest-single-source-ja.md) | コンポーネントマニフェストを単一の情報源にする | JSONのマニフェストから、スキーマ・各言語の型・エディタのパレットとインスペクタを生成する |
-| [ADR-0003](adr/ADR-0003-ui-document-format/ADR-0003-ui-document-format-ja.md) | UI定義のワイヤ形式 | JSON と JSON Schema 2020-12。人が読めて差分が取れることを優先する |
-| [ADR-0004](adr/ADR-0004-expression-language/ADR-0004-expression-language-ja.md) | 式言語とデータバインディング | 独自の `SpectreExpr`。意図的にチューリング完全にしない |
-| [ADR-0005](adr/ADR-0005-editor-stack/ADR-0005-editor-stack-ja.md) | WYSIWYGエディタの技術スタック | React 19 + TypeScript + Vite。近似プレビューと実機ミラーの二段構え |
-| [ADR-0006](adr/ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility-ja.md) | バージョニングと前方互換性 | ケイパビリティネゴシエーション、ノード単位のフォールバック、加算のみの進化 |
-| [ADR-0007](adr/ADR-0007-backend-stack/ADR-0007-backend-stack-ja.md) | バックエンドと配信の形 | Node 22 + Fastify + PostgreSQL(JSONB) + S3 + CDN。ロールバックはポインタの差し替え |
-| [ADR-0008](adr/ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy-ja.md) | 適合性テスト戦略 | 実装非依存のコーパスで3ランタイムの一致を機械的に保証する |
+| [ADR-0001](adr/ADR-0001-client-rendering-strategy/ADR-0001-client-rendering-strategy.md) | Client rendering strategy | Two native implementations. They share not code but the specification, the generated types, and the conformance corpus |
+| [ADR-0002](adr/ADR-0002-component-manifest-single-source/ADR-0002-component-manifest-single-source.md) | The component manifest as the single source of truth | Generate the schema, each language's types, and the editor's palette and inspector from the JSON manifest |
+| [ADR-0003](adr/ADR-0003-ui-document-format/ADR-0003-ui-document-format.md) | The wire format of a UI definition | JSON and JSON Schema 2020-12. We prioritize human readability and diffability |
+| [ADR-0004](adr/ADR-0004-expression-language/ADR-0004-expression-language.md) | The expression language and data binding | A purpose-built `SpectreExpr`, deliberately not Turing-complete |
+| [ADR-0005](adr/ADR-0005-editor-stack/ADR-0005-editor-stack.md) | The WYSIWYG editor's technology stack | React 19, TypeScript, and Vite, with a two-tier setup of an approximate preview and a device mirror |
+| [ADR-0006](adr/ADR-0006-versioning-and-forward-compatibility/ADR-0006-versioning-and-forward-compatibility.md) | Versioning and forward compatibility | Capability negotiation, per-node fallback, and additive-only evolution |
+| [ADR-0007](adr/ADR-0007-backend-stack/ADR-0007-backend-stack.md) | The backend stack and the shape of delivery | Node 22, Fastify, PostgreSQL (JSONB), S3, and a CDN. Rollback is a pointer swap |
+| [ADR-0008](adr/ADR-0008-conformance-testing-strategy/ADR-0008-conformance-testing-strategy.md) | The conformance testing strategy | An implementation-independent corpus that mechanically guarantees agreement across the three runtimes |
 
-## 選定サマリ
+## Selection summary
 
-| 領域 | 採用技術 |
+| Area | Technology chosen |
 | --- | --- |
-| iOS SDK | Swift 6 / SwiftUI (iOS 16+), Swift Package Manager |
-| Android SDK | Kotlin / Jetpack Compose (minSdk 24), Gradle |
-| UI定義形式 | JSON + JSON Schema 2020-12 |
-| 式言語 | 独自 `SpectreExpr` (非チューリング完全) |
-| 単一の情報源 | `spec/component-manifest.json` + コード生成 |
-| エディタ | React 19 + TypeScript + Vite + dnd-kit + Zustand/Immer |
-| バックエンド | Node 22 + Fastify + PostgreSQL(JSONB) + S3 + CDN |
-| 画像読み込み | iOS: Nuke / Android: Coil |
-| 整合性担保 | 言語非依存の適合性コーパス + プラットフォーム内スナップショットテスト |
+| iOS SDK | Swift 6, SwiftUI (iOS 16+), Swift Package Manager |
+| Android SDK | Kotlin, Jetpack Compose (minSdk 24), Gradle |
+| UI definition format | JSON, JSON Schema 2020-12 |
+| Expression language | Purpose-built `SpectreExpr` (not Turing-complete) |
+| Single source of truth | `spec/component-manifest.json`, plus code generation |
+| Editor | React 19, TypeScript, Vite, dnd-kit, Zustand/Immer |
+| Backend | Node 22, Fastify, PostgreSQL (JSONB), S3, CDN |
+| Image loading | Nuke on iOS, Coil on Android |
+| Consistency guarantee | A language-independent conformance corpus, plus per-platform snapshot tests |
 
-## 記録を追加・変更するには
+## Adding or changing a record
 
-採番の規則、書式、状態の値、そして置き換え（supersede）の手順は
-[`docs/adr/README-ja.md`](adr/README-ja.md) にあります。承認済みの記録は書き換えず、新しい記録で
-置き換えます。当時何を信じてそう決めたのかという記録を残すためです。
+The numbering rules, the format, the status values, and the supersede procedure live in
+[`docs/adr/README.md`](adr/README.md). We never rewrite an accepted record; we replace it with a new
+one, so the record of what we believed at the time, and why, survives.

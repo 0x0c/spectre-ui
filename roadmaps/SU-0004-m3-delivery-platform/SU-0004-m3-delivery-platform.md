@@ -7,7 +7,7 @@
 |---|---|
 | Proposal | [SU-0004](SU-0004-m3-delivery-platform.md) |
 | Author | [@0x0c](https://github.com/0x0c) |
-| Status | **Proposal** |
+| Status | **In progress** |
 | Topic | Delivery |
 | Related | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md) |
 <!-- /SU-METADATA -->
@@ -59,11 +59,36 @@ capability, so an application that predates a component still receives a tree it
 > Keep this current as work proceeds. The checklist mirrors the breakdown in *Detailed design*;
 > the log records what changed and when, oldest first.
 
-- [ ] Not started
+- [x] The authoring API: drafts / validation / publication / rollback / an audit log
+- [ ] The delivery API: capability negotiation, ETag, and CDN configuration
+- [ ] Permissions and workflow, including an approval step before publication
+- [x] Registration and management of logical endpoints
+- [x] Telemetry collection and adoption-rate aggregation
 
 **Log**
 
-- No work has begun; the repository is in its design phase.
+- This change adds `packages/server`, a Fastify service against PostgreSQL (ADR-0007).
+- The authoring API covers all five actions item 1 names.
+- Drafting uses optimistic locking; publishing validates against `@spectre-ui/manifest` first.
+- Rollback works by inserting a new `releases` row at the old `version_id`.
+- It never rewrites `document_versions`, keeping every version immutable.
+- The delivery API serves `GET /screens/:screenId` with `ETag` and 304 support.
+- It also serves the immutable `GET /d/:documentId/:versionId` and `GET /manifest/:schemaVersion`.
+- It does not yet shape the tree by declared capability; that half of item 2 waits on SU-0008.
+- The `documents` and `releases` tables are the logical-endpoint registry item 4 asks for.
+- `POST /api/telemetry` and `GET /api/screens/:screenId/adoption` land item 5 in full.
+- Item 3 (permissions and workflow) has a stand-in, not a real implementation.
+- Production publishes require an `approvedBy` distinct from the requester.
+- No real authentication or role-based access exists yet, so every requester is self-reported.
+- 23 integration tests exercise the full flow against a real PostgreSQL instance.
+- `packages/manifest` grew a runtime loader and a structural validator alongside its generated
+  types. That closes part of SU-0006 item 2 as a side effect.
+- A review pass found that a concurrent publish or rollback could create two active releases.
+- A partial unique index on `releases` now blocks the second insert; the route replies with 409.
+- The same pass found that `POST`/`PUT /api/documents/...` skipped the resource limits
+  `/validate` and `/publish` already enforced. Both routes now call `checkResourceLimits` first.
+- A default error handler now hides raw Postgres and Node error text behind a generic message.
+- Telemetry inserts run inside per-event savepoints, so one bad event no longer sinks the batch.
 
 ## References
 

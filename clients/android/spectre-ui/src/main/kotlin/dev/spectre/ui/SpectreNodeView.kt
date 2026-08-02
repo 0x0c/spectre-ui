@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import dev.spectre.core.PLACEHOLDER_NODE_TYPE
 import dev.spectre.core.RenderNode
 import dev.spectre.ui.components.BadgeView
 import dev.spectre.ui.components.ButtonView
@@ -28,6 +29,7 @@ import dev.spectre.ui.components.TabsView
 import dev.spectre.ui.components.TextFieldView
 import dev.spectre.ui.components.TextView
 import dev.spectre.ui.components.ToggleView
+import dev.spectre.ui.components.UnsupportedComponentView
 import dev.spectre.ui.components.VStackView
 import dev.spectre.ui.components.ZStackView
 
@@ -85,6 +87,10 @@ fun SpectreNodeView(node: RenderNode, modifier: Modifier = Modifier) {
         "Slider" -> SliderView(node, modifier)
         "Stepper" -> StepperView(node, modifier)
         "DatePicker" -> DatePickerView(node, modifier)
+
+        // 未対応コンポーネントの劣化の最終手段 (docs/compatibility.md §3, ADR-0006)。
+        // Resolver が fallback も optional もない未知ノードをここに置き換えて渡す。
+        PLACEHOLDER_NODE_TYPE -> UnsupportedComponentView(node, modifier)
 
         // Screen はルート専用。SpectreScreen が直接処理するのでここには来ない。
         else -> Unit

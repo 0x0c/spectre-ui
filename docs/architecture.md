@@ -1,11 +1,13 @@
-# アーキテクチャ
+**English** · [日本語](architecture-ja.md)
 
-## 1. 全体像
+# Architecture
+
+## 1. Overview
 
 ```
                         ┌──────────────────────────────────────┐
                         │  spec/component-manifest.json        │
-                        │  spec/tokens.json                    │  単一の情報源
+                        │  spec/tokens.json                    │  single source of truth
                         └───────────────┬──────────────────────┘
                                         │ codegen
               ┌─────────────────────────┼─────────────────────────┐
@@ -37,19 +39,21 @@
                                 ▼                   ▼
                         ┌────────────────────────────────────┐
                         │  Host App (delegate / handlers)    │
-                        │  認証・ナビゲーション・カスタム動作 │
+                        │  Authentication, navigation,       │
+                        │  custom behavior                    │
                         └────────────────────────────────────┘
 ```
 
-## 2. クライアントSDKの内部構成
+## 2. The client SDK's internal structure
 
-iOS / Android で同じレイヤ構成をとる。名前も揃える（レビュー時に対応が追える）。
+iOS and Android take the same layering, with matching layer names, so a reviewer can trace the same
+concept across platforms.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ Public API                                                   │
 │   SpectreScreen(screenId:) / SpectreScreen(document:)        │
-│   SpectreClient  … 設定・キャッシュ・デリゲート登録          │
+│   SpectreClient  … configuration, cache, delegate registration│
 └───────────────────────────┬──────────────────────────────────┘
                             │
 ┌───────────────────────────▼──────────────────────────────────┐
@@ -57,56 +61,69 @@ iOS / Android で同じレイヤ構成をとる。名前も揃える（レビュ
 │                                                              │
 │  ┌────────────┐  ┌────────────┐  ┌────────────────────────┐  │
 │  │ DocumentLoader│ │ Store      │  │ ActionDispatcher      │  │
-│  │  fetch/cache │ │ state+data │  │  順次実行・副作用管理  │  │
+│  │  fetch/cache │ │ state+data │  │  sequential execution, │  │
+│  │              │  │            │  │  side-effect management│  │
 │  └──────┬─────┘  └─────┬──────┘  └──────────┬─────────────┘  │
 │         │              │                     │               │
 │  ┌──────▼──────────────▼─────────────────────▼─────────────┐ │
 │  │ Resolver                                                │ │
-│  │   式評価 (SpectreExpr) / バインディング解決 /            │ │
-│  │   visibleWhen 判定 / repeat 展開 / 互換性の劣化処理      │ │
+│  │   Expression evaluation (SpectreExpr), binding           │ │
+│  │   resolution, visibleWhen evaluation, repeat expansion,  │ │
+│  │   compatibility degradation                              │ │
 │  └──────────────────────┬──────────────────────────────────┘ │
 │                         ▼                                    │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │ RenderTree  … 解決済みの純粋なノード木 (式を含まない)    │ │
+│  │ RenderTree  … a resolved, pure node tree (no expressions)│ │
 │  └──────────────────────┬──────────────────────────────────┘ │
 └─────────────────────────┼────────────────────────────────────┘
                           ▼
 ┌──────────────────────────────────────────────────────────────┐
-│ Renderer   ← ここだけがプラットフォーム固有                  │
-│   SwiftUI View / Composable への写像。1コンポーネント1ファイル│
-│   ThemeProvider (トークン → 実際の色・フォント)              │
+│ Renderer   ← the only platform-specific layer                │
+│   Maps to SwiftUI views or composables, one file per          │
+│   component                                                   │
+│   ThemeProvider (tokens → actual colors and fonts)            │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 各レイヤの責務
+### Each layer's responsibility
 
 **DocumentLoader**
-- `screenId` → HTTP GET。ETag / `If-None-Match` による条件付きリクエスト。
-- 3層キャッシュ: メモリ (LRU) → ディスク → アプリ同梱のバンドル済みフォールバック。
-- **stale-while-revalidate**: 期限切れキャッシュを即座に描画し、裏で更新して差し替える。初回以外は必ず即時描画になる。
-- ネットワーク到達不能かつキャッシュなしのときに何を出すかはホストアプリが決める（デリゲート）。
+- `screenId` → an HTTP GET, with a conditional request via ETag / `If-None-Match`.
+- A three-tier cache: memory (LRU) → disk → a bundled fallback shipped with the application.
+- **Stale-while-revalidate**: render an expired cache entry without delay, then refresh it in the
+  background and swap it in. Every render past the first happens this way.
+- The host application decides, through its delegate, what to show when the network is unreachable
+  and no cache exists.
 
 **Store**
-- 2つのスコープを持つ。`data`（サーバ提供、不変）と `state`（クライアント可変）。
-- `state` の更新は必ず `setState` アクション経由。パスベース (`form.email`) の更新で、購読しているノードのみ再描画する。
-- 画面のライフサイクルに紐づく。再取得時に `state` を保持するか破棄するかはドキュメント側の `statePolicy` で指定。
+- Holds two scopes: `data` (server-provided, immutable) and `state` (client-mutable).
+- Every `state` update goes through the `setState` action. A path-based update (`form.email`)
+  re-renders only the nodes subscribed to that path.
+- Tied to the screen's lifecycle. The document's own `statePolicy` says whether a refetch keeps or
+  discards `state`.
 
 **ActionDispatcher**
-- アクション列を**逐次**実行する。`request` の完了を待って `onSuccess` に進む。
-- 実行中の多重発火を防ぐ（ボタン連打）。同一ノードからのアクションは前回完了までブロックする。
-- ホストアプリのデリゲートに割り込み機会を与える: `shouldPerform(action) -> Bool` と `perform(hostAction)`。
+- Executes an action array **sequentially**: it waits for `request` to complete before moving on to
+  `onSuccess`.
+- Prevents duplicate firing during execution (a button tapped more than once). An action from the same
+  node blocks until the previous one completes.
+- Gives the host application's delegate a chance to intervene: `shouldPerform(action) -> Bool` and
+  `perform(hostAction)`.
 
 **Resolver**
-- 未解決ドキュメント（式を含む）+ Store → 解決済み RenderTree。
-- ここで互換性の劣化処理（未知ノードのフォールバック）も行う。**Renderer は未知の型を見ることがない**。
-- Store の変更に対して差分再解決する。フル再解決は初回のみ。
+- Turns an unresolved document (one that still contains expressions), combined with the Store, into
+  a resolved RenderTree.
+- Also performs compatibility degradation here (fallback for an unknown node). **The Renderer never
+  sees an unknown type.**
+- Re-resolves the diff against a Store change; the first pass alone triggers a full resolution.
 
 **Renderer**
-- 解決済みノードを描画するだけ。分岐も式評価も持たない。ここを薄く保つことが、2プラットフォーム間のドリフト抑制に直結する。
+- Renders resolved nodes, and nothing else. It carries no branching and no expression evaluation. Keeping this
+  layer thin directly limits the drift between the two platforms.
 
-## 3. データフロー
+## 3. Data flow
 
-### 3.1 初回描画
+### 3.1 First render
 
 ```
 Host App                SDK                        Server/CDN
@@ -116,19 +133,19 @@ Host App                SDK                        Server/CDN
    │                     ├─ cache lookup ──┐           │
    │                     │◄─ hit(stale) ───┘           │
    │                     │                             │
-   │  ◄── 即時描画 (stale) ─┤                          │
+   │  ◄── immediate render (stale) ─┤                  │
    │                     ├─ GET /screens/product_detail│
    │                     │   Spectre-Capabilities: ... │
    │                     │   If-None-Match: "abc"      │
    │                     ├────────────────────────────►│
    │                     │◄──── 200 + document ────────┤
    │                     ├─ validate → Resolver        │
-   │  ◄── 差し替え描画 ────┤                            │
+   │  ◄── swapped-in render ────┤                       │
 ```
 
-`Spectre-Capabilities` の内容は [compatibility.md](compatibility.md) を参照。
+See [compatibility.md](compatibility.md) for what `Spectre-Capabilities` carries.
 
-### 3.2 操作 → アクション → 更新
+### 3.2 Interaction → action → update
 
 ```
  User taps Button
@@ -139,10 +156,11 @@ Host App                SDK                        Server/CDN
    {request: POST cart.add, body:{...}},
  ])
         │
-        ├─ setState ──► Store ──► Resolver (差分) ──► 再描画 (ボタンがローディング表示に)
+        ├─ setState ──► Store ──► Resolver (diff) ──► re-render (button shows a loading state)
         │
-        ├─ request ───► Host App の NetworkDelegate
-        │                 (ベースURL・認証ヘッダ・エンドポイント名の解決はホスト責務)
+        ├─ request ───► the Host App's NetworkDelegate
+        │                 (resolving the base URL, the auth header, and the
+        │                  endpoint name is the host's responsibility)
         │                        │
         │                        ▼ HTTPS
         │                 ┌──────────────┐
@@ -153,31 +171,36 @@ Host App                SDK                        Server/CDN
         │   { state: {...}, patch: [...], actions: [{showToast}] }
         │                        │
         ├────────────────────────┘
-        ├─ state をマージ
-        ├─ patch をドキュメントに適用 (部分更新)
-        ├─ actions を逐次実行 → トースト表示
+        ├─ merge state
+        ├─ apply patch to the document (partial update)
+        ├─ execute actions sequentially → show a toast
         ▼
-    Resolver (差分) ──► 再描画
+    Resolver (diff) ──► re-render
 ```
 
-**エンドポイントの間接参照**: ドキュメントには絶対URLを書かず論理名 (`cart.add`) を書く。実URL・認証・ヘッダの付与はホストアプリが解決する。理由は3つ。
+**Indirection for endpoints**: the document never carries an absolute URL; it carries a logical name
+(`cart.add`) instead. The host application resolves the actual URL, authentication, and headers.
+Three reasons drive this:
 
-1. ドキュメントはCDNにキャッシュされる公開物であり、内部URLやトークンを含めてはならない。
-2. 環境（dev/stg/prod）ごとにドキュメントを作り分けずに済む。
-3. ホストアプリが既存のネットワーク層（認証・リトライ・証明書ピンニング）をそのまま使える。
+1. The document is a public artifact cached on a CDN, so it must never carry an internal URL or a
+   token.
+2. It avoids authoring a separate document per environment (dev, staging, production).
+3. The host application reuses its existing network layer as-is (authentication, retries,
+   certificate pinning).
 
-## 4. サーバ側の構成
+## 4. Server-side structure
 
 ```
 ┌────────────────── Authoring Plane ──────────────────┐
-│  Fastify (認証あり、社内向け)                        │
+│  Fastify (authenticated, internal)                   │
 │                                                     │
-│   POST /api/documents            下書き作成          │
-│   PUT  /api/documents/:id        下書き更新 (楽観ロック) │
-│   POST /api/documents/:id/validate  スキーマ+リント   │
-│   POST /api/documents/:id/publish   公開            │
-│   POST /api/documents/:id/rollback  ロールバック     │
-│   WS   /api/preview/:sessionId   実機ミラー中継      │
+│   POST /api/documents            create a draft      │
+│   PUT  /api/documents/:id        update a draft      │
+│                                   (optimistic lock)   │
+│   POST /api/documents/:id/validate  schema + lint     │
+│   POST /api/documents/:id/publish   publish          │
+│   POST /api/documents/:id/rollback  roll back        │
+│   WS   /api/preview/:sessionId   device-mirror relay  │
 │                                                     │
 │   PostgreSQL: documents, document_versions,         │
 │               releases, audit_log                   │
@@ -185,105 +208,122 @@ Host App                SDK                        Server/CDN
                         │ publish (immutable write)
                         ▼
 ┌────────────────── Delivery Plane ───────────────────┐
-│  Fastify (公開、CDN背後)                             │
+│  Fastify (public, behind a CDN)                       │
 │                                                     │
-│   GET /screens/:screenId    現在の公開版を解決       │
+│   GET /screens/:screenId    resolve the current       │
+│                              published version         │
 │        → 200 + document | 304                       │
-│   GET /d/:documentId/:versionId   イミュータブル      │
+│   GET /d/:documentId/:versionId   immutable           │
 │        → Cache-Control: public, max-age=31536000,   │
 │          immutable                                  │
-│   GET /manifest/:schemaVersion  クライアント検証用    │
+│   GET /manifest/:schemaVersion  for client validation │
 └─────────────────────────────────────────────────────┘
 ```
 
-**プレーンを分ける理由**: 配信系はステートレスかつ読み取り専用で、CDN前提でスケールする。オーサリング系はDB書き込みと認証を伴い、可用性要求も規模も違う。障害の切り分けとデプロイ頻度も別。
+**Why we split the planes**: the delivery plane is stateless and read-only, and scales on the
+assumption of a CDN. The authoring plane carries database writes and authentication, with different
+availability requirements, a different scale, and a different failure-isolation and deployment
+cadence.
 
-### データモデル (概略)
+### Data model (outline)
 
 ```sql
 documents          (id, screen_id, name, current_draft_version, created_by, ...)
 document_versions  (id, document_id, seq, body jsonb, checksum, author, created_at)
-                   -- body は不変。更新は常に新しい行
+                   -- body is immutable; every update is a new row
 releases           (id, document_id, version_id, channel, rollout_percent,
                     targeting jsonb, published_at, published_by, superseded_by)
 audit_log          (id, actor, action, document_id, version_id, diff jsonb, at)
 ```
 
-`releases` に `channel`（internal / canary / production）と `rollout_percent`、`targeting`（アプリバージョン範囲、プラットフォーム、ユーザセグメント）を持たせ、段階公開とA/Bを同じ仕組みで扱う。
+`releases` carries `channel` (internal / canary / production), `rollout_percent`, and `targeting`
+(the app version range, the platform, the user segment), so staged rollout and A/B testing share one
+mechanism.
 
-## 5. スレッドと性能
+## 5. Threading and performance
 
-| 処理 | 実行場所 |
+| Work | Where it runs |
 | --- | --- |
-| ネットワーク・ディスクI/O | バックグラウンド |
-| JSONデコード・スキーマ検証 | バックグラウンド |
-| Resolver の初回全解決 | バックグラウンド |
-| Resolver の差分解決 | メインスレッド可（ノード単位で軽量） |
-| 描画 | メイン |
+| Network and disk I/O | Background |
+| JSON decoding and schema validation | Background |
+| The Resolver's first full resolution | Background |
+| The Resolver's diff resolution | May run on the main thread (lightweight, per node) |
+| Rendering | Main |
 
-**保護のための上限値**（超過時はドキュメントを拒否し、キャッシュ済みの旧版かホスト提供のフォールバックを出す）:
+**Protective limits** (the client rejects a document that exceeds one, and falls back to a cached
+older version or a host-provided fallback):
 
-| 項目 | 上限 |
+| Item | Limit |
 | --- | --- |
-| ノード総数 | 2,000 |
-| 木の深さ | 32 |
-| ドキュメントサイズ (非圧縮) | 1 MB |
-| 1式あたりのASTノード数 | 256 |
-| `repeat` の展開件数 | 500 (超過分は切り捨て、テレメトリに記録) |
+| Total node count | 2,000 |
+| Tree depth | 32 |
+| Document size (uncompressed) | 1 MB |
+| AST nodes per expression | 256 |
+| `repeat` expansion count | 500 (excess is truncated and recorded in telemetry) |
 
-同じ上限をオーサリング時の検証にも適用し、公開できないものが端末に届かないようにする。
+We apply the same limits to authoring-time validation, so nothing unpublishable ever reaches a
+device.
 
-リスト系コンポーネントは必ず遅延描画にマップする（`LazyVStack` / `LazyColumn`）。安定した `id` を持つノードのみ差分描画の対象とし、`id` のないノードは親ごと再構築される。**エディタは全ノードに安定IDを自動採番する**。
+List components always map to lazy rendering (`LazyVStack` / `LazyColumn`). Diffed rendering considers
+a node solely when it carries a stable `id`; a node without one gets rebuilt along with its parent. **The
+editor assigns a stable ID to every node automatically.**
 
-## 6. ホストアプリとの統合点
+## 6. The integration surface with the host app
 
-SDKがホストアプリに要求するのは以下だけ。これ以上増やさない。
+The SDK asks the host application for nothing more than the following, and does not grow this surface
+further.
 
 ```swift
 protocol SpectreHostDelegate {
-    // 論理エンドポイント名 → 実リクエスト。認証ヘッダの付与もここ。
+    // Logical endpoint name → the actual request. Also where the auth header is attached.
     func performRequest(_ request: SpectreRequest) async throws -> SpectreActionResponse
 
-    // ドキュメントで表現できない画面遷移。既存のルーティングに委ねる。
+    // A screen transition the document cannot express. Delegates to existing routing.
     func navigate(to destination: SpectreDestination) -> Bool
 
-    // `host` アクション（共有シート、決済、カメラ等）の実行
+    // Executes a `host` action (a share sheet, payment, camera, and so on)
     func performHostAction(name: String, params: [String: SpectreValue]) async throws -> SpectreValue?
 
-    // 計測イベントの転送先
+    // Where to forward measurement events
     func track(event: String, properties: [String: SpectreValue])
 
-    // 読み込み失敗時の代替表示
+    // The fallback view to show on a load failure
     func fallbackView(for screenId: String, error: SpectreError) -> AnyView?
 }
 ```
 
-Android 側も同一シグネチャの `SpectreHostDelegate` インタフェースを持つ。
+Android carries the same `SpectreHostDelegate` interface, with an identical signature.
 
-**テーマ**: SDKはトークン名しか知らない。トークン → 実際の色/フォント/角丸の対応はホストアプリが `SpectreTheme` として注入する。これにより、ホストアプリのデザインシステムにそのまま馴染み、ダークモードやフォントスケーリングもホスト側の仕組みに乗る。
+**Theming**: the SDK knows token names alone. The host application injects the mapping from a token to
+an actual color, font, or corner radius, as `SpectreTheme`. This lets the SDK blend into the host
+application's own design system as-is, and lets dark mode and font scaling ride on the host's own
+mechanism.
 
-## 7. セキュリティ設計
+## 7. Security design
 
-| 脅威 | 対策 |
+| Threat | Mitigation |
 | --- | --- |
-| サーバ侵害による任意コード実行 | 式言語が非チューリング完全でコード実行機構を持たない (ADR-0004)。JSランタイムを積まない |
-| 悪意あるドキュメントによるクライアントDoS | §5 の上限値をクライアント側でも強制。超過はドキュメント拒否 |
-| フィッシング (`openUrl`) | URLスキームとホストのアロウリストをホストアプリが設定。外部ドメインは明示的な確認ダイアログを既定とする |
-| 意図しないAPI呼び出し | `request` は論理エンドポイント名のみ。ホストアプリが登録した名前以外は実行不可 |
-| 資格情報の漏洩 | ドキュメントはCDNキャッシュされる公開物として扱う。秘匿値を入れない。オーサリングAPI側のリントで検出 |
-| 画像経由の情報漏洩・トラッキング | 画像ホストのアロウリスト |
-| 不正なドキュメントの混入 | 公開版はチェックサム付き。ホストアプリの設定で署名検証（Ed25519）を有効化できる |
-| オーサリング権限の濫用 | 公開操作は監査ログに全件記録。本番チャネルへの公開は承認必須（2名体制）を設定可能 |
+| Arbitrary code execution from a compromised server | The expression language is not Turing-complete and carries no code-execution mechanism (ADR-0004). No JavaScript runtime is embedded |
+| Client denial of service from a malicious document | The §5 limits are enforced on the client too; the client rejects an excess document |
+| Phishing (`openUrl`) | The host application configures an allowlist of URL schemes and hosts. An external domain defaults to an explicit confirmation dialog |
+| An unintended API call | `request` carries only a logical endpoint name; nothing outside the names the host application registered can execute |
+| Credential leakage | We treat the document as a public artifact cached on a CDN and never place a secret in it. The authoring API's lint catches violations |
+| Information leakage or tracking through images | An allowlist of image hosts |
+| A tampered document reaching a client | A published version carries a checksum. The host application's configuration can enable signature verification (Ed25519) |
+| Abuse of authoring privileges | Every publish operation is recorded in the audit log in full. Publishing to the production channel can require approval (a two-person rule) |
 
-## 8. 可観測性
+## 8. Observability
 
-クライアントSDKが `track` デリゲート経由でホストの計測基盤に流すもの:
+What the client SDK forwards to the host's measurement infrastructure through the `track` delegate:
 
 - `spectre.document.loaded` (screenId, versionId, source=network|cache|bundle, ms)
 - `spectre.document.rejected` (screenId, reason)
-- `spectre.node.unknown` (screenId, versionId, nodeType, degradedTo) ← **互換性の実測値。最重要**
+- `spectre.node.unknown` (screenId, versionId, nodeType, degradedTo) ← **the measured signal of
+  compatibility, and the most important one**
 - `spectre.expr.error` (screenId, nodeId, code)
 - `spectre.action.performed` / `spectre.action.failed`
 - `spectre.render.ms` (screenId, nodeCount)
 
-`spectre.node.unknown` を集計することで「このコンポーネントを使うと現在のユーザの何%で劣化するか」が実測でき、エディタ上で編集者に警告として出せる。これが前方互換戦略を運用可能にする鍵になる。
+Aggregating `spectre.node.unknown` lets us measure, for real, what share of current users degrade
+when an author uses a given component, and surface that as a warning in the editor.
+This measurement is the key that makes the forward-compatibility strategy operable.

@@ -15,6 +15,14 @@ data class Document(
     val overlays: List<Overlay> = emptyList(),
     val onAppear: List<SpValue> = emptyList(),
     val onDisappear: List<SpValue> = emptyList(),
+    /**
+     * パース前の生の JSON 表現。`applyPatch` (RFC 6902) はここに対して適用し、
+     * その結果を再パースして新しい [Document] を作る — [root] は props/rawProps/nodeProps
+     * に振り分け済みで、その分割を逆変換せずに部分更新するのは壊れやすいため
+     * (docs/spec/actions.md `applyPatch`)。[DocumentParser] を経由せずに手で組み立てた
+     * ドキュメント (テストなど) では null になり、その場合 `applyPatch` は働かない。
+     */
+    val raw: SpValue.Obj? = null,
 )
 
 data class DocumentMeta(
@@ -132,6 +140,19 @@ data class ResolveResult(
 )
 
 /**
+ * [Resolver.resolveTraced] / [Resolver.reresolveTraced] の戻り値。
+ *
+ * [nodeResults] は解決に使った未解決 [Node] を [RenderNode] の列に対応付けたもので、
+ * 差分再解決が「このノードは前回と同じ結果を返す」と判断したときに再利用する。
+ * 呼び出し側 (画面コントローラ) はこれを次回の差分再解決にそのまま渡す以外の用途では
+ * 使わない — [Node] は式評価の実装詳細であり、レンダラに公開する型ではない。
+ */
+class TracedResolveResult(
+    val result: ResolveResult,
+    internal val nodeResults: Map<Node, List<RenderNode>>,
+)
+
+/**
  * 未対応コンポーネントに遭遇したときの劣化の記録。
  *
  * これを集計して「このコンポーネントは現在のユーザの何%で劣化するか」を
@@ -152,8 +173,31 @@ enum class DegradedTo {
     /** fallback ノードに置換された */
     FALLBACK,
 
-    /** 木から取り除かれた */
-    OMITTED;
+    /** 木から取り除かれた (`optional: true`) */
+    OMITTED,
 
-    val wireName: String get() = if (this == FALLBACK) "fallback" else "omitted"
+    /**
+     * 必須 (`optional` でない) かつ `fallback` もない未対応ノードが、
+     * 汎用プレースホルダに置き換えられた。
+     *
+     * 劣化の3段階 (fallback → 省略 → プレースホルダ) の最終手段
+     * (docs/compatibility.md §3, ADR-0006)。省略と違って画面上に痕跡を残すため、
+     * 「何かが表示されないまま失われた」ことが利用者にもテレメトリにも見える。
+     */
+    PLACEHOLDER;
+
+    val wireName: String get() = when (this) {
+        FALLBACK -> "fallback"
+        OMITTED -> "omitted"
+        PLACEHOLDER -> "placeholder"
+    }
 }
+
+/**
+ * 必須かつ `fallback` のない未対応ノードが劣化した先の合成コンポーネント型。
+ *
+ * [GeneratedCatalog] には現れない — マニフェスト由来のコンポーネントと衝突しない名前空間を
+ * 使うことで、レンダラはこの型だけを特別扱いして汎用プレースホルダを描ける
+ * (`docs/compatibility.md` §3 の劣化順序の最終防衛線)。
+ */
+const val PLACEHOLDER_NODE_TYPE = "Spectre.UnsupportedComponent"

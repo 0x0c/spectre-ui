@@ -12,9 +12,10 @@ predefined **component catalog**.
 
 The repository is in its **client-implementation phase**. The documents here record the technology
 selection and the specification. The repository also holds the iOS and Android runtimes and a
-renderer for each platform. Sample applications render a user-interface definition document without
-a server. Work on the editor (milestone M2) and on the delivery platform (milestone M3) has not
-started. [docs/roadmap.md](docs/roadmap.md) records what each part covers and which job verifies it.
+renderer for each platform. It holds an authoring and delivery API too (milestone M3,
+`packages/server`). Sample applications render a user-interface definition document without a
+server. Work on the editor (milestone M2) has not started. [docs/roadmap.md](docs/roadmap.md)
+records what each part covers and which job verifies it.
 
 ## Running it
 
@@ -39,6 +40,15 @@ cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 
 # iOS APNs sample application (needs XcodeGen)
 cd clients/ios/APNsSample && xcodegen generate && open SpectreAPNsSample.xcodeproj
+
+# The TypeScript SpectreExpr implementation, checked against the same conformance
+# corpus as the Kotlin and Swift runtimes (needs pnpm)
+pnpm install
+pnpm --filter @spectre-ui/core run typecheck && pnpm --filter @spectre-ui/core run test
+
+# Authoring and delivery API: type check and integration tests (needs pnpm and PostgreSQL)
+pnpm --filter @spectre-ui/manifest run typecheck && pnpm --filter @spectre-ui/manifest run test
+cd packages/server && pnpm run typecheck && TEST_DATABASE_URL=<url> pnpm run test
 ```
 
 Continuous integration (CI) runs every command above on each pull request. The job definitions live
@@ -74,8 +84,10 @@ formatting rules live in [docs/adr/README.md](docs/adr/README.md) and
 [.agent-workflows/](.agent-workflows/README.md). The adapters under `.claude/skills/` load that
 norm for Claude Code.
 
-English leads and the mirror follows it. The documents under `docs/` outside `docs/adr/` are the
-exception, with no English version today.
+English leads and the mirror follows it. The four specification documents under `docs/spec/` are the
+exception. They remain Japanese until milestone M0 freezes the specification, so a page does not get
+translated twice
+([SU-0011](roadmaps/SU-0011-english-first-documentation/SU-0011-english-first-documentation.md)).
 
 ## Deliverables (design samples)
 
@@ -98,7 +110,7 @@ exception, with no English version today.
    negotiation and per-node fallback. An older application version survives a component it does not
    recognize.
 
-## Repository layout (planned for the implementation phase)
+## Repository layout (target shape; `packages/editor` does not exist yet)
 
 ```
 spectre-ui/
@@ -113,7 +125,7 @@ spectre-ui/
 ├── packages/                   # TypeScript monorepo (pnpm workspace)
 │   ├── manifest/               #   Manifest loader and validation
 │   ├── codegen/                #   TypeScript, Swift, and Kotlin code generation
-│   ├── core/                   #   TypeScript expression evaluation and patch application (editor and server)
+│   ├── core/                   #   The TypeScript SpectreExpr implementation, third of the three parsers
 │   ├── editor/                 #   React WYSIWYG editor
 │   └── server/                 #   Authoring API and delivery service (Fastify)
 ├── clients/

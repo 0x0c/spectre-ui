@@ -44,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 加算のみチェック (下) が比較元の版を `git show` で読むために全履歴が要る。
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -58,6 +61,91 @@ jobs:
           find spec examples -name '*.json' -print0 \
             | xargs -0 -I{} node -e 'JSON.parse(require("fs").readFileSync("{}","utf8"))'
           echo "すべての JSON が解析できました"
+
+      # 仕様を変えるならコーパスへのケース追加を伴わなければならない (ADR-0008, SU-0007)。
+      # 忘れた変更を機械的に検出する。
+      - name: 仕様変更には適合性コーパスの拡張を伴う
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$BASE_SHA"
+          changed=$(git diff --name-only "$BASE_SHA" HEAD)
+          spec_changed=$(echo "$changed" | grep -E '^docs/spec/|^spec/component-manifest\.json' || true)
+          corpus_changed=$(echo "$changed" | grep -E '^spec/conformance/' || true)
+          if [ -n "$spec_changed" ] && [ -z "$corpus_changed" ]; then
+            echo "::error::仕様ファイルが変更されていますが spec/conformance/ の拡張がありません (ADR-0008)。"
+            echo "変更された仕様ファイル:"
+            echo "$spec_changed"
+            exit 1
+          fi
+          echo "OK: 仕様変更なし、またはコーパスも同じ変更で拡張されています。"
+
+      # schemaVersion のマイナー増加が加算のみであること (docs/compatibility.md §5, ADR-0006)。
+      # origin/main と比較するため、上の fetch-depth: 0 で全履歴を取得しておく。
+      - name: マニフェストの加算のみ進化規則
+        run: node packages/codegen/check-additive-evolution.mjs
+
+  # packages/core・packages/manifest・packages/server・packages/editor のテスト。実際の
+  # PostgreSQL に対して統合テストを走らせる (SU-0004)。editor はここに同居させている —
+  # 同じ pnpm ワークスペース・同じ Node セットアップを再利用でき、別ジョブに割る理由がないため。
+  server:
+    name: TypeScript (core / manifest / server / editor)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: spectre
+          POSTGRES_PASSWORD: spectre
+          POSTGRES_DB: spectre_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # バージョンは指定しない — ルート package.json の packageManager フィールドから
+      # 読む。両方指定すると ERR_PNPM_BAD_PM_VERSION を避けるためこのアクション自体が
+      # エラーで止まる。
+      - uses: pnpm/action-setup@v4
+
+      - name: 依存関係のインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: packages/core の型検査とテスト (適合性コーパス expr/ を含む)
+        run: |
+          pnpm --filter @spectre-ui/core run typecheck
+          pnpm --filter @spectre-ui/core run test
+
+      - name: packages/manifest の型検査とテスト
+        run: |
+          pnpm --filter @spectre-ui/manifest run typecheck
+          pnpm --filter @spectre-ui/manifest run test
+
+      - name: packages/server の型検査とテスト
+        working-directory: packages/server
+        env:
+          TEST_DATABASE_URL: postgres://spectre:spectre@localhost:5432/spectre_test
+        run: |
+          pnpm run typecheck
+          pnpm run test
+
+      - name: packages/editor の型検査・テスト・ビルド
+        working-directory: packages/editor
+        run: |
+          pnpm run typecheck
+          pnpm run test
+          pnpm run build
 
   # Compose レンダラとサンプルアプリのコンパイル。
   # GitHub の ubuntu ランナーには Android SDK が入っているため、
