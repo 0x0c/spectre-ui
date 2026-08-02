@@ -9,7 +9,10 @@ import { resolve } from 'node:path'
 // `vite dev` の HTTP 経路はここで明示しないとリポジトリルート外を拒否する。
 const repoRoot = resolve(__dirname, '../..')
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // GitHub Pages 上では docs サイトと同居し、/spectre-ui/editor/ 配下に置く
+  // (.github/workflows/pages.yml が dist/ を site/editor/ にコピーする)。
+  base: command === 'build' ? '/spectre-ui/editor/' : '/',
   plugins: [react()],
   server: {
     fs: { allow: [repoRoot] },
@@ -20,4 +23,4 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
   },
-})
+}))

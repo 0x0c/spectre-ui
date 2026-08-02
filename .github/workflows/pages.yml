@@ -9,6 +9,10 @@ on:
       - "scripts/**"
       - "mkdocs.yml"
       - "requirements-docs.txt"
+      - "packages/editor/**"
+      - "packages/manifest/**"
+      - "spec/component-manifest.json"
+      - "pnpm-lock.yaml"
       - ".github/workflows/pages.yml"
   pull_request:
     paths:
@@ -17,6 +21,10 @@ on:
       - "scripts/**"
       - "mkdocs.yml"
       - "requirements-docs.txt"
+      - "packages/editor/**"
+      - "packages/manifest/**"
+      - "spec/component-manifest.json"
+      - "pnpm-lock.yaml"
   workflow_dispatch:
 
 permissions:
@@ -44,6 +52,22 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-docs.txt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # バージョンは指定しない — ルート package.json の packageManager フィールドから読む。
+      - uses: pnpm/action-setup@v4
+
+      - name: エディタの依存関係のインストール
+        run: pnpm install --frozen-lockfile
+
+      # packages/editor を静的ビルドし、docs サイトと同居させる (/editor/ 配下)。
+      # 実行時のバックエンド依存はなく、サンプルドキュメントで完結するオフライン版。
+      - name: エディタのビルド
+        working-directory: packages/editor
+        run: pnpm run build
+
       # リポジトリ設定で Pages が未設定でも、ここで有効化する (Source = GitHub Actions)
       - name: Configure Pages
         if: github.event_name != 'pull_request'
@@ -62,6 +86,12 @@ jobs:
       # ロードマップ項目一覧 → site/index.html
       - name: Build roadmap index
         run: python3 scripts/build_roadmap_index.py site
+
+      # エディタの静的ビルドを site/editor/ に配置 (vite.config.ts の base と対応)
+      - name: エディタを site/editor/ に配置
+        run: |
+          mkdir -p site/editor
+          cp -r packages/editor/dist/. site/editor/
 
       - name: Upload artifact
         if: github.event_name != 'pull_request'
