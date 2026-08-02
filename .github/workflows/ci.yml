@@ -52,6 +52,12 @@ jobs:
         with:
           node-version: '22'
 
+      # Unit tests for the additive-evolution diagnostic itself. The step further down only
+      # ever runs it against the real diff, so on a change that violates nothing there is no
+      # way to tell whether the diagnostic would have missed a violation.
+      - name: codegen unit tests
+        run: node --test packages/codegen/test/*.test.mjs
+
       - name: 生成物がマニフェストと同期しているか
         run: node packages/codegen/generate.mjs --check
 
@@ -177,6 +183,21 @@ jobs:
         working-directory: clients/android
         run: ./gradlew --no-daemon :spectre-ui:assembleDebug :sample:assembleDebug
 
+      # Unit tests on the renderer side. They cover only property extraction and the token maps,
+      # neither of which builds a Compose tree, so they run on the JVM with no emulator. The
+      # assembleDebug step above only checks that it compiles, making this the sole check on
+      # that layer.
+      - name: spectre-ui tests
+        working-directory: clients/android
+        run: ./gradlew --no-daemon :spectre-ui:testDebugUnitTest
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spectre-ui-test-report
+          path: clients/android/spectre-ui/build/reports/tests/testDebugUnitTest
+          retention-days: 7
+
       - uses: actions/upload-artifact@v4
         if: success()
         with:
@@ -184,8 +205,34 @@ jobs:
           path: clients/android/sample/build/outputs/apk/debug/*.apk
           retention-days: 7
 
-  # SpectreCore の適合性テスト。ここが通れば、コーパスの範囲で
-  # Kotlin 実装と同じ挙動であることが確定する (ADR-0008)。
+  # Unit tests for the Python scripts that assemble the docs site.
+  #
+  # Only pages.yml ever ran these, and no layer checked them. Their failures also take the shape
+  # of "a page that built fine but says the wrong thing" — every item looking like the same
+  # status because it was misread, a link pointing somewhere else — so a green deploy proves
+  # nothing. They run on the standard library's unittest alone, so there is no dependency.
+  docs-scripts:
+    name: Docs scripts (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: scripts/ unit tests
+        run: python3 -m unittest discover -s scripts/tests -t . -v
+
+      # pages.yml runs this too, but only for changes touching docs/** and friends (its path
+      # filter). A missing counterpart appears exactly when a document is added, so check it
+      # unconditionally here as well.
+      - name: docs/ language pair completeness
+        run: python3 scripts/check_docs_mirror.py
+
+  # The SpectreCore conformance tests plus the SpectreUI unit tests. Once the former pass, the
+  # Swift implementation is pinned to the same behavior as the Kotlin one within the corpus
+  # (ADR-0008).
   ios:
     name: iOS (Swift)
     runs-on: macos-15
@@ -201,7 +248,10 @@ jobs:
         working-directory: clients/ios
         run: swift build
 
-      - name: 適合性テスト
+      # Runs both SpectreCoreTests (the conformance corpus) and SpectreUITests (property
+      # extraction and the token maps). The latter is the counterpart to
+      # :spectre-ui:testDebugUnitTest on the Compose side.
+      - name: Conformance and unit tests
         working-directory: clients/ios
         run: swift test
 

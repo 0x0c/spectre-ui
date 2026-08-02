@@ -22,5 +22,10 @@ let package = Package(
         // バンドルにコピーせず #filePath からリポジトリルートを辿って直接読む
         // (SwiftPM の resources はターゲットディレクトリ外を参照できない)。
         .testTarget(name: "SpectreCoreTests", dependencies: ["SpectreCore"]),
+        // Tests for SpectreUI, the counterpart to the `:spectre-ui` unit tests on the Compose
+        // side. They target property extraction from a resolved node and the token maps — the
+        // layer that can be checked without building a SwiftUI view — rather than screen
+        // assembly itself.
+        .testTarget(name: "SpectreUITests", dependencies: ["SpectreUI", "SpectreCore"]),
     ]
 )

@@ -25,6 +25,7 @@ android {
     }
 
     sourceSets["main"].java.srcDir("src/main/kotlin")
+    sourceSets["test"].java.srcDir("src/test/kotlin")
 
     buildFeatures { compose = true }
 }
@@ -41,4 +42,16 @@ dependencies {
     implementation(libs.coil.compose)
 
     debugImplementation(libs.compose.ui.tooling)
+
+    testImplementation(kotlin("test"))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = false
+    }
 }
