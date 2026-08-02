@@ -9,7 +9,7 @@
 | Author | [@0x0c](https://github.com/0x0c) |
 | Status | **Proposal** |
 | Topic | Delivery |
-| Related | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot.md) |
+| Related | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md) |
 <!-- /SU-METADATA -->
 
 ## Introduction

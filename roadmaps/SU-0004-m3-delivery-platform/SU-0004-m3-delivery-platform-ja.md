@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **提案** |
 | トピック | 配信 |
-| 関連 | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md) |
+| 関連 | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0005](../SU-0005-m4-operational-maturity/SU-0005-m4-operational-maturity-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0010](../SU-0010-narrow-scope-pilot/SU-0010-narrow-scope-pilot-ja.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに

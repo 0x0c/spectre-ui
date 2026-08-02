@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **提案** |
 | トピック | クライアントSDK |
-| 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md) |
+| 関連 | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze-ja.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus-ja.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに
