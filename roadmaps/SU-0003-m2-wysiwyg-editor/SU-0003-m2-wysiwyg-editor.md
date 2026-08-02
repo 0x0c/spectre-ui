@@ -138,6 +138,12 @@ safely trust before publishing.
 - They cover the interpolation stub's type-preservation rule too.
 - CI's `server` job now runs `packages/editor`'s typecheck, test, and build.
 - It already ran `packages/manifest` and `packages/server`'s checks.
+- 2026-08-02: `.github/workflows/pages.yml` now also builds `packages/editor` and publishes it to
+  GitHub Pages, alongside the documentation site, at `/spectre-ui/editor/`.
+- `vite.config.ts` sets `base` to that path for `vite build`; `vite dev` keeps `/`.
+- The editor still runs offline against its bundled sample document — this change only adds
+  hosting, not the authoring-API wiring or the device mirror.
+- No `Progress` box changes: none of this item's design points are about hosting.
 
 ## References
 
