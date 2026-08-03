@@ -31,6 +31,7 @@ publish.
 | `applyPatch` / `focus` / `scrollTo` | Implemented | RFC 6902 JSON Patch, plus the focus and scroll wiring |
 | Delivery and caching (DocumentLoader) | Implemented | A three-tier cache plus stale-while-revalidate; the samples already use it |
 | Capability negotiation and per-node fallback degradation | Implemented | `Spectre-Schema`/`Spectre-Components` headers, server-side `degradeDocumentTree`, and the client's fixed fallback → optional-omission → placeholder order (ADR-0006) |
+| Visual regression testing for both renderers ([SU-0015](../roadmaps/SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing.md)) | In progress | The suites, the shared fixtures under `spec/vrt/`, and the `android-vrt` / `ios-vrt` jobs exist. Both suites skip until the first goldens are recorded and committed |
 | Authoring and delivery API (M3) | In progress | `packages/server`; permissions and workflow (item 3) is still a stand-in |
 | Editor (M2) | In progress | `packages/editor`; the palette, canvas, inspector, action editor, sample data, undo/redo, the rearrangeable workspace ([SU-0013](../roadmaps/SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout.md)), and overlay authoring ([SU-0014](../roadmaps/SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md)) work, but the device mirror (SU-0009) is missing, so M2's own acceptance bar isn't met yet |
 | Overlay presentation options ([SU-0014](../roadmaps/SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md)) | Implemented | The `presentation` block plus the alert options, in the schema, both renderers, and three new resolve-corpus cases |
@@ -56,6 +57,8 @@ Continuous integration (CI) owns compile verification. The job definitions live 
 | `ios` | macOS | `swift build` / `swift test`, plus `xcodebuild` for iOS |
 | `ios-sample` | macOS | Generating the project with XcodeGen and building the sample app |
 | `ios-apns-sample` | macOS | Validating the example payloads' syntax, then generating the project with XcodeGen and building the APNs sample app |
+| `android-vrt` | Ubuntu | Rendering the `spec/vrt/` cases through Roborazzi and comparing each image against its golden |
+| `ios-vrt` | macOS | The same cases on the iOS Simulator, through swift-snapshot-testing |
 
 To verify everything locally, run the following in an environment with the Android SDK and Xcode:
 
@@ -92,7 +95,9 @@ Android engineer, and one or two web/server engineers.
 - [ ] ThemeProvider, the host delegate
 - [ ] A three-tier cache plus stale-while-revalidate
 - [ ] Compatibility degradation (fallback / optional / enforcing the upper limits)
-- [ ] Fuzz testing, snapshot testing
+- [ ] Fuzz testing, snapshot testing — the snapshot half is
+      [SU-0015](../roadmaps/SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing.md),
+      which builds a visual regression suite for each renderer
 - [ ] A sample application
 
 > **M1's acceptance criterion**: three real screens, hand-written as JSON, render on both operating

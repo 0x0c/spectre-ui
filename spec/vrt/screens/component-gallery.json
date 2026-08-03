@@ -1,0 +1,265 @@
+{
+  "$comment": "VRT フィクスチャ。レイアウト系とコンテンツ系のコンポーネントを一通り並べる。画像は解決しないホスト (.invalid) を指し、進捗表示は不定形ではなく確定値にする — どちらも実行ごとに画素が変わらないようにするため。",
+  "schemaVersion": "1.0",
+  "id": "vrt_component_gallery",
+
+  "meta": {
+    "title": "コンポーネント一覧",
+    "statePolicy": "reset"
+  },
+
+  "data": {
+    "tiles": [
+      { "id": "t1", "title": "配送状況", "caption": "12月3日 到着予定" },
+      { "id": "t2", "title": "ポイント", "caption": "1,240 pt" },
+      { "id": "t3", "title": "クーポン", "caption": "3枚 利用可能" },
+      { "id": "t4", "title": "お知らせ", "caption": "未読 2件" }
+    ],
+    "rows": [
+      { "id": "r1", "label": "注文履歴", "icon": "list" },
+      { "id": "r2", "label": "お気に入り", "icon": "heart" },
+      { "id": "r3", "label": "支払い方法", "icon": "lock" }
+    ]
+  },
+
+  "state": {
+    "tab": "overview"
+  },
+
+  "root": {
+    "type": "Screen",
+    "id": "screen",
+    "props": {
+      "scrollable": true,
+      "background": "background",
+      "appBar": {
+        "title": "コンポーネント一覧",
+        "showBack": true,
+        "actions": [
+          {
+            "type": "Button",
+            "id": "appbar_action",
+            "props": { "label": "", "variant": "text", "leadingIcon": "bell" },
+            "a11y": { "label": "お知らせ", "role": "button" }
+          }
+        ]
+      },
+      "bottomBar": {
+        "type": "HStack",
+        "id": "bottom_bar",
+        "props": { "spacing": "sm", "alignment": "center" },
+        "layout": { "padding": "md" },
+        "style": { "background": "surface", "elevation": 2 },
+        "children": [
+          {
+            "type": "Text",
+            "id": "bottom_note",
+            "props": { "text": "固定フッタ", "typography": "bodySm", "color": "onSurfaceVariant" },
+            "layout": { "weight": 1 }
+          },
+          {
+            "type": "Button",
+            "id": "bottom_cta",
+            "props": { "label": "次へ", "variant": "primary", "trailingIcon": "chevron.right" }
+          }
+        ]
+      }
+    },
+    "children": [
+      {
+        "type": "VStack",
+        "id": "content",
+        "props": { "spacing": "md", "alignment": "leading" },
+        "layout": { "padding": "md" },
+        "children": [
+          {
+            "type": "Section",
+            "id": "typography_section",
+            "props": { "title": "文字", "subtitle": "書体トークンと装飾" },
+            "children": [
+              {
+                "type": "VStack",
+                "props": { "spacing": "xs", "alignment": "leading" },
+                "children": [
+                  { "type": "Text", "props": { "text": "見出し Large", "typography": "titleLg", "weight": "bold" } },
+                  { "type": "Text", "props": { "text": "本文 Medium。折り返しの見え方も対象にする。", "typography": "bodyMd", "maxLines": 2 } },
+                  { "type": "Text", "props": { "text": "取り消し線つきの補足", "typography": "bodySm", "color": "onSurfaceVariant", "decoration": "strikethrough" } },
+                  { "type": "Text", "props": { "text": "中央揃えのキャプション", "typography": "caption", "color": "primary", "align": "center" }, "layout": { "width": "fill" } }
+                ]
+              }
+            ]
+          },
+
+          { "type": "Divider", "props": { "inset": "none" } },
+
+          {
+            "type": "HStack",
+            "id": "badge_row",
+            "props": { "spacing": "sm", "alignment": "center", "wrap": true },
+            "children": [
+              { "type": "Icon", "props": { "name": "star.fill", "size": "md", "color": "warning" } },
+              { "type": "Badge", "props": { "text": "新着", "tone": "info" } },
+              { "type": "Badge", "props": { "text": "在庫あり", "tone": "success", "variant": "outlined" } },
+              { "type": "Badge", "props": { "text": "残りわずか", "tone": "warning" } },
+              { "type": "Badge", "props": { "text": "販売終了", "tone": "error", "variant": "outlined" } }
+            ]
+          },
+
+          {
+            "type": "ZStack",
+            "id": "hero_stack",
+            "props": { "alignment": "bottomTrailing" },
+            "layout": { "width": "fill" },
+            "children": [
+              {
+                "type": "Image",
+                "id": "hero",
+                "props": {
+                  "url": "https://assets.invalid/vrt/hero.png",
+                  "contentMode": "fill",
+                  "aspectRatio": 2,
+                  "radius": "md",
+                  "placeholder": "color"
+                },
+                "layout": { "width": "fill" },
+                "a11y": { "label": "見出し画像", "role": "image" }
+              },
+              {
+                "type": "Badge",
+                "props": { "text": "重ね表示", "tone": "neutral" },
+                "layout": { "padding": "sm" }
+              }
+            ]
+          },
+
+          {
+            "type": "Grid",
+            "id": "tile_grid",
+            "props": { "columns": 2, "spacing": "sm" },
+            "layout": { "width": "fill" },
+            "children": [
+              {
+                "type": "Card",
+                "repeat": { "for": "${data.tiles}", "as": "tile", "key": "${tile.id}" },
+                "props": { "padding": "md", "elevation": 1, "radius": "md" },
+                "children": [
+                  {
+                    "type": "VStack",
+                    "props": { "spacing": "xs", "alignment": "leading" },
+                    "children": [
+                      { "type": "Text", "props": { "text": "${tile.title}", "typography": "titleSm" } },
+                      { "type": "Text", "props": { "text": "${tile.caption}", "typography": "bodySm", "color": "onSurfaceVariant" } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+
+          {
+            "type": "Section",
+            "id": "list_section",
+            "props": { "title": "一覧" },
+            "children": [
+              {
+                "type": "List",
+                "id": "row_list",
+                "props": { "spacing": "none", "separator": true },
+                "layout": { "width": "fill" },
+                "children": [
+                  {
+                    "type": "HStack",
+                    "repeat": { "for": "${data.rows}", "as": "row", "key": "${row.id}" },
+                    "props": { "spacing": "sm", "alignment": "center" },
+                    "layout": { "padding": { "top": "sm", "bottom": "sm" } },
+                    "children": [
+                      { "type": "Icon", "props": { "name": "${row.icon}", "size": "sm", "color": "onSurfaceVariant" } },
+                      { "type": "Text", "props": { "text": "${row.label}", "typography": "bodyMd" }, "layout": { "weight": 1 } },
+                      { "type": "Icon", "props": { "name": "chevron.right", "size": "sm", "color": "outline" } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+
+          {
+            "type": "ScrollView",
+            "id": "chip_scroll",
+            "props": { "direction": "horizontal", "showsIndicator": false },
+            "layout": { "width": "fill" },
+            "children": [
+              {
+                "type": "HStack",
+                "props": { "spacing": "sm", "alignment": "center" },
+                "children": [
+                  { "type": "Badge", "props": { "text": "すべて", "tone": "info" } },
+                  { "type": "Badge", "props": { "text": "食品", "tone": "neutral", "variant": "outlined" } },
+                  { "type": "Badge", "props": { "text": "日用品", "tone": "neutral", "variant": "outlined" } },
+                  { "type": "Badge", "props": { "text": "家電", "tone": "neutral", "variant": "outlined" } }
+                ]
+              }
+            ]
+          },
+
+          {
+            "type": "ProgressIndicator",
+            "id": "progress",
+            "props": { "kind": "linear", "value": 0.4, "size": "md" },
+            "layout": { "width": "fill" }
+          },
+
+          {
+            "type": "Tabs",
+            "id": "tabs",
+            "props": {
+              "bindTo": "tab",
+              "items": [
+                { "id": "overview", "label": "概要" },
+                { "id": "detail", "label": "詳細" }
+              ]
+            },
+            "children": [
+              {
+                "type": "VStack",
+                "id": "overview_tab",
+                "props": { "spacing": "sm", "alignment": "leading" },
+                "layout": { "padding": { "top": "sm" } },
+                "children": [
+                  { "type": "Text", "props": { "text": "選択中のタブの内容", "typography": "bodyMd" } }
+                ]
+              },
+              {
+                "type": "VStack",
+                "id": "detail_tab",
+                "props": { "spacing": "sm", "alignment": "leading" },
+                "layout": { "padding": { "top": "sm" } },
+                "children": [
+                  { "type": "Text", "props": { "text": "選択されていないタブの内容", "typography": "bodyMd" } }
+                ]
+              }
+            ]
+          },
+
+          {
+            "type": "HStack",
+            "id": "button_row",
+            "props": { "spacing": "sm", "alignment": "center", "wrap": true },
+            "children": [
+              { "type": "Button", "props": { "label": "主ボタン", "variant": "primary", "size": "md" } },
+              { "type": "Button", "props": { "label": "副ボタン", "variant": "secondary", "size": "md" } },
+              { "type": "Button", "props": { "label": "文字", "variant": "text", "size": "sm", "leadingIcon": "plus" } },
+              { "type": "Button", "props": { "label": "無効", "variant": "primary", "size": "md", "enabled": false } }
+            ]
+          },
+
+          { "type": "Spacer", "props": { "minLength": "xl" } }
+        ]
+      }
+    ]
+  },
+
+  "overlays": [],
+
+  "onAppear": []
+}

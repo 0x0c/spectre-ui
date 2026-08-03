@@ -42,6 +42,17 @@ cd clients/android && ./gradlew :sample:installDebug
 # iOS runtime tests (needs Xcode)
 cd clients/ios && swift test
 
+# Visual regression testing for the Compose renderer (needs the Android SDK).
+# Add -Pspectre.vrt.record=true to re-record the reference images.
+cd clients/android && ./gradlew :spectre-ui:testDebugUnitTest \
+  --tests 'dev.spectre.ui.SpectreScreenSnapshotTest'
+
+# Visual regression testing for the SwiftUI renderer (needs Xcode).
+# Set SPECTRE_VRT_RECORD=1 to re-record the reference images.
+cd clients/ios && xcodebuild test -scheme SpectreUI-Package \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:SpectreUISnapshotTests
+
 # iOS sample application (needs XcodeGen)
 cd clients/ios/SampleApp && xcodegen generate && open SpectreSample.xcodeproj
 

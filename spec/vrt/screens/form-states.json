@@ -1,0 +1,202 @@
+{
+  "$comment": "VRT フィクスチャ。入力コンポーネントを、通常・エラー・無効の各状態で並べる。回帰が見た目に出やすいのは状態の描き分けなので、1画面に同居させる。",
+  "schemaVersion": "1.0",
+  "id": "vrt_form_states",
+
+  "meta": {
+    "title": "入力の状態",
+    "statePolicy": "preserve"
+  },
+
+  "data": {
+    "plans": [
+      { "value": "free", "label": "フリー" },
+      { "value": "standard", "label": "スタンダード" },
+      { "value": "pro", "label": "プロ" }
+    ],
+    "areas": [
+      { "value": "east", "label": "東日本" },
+      { "value": "west", "label": "西日本" }
+    ]
+  },
+
+  "state": {
+    "name": "板東",
+    "email": "not-an-email",
+    "note": "",
+    "plan": "standard",
+    "area": "east",
+    "volume": 6,
+    "seats": 2,
+    "startDate": "2026-04-01",
+    "pushEnabled": true,
+    "mailEnabled": false,
+    "agreed": false,
+    "emailError": "メールアドレスの形式が正しくありません"
+  },
+
+  "root": {
+    "type": "Screen",
+    "id": "screen",
+    "props": {
+      "scrollable": true,
+      "background": "background",
+      "appBar": { "title": "入力の状態", "showBack": true }
+    },
+    "children": [
+      {
+        "type": "VStack",
+        "id": "content",
+        "props": { "spacing": "md", "alignment": "leading" },
+        "layout": { "padding": "md" },
+        "children": [
+          {
+            "type": "Section",
+            "id": "text_section",
+            "props": { "title": "テキスト入力", "subtitle": "補助文とエラー文の描き分け" },
+            "children": [
+              {
+                "type": "VStack",
+                "props": { "spacing": "sm", "alignment": "leading" },
+                "children": [
+                  {
+                    "type": "TextField",
+                    "id": "name_field",
+                    "props": {
+                      "bindTo": "name",
+                      "label": "お名前",
+                      "placeholder": "山田 太郎",
+                      "helperText": "配送先の宛名になります",
+                      "keyboard": "text"
+                    }
+                  },
+                  {
+                    "type": "TextField",
+                    "id": "email_field",
+                    "props": {
+                      "bindTo": "email",
+                      "label": "メールアドレス",
+                      "placeholder": "you@example.com",
+                      "keyboard": "email",
+                      "errorText": "${state.emailError}"
+                    }
+                  },
+                  {
+                    "type": "TextField",
+                    "id": "note_field",
+                    "props": {
+                      "bindTo": "note",
+                      "label": "備考",
+                      "placeholder": "空欄の複数行入力",
+                      "multiline": true,
+                      "maxLength": 200
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+
+          { "type": "Divider", "props": { "inset": "none" } },
+
+          {
+            "type": "Section",
+            "id": "choice_section",
+            "props": { "title": "選択" },
+            "children": [
+              {
+                "type": "VStack",
+                "props": { "spacing": "sm", "alignment": "leading" },
+                "children": [
+                  { "type": "Toggle", "id": "push_toggle", "props": { "bindTo": "pushEnabled", "label": "プッシュ通知 (オン)" } },
+                  { "type": "Toggle", "id": "mail_toggle", "props": { "bindTo": "mailEnabled", "label": "メール通知 (オフ)" } },
+                  { "type": "Toggle", "id": "locked_toggle", "props": { "bindTo": "mailEnabled", "label": "変更できない項目", "enabled": false } },
+                  { "type": "Checkbox", "id": "agree_check", "props": { "bindTo": "agreed", "label": "利用規約に同意する" } },
+                  {
+                    "type": "RadioGroup",
+                    "id": "plan_picker",
+                    "props": { "bindTo": "plan", "options": "${data.plans}", "orientation": "vertical" }
+                  },
+                  {
+                    "type": "RadioGroup",
+                    "id": "area_picker",
+                    "props": { "bindTo": "area", "options": "${data.areas}", "orientation": "horizontal" }
+                  },
+                  {
+                    "type": "Select",
+                    "id": "plan_select",
+                    "props": {
+                      "bindTo": "plan",
+                      "options": "${data.plans}",
+                      "label": "プラン",
+                      "placeholder": "選択してください"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+
+          { "type": "Divider", "props": { "inset": "none" } },
+
+          {
+            "type": "Section",
+            "id": "value_section",
+            "props": { "title": "数値と日付" },
+            "children": [
+              {
+                "type": "VStack",
+                "props": { "spacing": "sm", "alignment": "leading" },
+                "children": [
+                  {
+                    "type": "Slider",
+                    "id": "volume_slider",
+                    "props": { "bindTo": "volume", "min": 0, "max": 10, "step": 1, "showValue": true },
+                    "layout": { "width": "fill" }
+                  },
+                  {
+                    "type": "HStack",
+                    "props": { "spacing": "sm", "alignment": "center" },
+                    "children": [
+                      { "type": "Text", "props": { "text": "席数", "typography": "bodyMd" }, "layout": { "weight": 1 } },
+                      { "type": "Stepper", "id": "seats_stepper", "props": { "bindTo": "seats", "min": 1, "max": 9, "step": 1 } }
+                    ]
+                  },
+                  {
+                    "type": "DatePicker",
+                    "id": "start_date",
+                    "props": { "bindTo": "startDate", "mode": "date", "label": "利用開始日", "displayFormat": "medium" }
+                  }
+                ]
+              }
+            ]
+          },
+
+          {
+            "type": "HStack",
+            "id": "action_row",
+            "props": { "spacing": "sm", "alignment": "center", "wrap": true },
+            "children": [
+              { "type": "Button", "props": { "label": "保存する", "variant": "primary", "size": "lg", "enabled": "${state.agreed}" }, "layout": { "weight": 1 } },
+              { "type": "Button", "props": { "label": "削除", "variant": "destructive", "size": "md", "leadingIcon": "trash" } },
+              { "type": "Button", "props": { "label": "戻る", "variant": "tertiary", "size": "md" } }
+            ]
+          },
+
+          {
+            "type": "Text",
+            "id": "hint",
+            "props": { "text": "同意しないと保存できません", "typography": "caption", "color": "onSurfaceVariant" },
+            "visibleWhen": "${!state.agreed}"
+          },
+
+          { "type": "Spacer", "props": { "minLength": "lg" } }
+        ]
+      }
+    ]
+  },
+
+  "overlays": [],
+
+  "onAppear": []
+}

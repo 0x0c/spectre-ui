@@ -9,7 +9,7 @@
 | Author | [@0x0c](https://github.com/0x0c) |
 | Status | **In progress** |
 | Topic | Client SDK |
-| Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md) |
+| Related | [SU-0001](../SU-0001-m0-specification-freeze/SU-0001-m0-specification-freeze.md), [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0007](../SU-0007-conformance-corpus/SU-0007-conformance-corpus.md), [SU-0008](../SU-0008-capability-negotiation-and-fallback/SU-0008-capability-negotiation-and-fallback.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0012](../SU-0012-apns-sdui-sample-app/SU-0012-apns-sdui-sample-app.md), [SU-0015](../SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing.md) |
 <!-- /SU-METADATA -->
 
 ## Introduction
@@ -89,6 +89,10 @@ the SDK does not understand must degrade predictably instead of crashing.
 - Both sample apps load through `DocumentLoader` now, not a bundled JSON file directly.
 - Fuzzing and snapshot testing (item 7) stay open.
 - Every other Detailed design item now has a working, tested implementation on both platforms.
+- 2026-08-02: The snapshot half of item 7 moved to
+  [SU-0015](../SU-0015-renderer-visual-regression-testing/SU-0015-renderer-visual-regression-testing.md),
+  which lands a visual regression suite for each renderer. Fuzzing stays open here, so the box stays
+  unticked.
 
 ## References
 

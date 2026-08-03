@@ -8,6 +8,10 @@ activityCompose = "1.9.3"
 lifecycle = "2.8.7"
 coreKtx = "1.15.0"
 junit5 = "5.11.4"
+junit4 = "4.13.2"
+robolectric = "4.14.1"
+roborazzi = "1.42.0"
+androidxTest = "1.6.1"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -15,6 +19,16 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "1.11.4" }
+
+# VRT (SU-0013)。Roborazzi は Robolectric 上で Compose を描画するので、
+# エミュレータを使わず JVM のテストとして走る。Robolectric のランナーは JUnit 4
+# なので、JUnit 5 のプラットフォーム上で動かすために vintage エンジンを添える。
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit5" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
 
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
