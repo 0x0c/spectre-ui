@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **実装済み** |
 | トピック | エディタ |
-| 関連 | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md)、[SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md)、[SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md) |
+| 関連 | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor-ja.md)、[SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md)、[SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md)、[SU-0015](../SU-0015-canvas-inline-editing/SU-0015-canvas-inline-editing-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに

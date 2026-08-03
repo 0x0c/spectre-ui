@@ -9,7 +9,7 @@
 | Author | [@0x0c](https://github.com/0x0c) |
 | Status | **In progress** |
 | Topic | Editor |
-| Related | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0013](../SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md) |
+| Related | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0013](../SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md), [SU-0015](../SU-0015-canvas-inline-editing/SU-0015-canvas-inline-editing.md) |
 <!-- /SU-METADATA -->
 
 ## Introduction

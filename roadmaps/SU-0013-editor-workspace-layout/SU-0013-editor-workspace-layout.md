@@ -9,7 +9,7 @@
 | Author | [@0x0c](https://github.com/0x0c) |
 | Status | **Implemented** |
 | Topic | Editor |
-| Related | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md) |
+| Related | [SU-0003](../SU-0003-m2-wysiwyg-editor/SU-0003-m2-wysiwyg-editor.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options.md), [SU-0015](../SU-0015-canvas-inline-editing/SU-0015-canvas-inline-editing.md) |
 <!-- /SU-METADATA -->
 
 ## Introduction

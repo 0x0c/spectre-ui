@@ -9,7 +9,7 @@
 | 提案者 | [@0x0c](https://github.com/0x0c) |
 | 状態 | **進行中** |
 | トピック | エディタ |
-| 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md), [SU-0013](../SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout-ja.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md) |
+| 関連 | [SU-0002](../SU-0002-m1-client-sdks/SU-0002-m1-client-sdks-ja.md), [SU-0004](../SU-0004-m3-delivery-platform/SU-0004-m3-delivery-platform-ja.md), [SU-0006](../SU-0006-manifest-driven-codegen/SU-0006-manifest-driven-codegen-ja.md), [SU-0009](../SU-0009-device-mirror-preview/SU-0009-device-mirror-preview-ja.md), [SU-0013](../SU-0013-editor-workspace-layout/SU-0013-editor-workspace-layout-ja.md), [SU-0014](../SU-0014-overlay-presentation-options/SU-0014-overlay-presentation-options-ja.md), [SU-0015](../SU-0015-canvas-inline-editing/SU-0015-canvas-inline-editing-ja.md) |
 <!-- /SU-METADATA -->
 
 ## はじめに
